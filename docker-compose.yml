@@ -1,0 +1,6 @@
+﻿services:
+  truman.api:
+    image: truman.api
+    build:
+      context: .
+      dockerfile: truman.api/Dockerfile
