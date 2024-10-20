@@ -1,0 +1,67 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  PROJECT_ID: truman-2024
+  REPOSITORY: cloud-run-source-deploy
+  SERVICE: truman
+  REGION: us-west1
+  IMAGE_URL: us-west1-docker.pkg.dev/truman-2024/cloud-run-source-deploy/truman
+
+jobs:
+  deploy:
+    # Add 'id-token' with the intended permissions for workload identity federation
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v2
+#      - name: Checkout actions-oidc-debugger
+#        uses: actions/checkout@v3
+#        with:
+#          repository: github/actions-oidc-debugger
+#          ref: main
+#          token: ${{ secrets.GITHUB_TOKEN }}
+#          path: ./.github/actions/actions-oidc-debugger
+#      - name: Debug OIDC Claims
+#        uses: ./.github/actions/actions-oidc-debugger
+#        with:
+#          audience: '${{ vars.WIF_PROVIDER }}'          
+
+      - name: Google Auth
+        id: auth
+        uses: 'google-github-actions/auth@v2'
+        with:
+          project_id: '${{ env.PROJECT_ID }}'
+          workload_identity_provider: '${{ vars.WIF_PROVIDER }}'
+          export_environment_variables: 'true'
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}          
+
+      - name: Configure Docker for Google Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+
+      - name: Build Container
+        run: docker build . -t "${{ env.IMAGE_URL }}:${{ github.sha }}" 
+        working-directory: ./Truman.Api
+        
+      - name: Push Container
+        run: docker push "${{ env.IMAGE_URL }}:${{ github.sha }}"
+        working-directory: ./Truman.Api
+       
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.SERVICE }} \
+          --image ${{ env.IMAGE_URL }}:${{ github.sha }} \
+          --region ${{ env.REGION }}

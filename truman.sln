@@ -1,13 +1,12 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "truman.api", "truman.api\truman.api.csproj", "{8F7E8A20-1495-4EC1-BCFE-1626A2C2F259}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{71776292-9847-4EAD-AE1C-70EA9FE2717B}"
 	ProjectSection(SolutionItems) = preProject
 		docker-compose.yml = docker-compose.yml
+		.gitignore = .gitignore
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "truman.functions", "truman.functions\truman.functions.csproj", "{92103C3C-B5E2-42CD-B5EF-18D4D5228377}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Truman.Api", "Truman.Api\Truman.Api.csproj", "{2B5327C0-ACDC-4B8D-BF06-7F93B46E230D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,13 +14,9 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{8F7E8A20-1495-4EC1-BCFE-1626A2C2F259}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8F7E8A20-1495-4EC1-BCFE-1626A2C2F259}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8F7E8A20-1495-4EC1-BCFE-1626A2C2F259}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8F7E8A20-1495-4EC1-BCFE-1626A2C2F259}.Release|Any CPU.Build.0 = Release|Any CPU
-		{92103C3C-B5E2-42CD-B5EF-18D4D5228377}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{92103C3C-B5E2-42CD-B5EF-18D4D5228377}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{92103C3C-B5E2-42CD-B5EF-18D4D5228377}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{92103C3C-B5E2-42CD-B5EF-18D4D5228377}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2B5327C0-ACDC-4B8D-BF06-7F93B46E230D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2B5327C0-ACDC-4B8D-BF06-7F93B46E230D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2B5327C0-ACDC-4B8D-BF06-7F93B46E230D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2B5327C0-ACDC-4B8D-BF06-7F93B46E230D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
