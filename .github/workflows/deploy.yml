@@ -3,7 +3,7 @@ name: Deploy to Cloud Run
 on:
   push:
     branches:
-      - main
+      - '**'     # Trigger on all branches
 
 env:
   PROJECT_ID: truman-2024
@@ -36,6 +36,16 @@ jobs:
 #        with:
 #          audience: '${{ vars.WIF_PROVIDER }}'          
 
+      - name: Set up Environment Variables
+        run: |
+          echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+          # Sanitize the branch name
+          SAFE_BRANCH_NAME=$(echo "${BRANCH_NAME}" | tr '/\#' '-' | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9\-')
+          SAFE_BRANCH_NAME=${SAFE_BRANCH_NAME#-}
+          SAFE_BRANCH_NAME=${SAFE_BRANCH_NAME%-}
+          echo "SAFE_BRANCH_NAME=${SAFE_BRANCH_NAME}" >> $GITHUB_ENV
+          echo "SERVICE_NAME=truman-${SAFE_BRANCH_NAME}" >> $GITHUB_ENV
+
       - name: Google Auth
         id: auth
         uses: 'google-github-actions/auth@v2'
@@ -62,6 +72,6 @@ jobs:
        
       - name: Deploy to Cloud Run
         run: |
-          gcloud run deploy ${{ env.SERVICE }} \
+          gcloud run deploy ${{ env.SERVICE_NAME }} \
           --image ${{ env.IMAGE_URL }}:${{ github.sha }} \
           --region ${{ env.REGION }}

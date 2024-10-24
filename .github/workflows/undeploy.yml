@@ -1,0 +1,56 @@
+name: Deploy to Cloud Run
+
+on:
+  delete:
+    branches:
+      - '**'     # Trigger on all branches
+
+env:
+  PROJECT_ID: truman-2024
+  REPOSITORY: cloud-run-source-deploy
+  SERVICE: truman
+  REGION: us-west1
+  IMAGE_URL: us-west1-docker.pkg.dev/truman-2024/cloud-run-source-deploy/truman
+
+jobs:
+  remove-service:
+    if: github.event.ref_type == 'branch'
+    # Add 'id-token' with the intended permissions for workload identity federation
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up Environment Variables
+        run: |
+          echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+          # Sanitize the branch name
+          SAFE_BRANCH_NAME=$(echo "${BRANCH_NAME}" | tr '/\#' '-' | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9\-')
+          SAFE_BRANCH_NAME=${SAFE_BRANCH_NAME#-}
+          SAFE_BRANCH_NAME=${SAFE_BRANCH_NAME%-}
+          echo "SAFE_BRANCH_NAME=${SAFE_BRANCH_NAME}" >> $GITHUB_ENV
+          echo "SERVICE_NAME=truman-${SAFE_BRANCH_NAME}" >> $GITHUB_ENV
+
+      - name: Google Auth
+        id: auth
+        uses: 'google-github-actions/auth@v2'
+        with:
+          project_id: '${{ env.PROJECT_ID }}'
+          workload_identity_provider: '${{ vars.WIF_PROVIDER }}'
+          export_environment_variables: 'true'
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}          
+
+      - name: Delete Cloud Run Service
+        run: |
+          gcloud run services delete ${{ env.SERVICE_NAME }} \
+            --region ${{ env.REGION }} \
+            --quiet || echo "Service does not exist."
