@@ -6,6 +6,7 @@ on:
       - '**'     # Trigger on all branches
 
 env:
+  BRANCH_NAME: ${{ github.head_ref || github.ref_name }} 
   PROJECT_ID: truman-2024
   REPOSITORY: cloud-run-source-deploy
   SERVICE: truman
@@ -38,8 +39,6 @@ jobs:
 
       - name: Set up Environment Variables
         run: |
-          echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
-          # Sanitize the branch name
           SAFE_BRANCH_NAME=$(echo "${BRANCH_NAME}" | tr '/\#' '-' | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9\-')
           SAFE_BRANCH_NAME=${SAFE_BRANCH_NAME#-}
           SAFE_BRANCH_NAME=${SAFE_BRANCH_NAME%-}
