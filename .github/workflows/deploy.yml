@@ -74,3 +74,4 @@ jobs:
           gcloud run deploy ${{ env.SERVICE_NAME }} \
           --image ${{ env.IMAGE_URL }}:${{ github.sha }} \
           --region ${{ env.REGION }}
+          --allow-unauthenticated
