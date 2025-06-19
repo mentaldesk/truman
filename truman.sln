@@ -4,6 +4,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		docker-compose.yml = docker-compose.yml
 		.gitignore = .gitignore
+		CONTRIBUTING.md = CONTRIBUTING.md
+		README.md = README.md
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Truman.Api", "Truman.Api\Truman.Api.csproj", "{2B5327C0-ACDC-4B8D-BF06-7F93B46E230D}"
