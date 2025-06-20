@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Authentication;
-
 namespace Truman.Api.Features.Auth;
 
 public static class AuthEndpoints

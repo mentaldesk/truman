@@ -1,5 +1,3 @@
-using Truman.Api.Features.Auth;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services
