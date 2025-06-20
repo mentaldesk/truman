@@ -1,15 +1,50 @@
 <script lang="ts">
+    import { page } from '$app/stores';
+    import { auth } from '$lib/stores/auth';
+    import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
     
+    const API_URL = 'http://localhost:8080'; // Match our local development API
+    let error: string | null = null;
+
     async function handleSocialLogin(provider: 'facebook' | 'google' | 'microsoft') {
-        // TODO: Implement social login
-        console.log(`Logging in with ${provider}`);
+        // Store the current URL as the return URL, but specifically to the login page
+        const returnUrl = `${$page.url.origin}/login`;
+        // Redirect to the API's login endpoint
+        window.location.href = `${API_URL}/auth/${provider}/login?returnUrl=${encodeURIComponent(returnUrl)}`;
     }
 
     async function handleMagicLink() {
         // TODO: Implement magic link login
         console.log('Magic link login requested');
     }
+
+    // Handle the token if we're returning from a social login
+    onMount(() => {
+        console.log('Page URL:', $page.url.toString());
+        console.log('Search params:', Object.fromEntries($page.url.searchParams.entries()));
+        
+        const token = $page.url.searchParams.get('token');
+        console.log('Token found:', !!token);
+        
+        if (token) {
+            console.log('Setting token and redirecting...');
+            try {
+                auth.setToken(token);
+                goto('/');
+            } catch (e) {
+                console.error('Failed to process token:', e);
+                error = 'Failed to process authentication token';
+            }
+        } else {
+            // Check for error parameter
+            const errorParam = $page.url.searchParams.get('error');
+            if (errorParam) {
+                error = errorParam;
+            }
+            console.log('No token found in URL');
+        }
+    });
 </script>
 
 <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -18,6 +53,21 @@
             <h1 class="text-center text-4xl font-bold tracking-tight mb-2">TRUMAN.NEWS</h1>
             <h2 class="text-center text-2xl font-semibold text-gray-900 mb-8">Log in to your account</h2>
         </div>
+        
+        {#if error}
+            <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-red-700">{error}</p>
+                    </div>
+                </div>
+            </div>
+        {/if}
         
         <div class="space-y-4">
             <!-- Facebook Login -->
