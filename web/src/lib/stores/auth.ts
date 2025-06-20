@@ -1,4 +1,4 @@
-import { writable } from 'svelte/store';
+import { writable, type Writable } from 'svelte/store';
 
 export interface User {
     id: string;
@@ -13,7 +13,13 @@ interface AuthState {
     isLoading: boolean;
 }
 
-function createAuthStore() {
+interface AuthStore extends Writable<AuthState> {
+    setUser: (user: User) => void;
+    clearUser: () => void;
+    setLoading: (isLoading: boolean) => void;
+}
+
+function createAuthStore(): AuthStore {
     const { subscribe, set, update } = writable<AuthState>({
         isAuthenticated: false,
         user: null,
@@ -22,6 +28,8 @@ function createAuthStore() {
 
     return {
         subscribe,
+        set,
+        update,
         setUser: (user: User) => {
             update(state => ({
                 ...state,
