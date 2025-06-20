@@ -1,6 +1,8 @@
 <script lang="ts">
-    import { createEventDispatcher } from 'svelte';
+    import { createEventDispatcher, onMount } from 'svelte';
     import { mood } from '$lib/stores/mood';
+    import { auth } from '$lib/stores/auth';
+    import { goto } from '$app/navigation';
     
     const dispatch = createEventDispatcher<{
         sourcesClick: void;
@@ -8,10 +10,37 @@
         profileClick: void;
     }>();
     
+    let showProfileMenu = false;
+    let profileMenuRef: HTMLDivElement;
+    let profileButtonRef: HTMLButtonElement;
+    
     function handleMoodChange(event: Event) {
         const value = parseInt((event.target as HTMLInputElement).value);
         mood.set(value);
     }
+    
+    function handleLogout() {
+        auth.clearUser();
+        showProfileMenu = false;
+        goto('/login');
+    }
+    
+    function handleClickOutside(event: MouseEvent) {
+        if (!profileMenuRef || !profileButtonRef) return;
+        
+        // Check if the click was outside both the menu and the button
+        if (!profileMenuRef.contains(event.target as Node) && 
+            !profileButtonRef.contains(event.target as Node)) {
+            showProfileMenu = false;
+        }
+    }
+    
+    onMount(() => {
+        document.addEventListener('click', handleClickOutside);
+        return () => {
+            document.removeEventListener('click', handleClickOutside);
+        };
+    });
 </script>
 
 <header class="p-4 border-b border-gray-200">
@@ -60,15 +89,48 @@
             </button>
             
             <!-- Profile Button -->
-            <button
-                on:click={() => dispatch('profileClick')}
-                class="inline-flex items-center justify-center w-10 h-10 rounded-full border border-gray-300 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                aria-label="Open profile menu"
-            >
-                <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-            </button>
+            <div class="relative">
+                <button
+                    bind:this={profileButtonRef}
+                    on:click={() => showProfileMenu = !showProfileMenu}
+                    class="inline-flex items-center justify-center w-10 h-10 rounded-full border border-gray-300 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    aria-label="Open profile menu"
+                    aria-expanded={showProfileMenu}
+                    aria-haspopup="true"
+                >
+                    <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                </button>
+                
+                {#if showProfileMenu}
+                    <div
+                        bind:this={profileMenuRef}
+                        class="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100"
+                        role="menu"
+                        aria-orientation="vertical"
+                        aria-labelledby="user-menu"
+                    >
+                        <div class="py-3 px-4">
+                            <p class="text-sm font-medium text-gray-900" role="menuitem">
+                                {$auth.user?.name || 'Anonymous User'}
+                            </p>
+                            <p class="text-xs text-gray-500 mt-1" role="menuitem">
+                                {$auth.user?.email || 'No email'}
+                            </p>
+                        </div>
+                        <div class="py-1">
+                            <button
+                                on:click={handleLogout}
+                                class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                role="menuitem"
+                            >
+                                Sign out
+                            </button>
+                        </div>
+                    </div>
+                {/if}
+            </div>
         </div>
     </div>
 </header> 
