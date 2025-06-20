@@ -112,14 +112,14 @@
                         aria-labelledby="user-menu"
                     >
                         <div class="py-3 px-4">
-                            <p class="text-sm font-medium text-gray-900" role="menuitem">
+                            <p class="text-sm font-medium text-gray-900">
                                 {$auth.user?.name || 'Anonymous User'}
                             </p>
-                            <p class="text-xs text-gray-500 mt-1" role="menuitem">
+                            <p class="text-xs text-gray-500 mt-1">
                                 {$auth.user?.email || 'No email'}
                             </p>
                         </div>
-                        <div class="py-1">
+                        <div class="py-1" role="none">
                             <button
                                 on:click={handleLogout}
                                 class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"

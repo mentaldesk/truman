@@ -78,17 +78,49 @@ builder.Services.AddAuthentication(options =>
             }
         };
     })
-// .AddGoogle(options =>
-// {
-//     options.ClientId = builder.Configuration["Authentication:Google:ClientId"] ?? throw new InvalidOperationException("Google ClientId not found");
-//     options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"] ?? throw new InvalidOperationException("Google ClientSecret not found");
-// })
+    .AddGoogle(options =>
+    {
+        options.ClientId = builder.Configuration["Authentication:Google:ClientId"] ?? 
+            throw new InvalidOperationException("Google ClientId not found");
+        options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"] ?? 
+            throw new InvalidOperationException("Google ClientSecret not found");
+        options.SignInScheme = "Cookies";
+        options.SaveTokens = true;
+        
+        // Use the default callback path that Google expects
+        options.CallbackPath = "/signin-google";
+        
+        options.Events = new OAuthEvents
+        {
+            OnTicketReceived = async context =>
+            {
+                // Get the return URL from the auth properties
+                var returnUrl = context.Properties != null && context.Properties.Items.TryGetValue("returnUrl", out var url) ? url : "http://localhost:5174";
+                
+                // Generate JWT token
+                var tokenService = context.HttpContext.RequestServices.GetRequiredService<TokenService>();
+                if (context.Principal != null)
+                {
+                    var claims = context.Principal.Claims.ToList();
+                    // Add the authentication method claim
+                    claims.Add(new Claim("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/authenticationmethod", "google"));
+                    var token = tokenService.GenerateToken(claims);
+                
+                    // Sign-out of cookie auth
+                    await context.HttpContext.SignOutAsync("Cookies");
+                
+                    // Redirect to frontend with token
+                    context.HandleResponse();
+                    context.Response.Redirect($"{returnUrl}?token={token}");
+                }
+            }
+        };
+    });
 // .AddMicrosoftAccount(options =>
 // {
 //     options.ClientId = builder.Configuration["Authentication:Microsoft:ClientId"] ?? throw new InvalidOperationException("Microsoft ClientId not found");
 //     options.ClientSecret = builder.Configuration["Authentication:Microsoft:ClientSecret"] ?? throw new InvalidOperationException("Microsoft ClientSecret not found");
 // });
-    ;
 
 builder.Services.AddAuthorization();
 builder.Services.AddCors(options =>
