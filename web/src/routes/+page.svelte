@@ -1,6 +1,34 @@
-<div class="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-7xl mx-auto">
-        <h1 class="text-3xl font-bold text-gray-900">Welcome to Truman.News</h1>
-        <p class="mt-4 text-lg text-gray-500">Your authenticated home page.</p>
-    </div>
+<script lang="ts">
+    import Header from '$lib/components/Header.svelte';
+    import { mood } from '$lib/stores/mood';
+    
+    function handleSourcesClick() {
+        console.log('Sources clicked');
+        // TODO: Implement sources dialog
+    }
+    
+    function handleRulesClick() {
+        console.log('Rules clicked');
+        // TODO: Implement rules dialog
+    }
+    
+    function handleProfileClick() {
+        console.log('Profile clicked');
+        // TODO: Implement profile panel
+    }
+</script>
+
+<div class="min-h-screen bg-gray-50">
+    <Header
+        on:sourcesClick={handleSourcesClick}
+        on:rulesClick={handleRulesClick}
+        on:profileClick={handleProfileClick}
+    />
+    
+    <main class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <!-- Content Placeholder -->
+        <div class="bg-white rounded-lg shadow p-6 min-h-[400px] flex items-center justify-center">
+            <p class="text-gray-500 text-lg">Content Placeholder (Mood: {$mood})</p>
+        </div>
+    </main>
 </div>
