@@ -6,7 +6,7 @@ export interface User {
     id: string;
     email: string | null;
     name: string | null;
-    provider: 'facebook' | 'google' | 'microsoft' | 'magic_link';
+    provider: 'facebook' | 'google' | 'magic_link';
 }
 
 interface AuthState {

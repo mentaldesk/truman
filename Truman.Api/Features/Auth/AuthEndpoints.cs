@@ -10,7 +10,6 @@ public static class AuthEndpoints
             {
                 "facebook" => "Facebook",
                 "google" => "Google",
-                "microsoft" => "Microsoft",
                 _ => throw new ArgumentException("Invalid provider", nameof(provider))
             };
             
