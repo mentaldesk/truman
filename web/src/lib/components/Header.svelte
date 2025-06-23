@@ -106,16 +106,16 @@
                 {#if showProfileMenu}
                     <div
                         bind:this={profileMenuRef}
-                        class="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100"
+                        class="absolute right-0 mt-2 min-w-[12rem] max-w-sm rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100"
                         role="menu"
                         aria-orientation="vertical"
                         aria-labelledby="user-menu"
                     >
                         <div class="py-3 px-4">
-                            <p class="text-sm font-medium text-gray-900">
+                            <p class="text-sm font-medium text-gray-900 break-words">
                                 {$auth.user?.name || 'Anonymous User'}
                             </p>
-                            <p class="text-xs text-gray-500 mt-1">
+                            <p class="text-xs text-gray-500 mt-1 break-words">
                                 {$auth.user?.email || 'No email'}
                             </p>
                         </div>
