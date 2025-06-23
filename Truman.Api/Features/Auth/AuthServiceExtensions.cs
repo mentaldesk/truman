@@ -1,3 +1,5 @@
+using Truman.Api.Features.Email;
+
 namespace Truman.Api.Features.Auth;
 
 public static class AuthServiceExtensions
@@ -6,6 +8,8 @@ public static class AuthServiceExtensions
     {
         services.Configure<AuthConfiguration>(configuration.GetSection("Authentication"));
         services.AddScoped<TokenService>();
+        services.AddScoped<ITokenService, TokenService>();
+        services.AddScoped<IMagicLinkService, MagicLinkService>();
         
         services.AddAuthentication(options =>
             {
@@ -23,17 +27,18 @@ public static class AuthServiceExtensions
             })
             .AddJwtBearer(options =>
             {
+                var jwtSettings = configuration.GetSection("Authentication:Jwt").Get<JwtSettings>();
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
                     ValidateAudience = true,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    ValidIssuer = configuration["Jwt:Issuer"],
-                    ValidAudience = configuration["Jwt:Audience"],
+                    ValidIssuer = jwtSettings?.Issuer,
+                    ValidAudience = jwtSettings?.Audience,
                     IssuerSigningKey = new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(configuration["Jwt:Key"] ?? 
-                            throw new InvalidOperationException("JWT Key not found")))
+                        Encoding.UTF8.GetBytes(jwtSettings?.Key ?? throw new InvalidOperationException("JWT Key is not configured"))
+                    )
                 };
             })
             .AddFacebook(ConfigureFacebookOptions(configuration))
@@ -47,10 +52,9 @@ public static class AuthServiceExtensions
     {
         return options =>
         {
-            options.AppId = configuration["Authentication:Facebook:AppId"] ??
-                throw new InvalidOperationException("Facebook AppId not found");
-            options.AppSecret = configuration["Authentication:Facebook:AppSecret"] ??
-                throw new InvalidOperationException("Facebook AppSecret not found");
+            var fbSettings = configuration.GetSection("Authentication:Facebook").Get<FacebookSettings>();
+            options.AppId = fbSettings?.AppId ?? throw new InvalidOperationException("Facebook AppId is not configured");
+            options.AppSecret = fbSettings?.AppSecret ?? throw new InvalidOperationException("Facebook AppSecret is not configured");
             options.SignInScheme = "Cookies";
             options.SaveTokens = true;
             options.CallbackPath = "/signin-facebook";
@@ -69,10 +73,9 @@ public static class AuthServiceExtensions
     {
         return options =>
         {
-            options.ClientId = configuration["Authentication:Google:ClientId"] ??
-                throw new InvalidOperationException("Google ClientId not found");
-            options.ClientSecret = configuration["Authentication:Google:ClientSecret"] ??
-                throw new InvalidOperationException("Google ClientSecret not found");
+            var googleSettings = configuration.GetSection("Authentication:Google").Get<GoogleSettings>();
+            options.ClientId = googleSettings?.ClientId ?? throw new InvalidOperationException("Google ClientId is not configured");
+            options.ClientSecret = googleSettings?.ClientSecret ?? throw new InvalidOperationException("Google ClientSecret is not configured");
             options.SignInScheme = "Cookies";
             options.SaveTokens = true;
             options.CallbackPath = "/signin-google";

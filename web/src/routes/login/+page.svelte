@@ -6,6 +6,28 @@
     
     const API_URL = 'http://localhost:8080'; // Match our local development API
     let error: string | null = null;
+    let showEmailModal = false;
+    let email = '';
+    let isLoading = false;
+    let showSuccessMessage = false;
+    let errorTimeout: ReturnType<typeof setTimeout>;
+
+    function setError(message: string) {
+        error = message;
+        // Clear any existing timeout
+        if (errorTimeout) clearTimeout(errorTimeout);
+        // Set new timeout to clear error after 10 seconds
+        errorTimeout = setTimeout(() => {
+            error = null;
+        }, 10000);
+    }
+
+    onMount(() => {
+        // Cleanup timeout on component unmount
+        return () => {
+            if (errorTimeout) clearTimeout(errorTimeout);
+        };
+    });
 
     async function handleSocialLogin(provider: 'facebook' | 'google') {
         // Store the current URL as the return URL, but specifically to the login page
@@ -15,8 +37,41 @@
     }
 
     async function handleMagicLink() {
-        // TODO: Implement magic link login
-        console.log('Magic link login requested');
+        showEmailModal = true;
+    }
+
+    async function requestMagicLink() {
+        if (!email) {
+            setError('Please enter your email address');
+            return;
+        }
+        
+        isLoading = true;
+        error = null;
+        
+        try {
+            const response = await fetch(`${API_URL}/auth/start/magic?email=${encodeURIComponent(email)}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || 'Failed to send magic link');
+            }
+
+            const data = await response.json();
+            showEmailModal = false;
+            showSuccessMessage = true;
+            error = null;
+        } catch (e) {
+            console.error('Failed to request magic link:', e);
+            setError(e instanceof Error ? e.message : 'Failed to send magic link');
+        } finally {
+            isLoading = false;
+        }
     }
 
     // Handle the token if we're returning from a social login
@@ -68,6 +123,23 @@
                 </div>
             </div>
         {/if}
+
+        {#if showSuccessMessage}
+            <div class="bg-green-50 border-l-4 border-green-400 p-4 mb-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-green-700">
+                            We've sent a magic link to your email address. Please check your inbox and click the link to log in.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        {/if}
         
         <div class="space-y-4">
             <!-- Facebook Login -->
@@ -107,4 +179,62 @@
             </button>
         </div>
     </div>
-</div> 
+</div>
+
+    <!-- Email Modal -->
+    {#if showEmailModal}
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4">
+            <div class="bg-white rounded-lg p-6 max-w-sm w-full">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Enter your email address</h3>
+                
+                {#if error}
+                    <div class="mb-4 bg-red-50 border-l-4 border-red-400 p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-red-700">{error}</p>
+                                <p class="text-sm text-red-700 mt-1">Please try again in a few minutes.</p>
+                            </div>
+                        </div>
+                    </div>
+                {/if}
+                
+                <form on:submit|preventDefault={requestMagicLink} class="space-y-4">
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                        <input
+                            type="email"
+                            id="email"
+                            bind:value={email}
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            placeholder="you@example.com"
+                            required
+                            disabled={isLoading}
+                        />
+                    </div>
+
+                    <div class="flex justify-end space-x-3">
+                        <button
+                            type="button"
+                            on:click={() => { showEmailModal = false; error = null; }}
+                            class="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 rounded-md"
+                            disabled={isLoading}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-md disabled:opacity-50"
+                            disabled={isLoading}
+                        >
+                            {isLoading ? 'Sending...' : 'Send Magic Link'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    {/if} 
