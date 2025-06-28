@@ -24,6 +24,10 @@
         showProfileMenu = false;
         goto('/login');
     }
+
+    function handlePerspectiveClick() {
+        goto('/pov');
+    }
     
     function handleClickOutside(event: MouseEvent) {
         if (!profileMenuRef || !profileButtonRef) return;
@@ -45,7 +49,11 @@
 
 <header class="p-4 border-b border-gray-200">
     <div class="max-w-7xl mx-auto flex items-center justify-between">
-        <h1 class="text-2xl font-bold tracking-tight">TRUMAN.NEWS</h1>
+        <div class="flex-1 flex items-center">
+            <a href="/" class="flex-shrink-0">
+                <h1 class="text-2xl font-bold text-gray-900">TRUMAN.NEWS</h1>
+            </a>
+        </div>
         
         <div class="flex items-center space-x-6">
             <!-- Mood Slider -->
@@ -74,6 +82,16 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 5c7.18 0 13 5.82 13 13M6 11a7 7 0 017 7m-6 0a1 1 0 11-2 0 1 1 0 012 0z" />
                 </svg>
                 Sources
+            </button>
+
+            <!-- Perspective Button -->
+            <button
+                on:click={handlePerspectiveClick}
+                class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                aria-label="Define your perspective"
+            >
+                <img src="/icons/telescope.svg" alt="Telescope" class="w-5 h-5 mr-2" />
+                Perspective
             </button>
             
             <!-- Rules Button -->
