@@ -12,6 +12,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Truman.Api", "Truman.Api\Tr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Truman.Job.RssFetcher", "Truman.Job.RssFetcher\Truman.Job.RssFetcher.csproj", "{748936C1-3299-4F4B-A7E3-1F6D34BD66C4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Truman.Data", "Truman.Data\Truman.Data.csproj", "{4137BDC7-1414-4393-9910-6C5815DF7DD1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,5 +28,9 @@ Global
 		{748936C1-3299-4F4B-A7E3-1F6D34BD66C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{748936C1-3299-4F4B-A7E3-1F6D34BD66C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{748936C1-3299-4F4B-A7E3-1F6D34BD66C4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4137BDC7-1414-4393-9910-6C5815DF7DD1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4137BDC7-1414-4393-9910-6C5815DF7DD1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4137BDC7-1414-4393-9910-6C5815DF7DD1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4137BDC7-1414-4393-9910-6C5815DF7DD1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
