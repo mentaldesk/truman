@@ -94,6 +94,9 @@
                     it conveys allows you to take control of your reality and focus on the things that are important
                     to you. 
                 </p>
+                <p class="mt-4 text-base text-gray-500">
+                    Here you can calibrate your reality to live the life you want to lead.
+                </p>
             </div>
         </div>
 
