@@ -19,14 +19,20 @@
     />
     
     <main class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <p class="mt-4 text-base text-gray-600">
-            Your reality is defined by the sum of all the little things you choose to pay attention to. 
-            
-        </p>
-        <p class="mt-4 text-base text-gray-500">
-            Consciously choosing <strong>the media</strong> you consume and <strong>the sentiment</strong> 
-            it conveys allows you to take control of your reality and focus on the things that are important
-            to you. 
-        </p>
+        <div class="flex items-center gap-8">
+            <div class="flex-shrink-0 bg-gray-50 rounded-full p-4 flex items-center justify-center overflow-hidden">
+                <img src="/icons/perspective-large.png" alt="Perspective" class="w-24 h-24 object-cover rounded-full" />
+            </div>
+            <div class="flex-1">
+                <p class="text-base text-gray-600">
+                    Your reality is defined by the sum of all the little things you choose to pay attention to. 
+                </p>
+                <p class="mt-4 text-base text-gray-500">
+                    Consciously choosing <strong>the media</strong> you consume and <strong>the sentiment</strong> 
+                    it conveys allows you to take control of your reality and focus on the things that are important
+                    to you. 
+                </p>
+            </div>
+        </div>
     </main>
 </div> 
