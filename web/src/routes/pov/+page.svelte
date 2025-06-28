@@ -129,16 +129,21 @@
                 </div>
                 
                 <div class="overflow-y-auto min-h-0 flex-1">
-                    <div class="space-y-3">
-                        {#each $valuesStore.available as value}
-                            <div
-                                on:dragstart={() => handleDragStart(value)}
-                                on:dragend={handleDragEnd}
-                            >
-                                <ValueCard {value} />
+                    {#each Array.from(new Set($valuesStore.available.map(v => v.category.name))) as categoryName}
+                        <div class="mb-6 last:mb-0">
+                            <h3 class="font-medium text-gray-700 mb-3">{categoryName}</h3>
+                            <div class="space-y-2">
+                                {#each $valuesStore.available.filter(v => v.category.name === categoryName) as value}
+                                    <div
+                                        on:dragstart={() => handleDragStart(value)}
+                                        on:dragend={handleDragEnd}
+                                    >
+                                        <ValueCard {value} />
+                                    </div>
+                                {/each}
                             </div>
-                        {/each}
-                    </div>
+                        </div>
+                    {/each}
                 </div>
             </div>
         </div>

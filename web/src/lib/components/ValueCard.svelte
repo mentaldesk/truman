@@ -11,19 +11,20 @@
 </script>
 
 <div 
-    class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200"
+    class="bg-white p-3 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200"
     {draggable}
     on:dragstart
     on:dragend
 >
-    <div class="flex items-start gap-3">
-        <div class="text-2xl flex-shrink-0" aria-hidden="true">
+    <div class="flex items-center gap-3">
+        <div class="text-xl flex-shrink-0" aria-hidden="true">
             {value.category.emoji}
         </div>
-        <div>
-            <h3 class="font-medium text-gray-900">{value.name}</h3>
-            <p class="text-sm text-gray-500 mt-1">{value.description}</p>
-            <p class="text-xs text-gray-400 mt-2">{value.category.name}</p>
+        <div class="flex-1 min-w-0">
+            <p class="text-sm text-gray-900">
+                <span class="font-medium">{value.name}</span>
+                <span class="text-gray-500"> - {value.description}</span>
+            </p>
         </div>
     </div>
 </div> 
