@@ -5,54 +5,74 @@
     
     let draggedValue: any = null;
     let dragOverIndex: number | null = null;
-    let isDraggingOver = false;
+    let isDraggingOverSelected = false;
+    let isDraggingOverAvailable = false;
 
-    function handleDragStart(value: any) {
-        draggedValue = value;
+    function handleDragStart(value: any, fromSelected: boolean = false) {
+        draggedValue = { ...value, fromSelected };
     }
     
     function handleDragEnd() {
         draggedValue = null;
         dragOverIndex = null;
-        isDraggingOver = false;
+        isDraggingOverSelected = false;
+        isDraggingOverAvailable = false;
     }
     
-    function handleDragOver(e: DragEvent, index: number | null = null) {
+    function handleDragOver(e: DragEvent, index: number | null = null, isSelected: boolean = true) {
         e.preventDefault();
-        isDraggingOver = true;
-        dragOverIndex = index;
+        if (isSelected) {
+            isDraggingOverSelected = true;
+            isDraggingOverAvailable = false;
+            dragOverIndex = index;
+        } else {
+            isDraggingOverAvailable = true;
+            isDraggingOverSelected = false;
+            dragOverIndex = null;
+        }
     }
 
-    function handleDragLeave() {
-        isDraggingOver = false;
+    function handleDragLeave(isSelected: boolean = true) {
+        if (isSelected) {
+            isDraggingOverSelected = false;
+        } else {
+            isDraggingOverAvailable = false;
+        }
     }
     
-    function handleDrop(e: DragEvent, index: number | null = null) {
+    function handleDrop(e: DragEvent, index: number | null = null, isSelected: boolean = true) {
         e.preventDefault();
         if (!draggedValue) return;
 
-        // If we're dropping into the selected list
-        if ($valuesStore.selected.length === 0) {
-            // First item being added
-            valuesStore.selectValue(draggedValue);
-        } else if (index !== null) {
-            // Reordering in selected list
-            const currentIndex = $valuesStore.selected.findIndex(v => v.id === draggedValue.id);
-            if (currentIndex !== -1) {
-                valuesStore.reorderSelected(currentIndex, index);
+        if (isSelected) {
+            if (draggedValue.fromSelected) {
+                // Reordering within selected list
+                if (index !== null) {
+                    const currentIndex = $valuesStore.selected.findIndex(v => v.id === draggedValue.id);
+                    if (currentIndex !== -1 && currentIndex !== index) {
+                        valuesStore.reorderSelected(currentIndex, index);
+                    }
+                }
             } else {
-                // Adding new item at specific position
-                valuesStore.selectValue(draggedValue);
-                // TODO: Add support for inserting at specific position
+                // Adding new value to selected list
+                if ($valuesStore.selected.length === 0) {
+                    // First item being added
+                    valuesStore.selectValue(draggedValue);
+                } else if (index !== null) {
+                    // Adding at specific position
+                    valuesStore.selectValue(draggedValue);
+                    // TODO: Add support for inserting at specific position
+                } else {
+                    // Adding to end of selected list
+                    valuesStore.selectValue(draggedValue);
+                }
             }
-        } else {
-            // Adding to end of selected list
-            valuesStore.selectValue(draggedValue);
+        } else if (!isSelected && draggedValue.fromSelected) {
+            // Dropping back into available values list
+            valuesStore.unselectValue(draggedValue);
         }
         
-        draggedValue = null;
-        dragOverIndex = null;
-        isDraggingOver = false;
+        handleDragEnd();
     }
 </script>
 
@@ -81,9 +101,9 @@
         <div class="grid grid-cols-2 gap-8 flex-1 min-h-0">
             <!-- Selected Values (Left Panel) -->
             <div 
-                class="bg-white rounded-lg p-6 flex flex-col overflow-hidden relative {isDraggingOver ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}"
+                class="bg-white rounded-lg p-6 flex flex-col overflow-hidden relative {isDraggingOverSelected ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}"
                 on:dragover={(e) => handleDragOver(e)}
-                on:dragleave={handleDragLeave}
+                on:dragleave={() => handleDragLeave(true)}
                 on:drop={(e) => handleDrop(e)}
             >
                 <div class="flex-shrink-0 mb-6">
@@ -97,14 +117,14 @@
                             <div
                                 class="relative"
                                 on:dragover={(e) => handleDragOver(e, index)}
-                                on:dragleave={handleDragLeave}
+                                on:dragleave={() => handleDragLeave(true)}
                                 on:drop={(e) => handleDrop(e, index)}
                             >
                                 {#if dragOverIndex === index}
                                     <div class="absolute inset-0 border-2 border-blue-500 rounded-lg -m-1"></div>
                                 {/if}
                                 <div
-                                    on:dragstart={() => handleDragStart(value)}
+                                    on:dragstart={() => handleDragStart(value, true)}
                                     on:dragend={handleDragEnd}
                                 >
                                     <ValueCard {value} />
@@ -122,7 +142,12 @@
             </div>
 
             <!-- Available Values (Right Panel) -->
-            <div class="bg-white rounded-lg p-6 flex flex-col overflow-hidden">
+            <div 
+                class="bg-white rounded-lg p-6 flex flex-col overflow-hidden relative {isDraggingOverAvailable ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}"
+                on:dragover={(e) => handleDragOver(e, null, false)}
+                on:dragleave={() => handleDragLeave(false)}
+                on:drop={(e) => handleDrop(e, null, false)}
+            >
                 <div class="flex-shrink-0 mb-6">
                     <h2 class="text-xl font-semibold text-gray-900 mb-4">Available Values</h2>
                     <p class="text-sm text-gray-500">Choose from these values to define your perspective.</p>
