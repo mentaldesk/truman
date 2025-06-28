@@ -46,7 +46,7 @@ public static class AuthEndpoints
                 var code = await magicLinkService.GenerateMagicLinkAsync(email);
                 
                 // Create the magic link URL that points to the frontend verification page
-                var magicLinkUrl = $"http://localhost:5173/login/verify?code={code}";
+                var magicLinkUrl = $"http://localhost:5174/login/verify?code={code}";
                 
                 // Send the magic link email
                 await emailService.SendMagicLinkEmailAsync(email, magicLinkUrl);
