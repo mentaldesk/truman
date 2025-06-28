@@ -9,6 +9,9 @@ export default defineConfig({
 		sveltekit(),
 		devtoolsJson()
 	],
+	build: {
+		sourcemap: true
+	},
 	test: {
 		projects: [
 			{
