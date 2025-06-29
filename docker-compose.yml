@@ -1,6 +1,22 @@
 ﻿version: '3.8'
 
 services:
+  postgres:
+    image: postgres:16
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-truman}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-devpassword}
+      - POSTGRES_DB=${POSTGRES_DB:-trumandb}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-truman} -d ${POSTGRES_DB:-trumandb}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   truman.api:
     image: truman.api
     build:
@@ -10,6 +26,9 @@ services:
       - "5001:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   web:
     image: truman.web
@@ -20,3 +39,6 @@ services:
       - "3000:80"
     depends_on:
       - truman.api
+
+volumes:
+  postgres_data:

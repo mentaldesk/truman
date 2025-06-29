@@ -1,4 +1,7 @@
 using System.Security.Cryptography;
+using Microsoft.EntityFrameworkCore;
+using Truman.Data;
+using Truman.Data.Entities;
 
 namespace Truman.Api.Features.Auth;
 
@@ -12,9 +15,14 @@ public interface IMagicLinkService
 
 public class MagicLinkService : IMagicLinkService
 {
-    private static readonly Dictionary<string, MagicLinkRecord> _magicLinks = new();
+    private readonly TrumanDbContext _dbContext;
+
+    public MagicLinkService(TrumanDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
     
-    public Task<string> GenerateMagicLinkAsync(string email)
+    public async Task<string> GenerateMagicLinkAsync(string email)
     {
         // Generate a cryptographically secure random code
         var codeBytes = new byte[32];
@@ -24,34 +32,45 @@ public class MagicLinkService : IMagicLinkService
             .Replace("+", "-")
             .Replace("=", "");
             
-        var record = new MagicLinkRecord(
-            Code: code,
-            Email: email,
-            ExpiresAt: DateTime.UtcNow.AddMinutes(5)
-        );
+        var magicLink = new MagicLink
+        {
+            Code = code,
+            Email = email,
+            ExpiresAt = DateTime.UtcNow.AddMinutes(5)
+        };
         
-        // Store the record
-        _magicLinks[code] = record;
+        _dbContext.MagicLinks.Add(magicLink);
+        await _dbContext.SaveChangesAsync();
         
-        return Task.FromResult(code);
+        return code;
     }
     
-    public Task<MagicLinkRecord?> ValidateMagicLinkAsync(string code)
+    public async Task<MagicLinkRecord?> ValidateMagicLinkAsync(string code)
     {
-        // Try to get the record and validate it
-        if (_magicLinks.TryGetValue(code, out var record))
+        var magicLink = await _dbContext.MagicLinks
+            .FirstOrDefaultAsync(m => m.Code == code);
+
+        if (magicLink == null)
         {
-            if (record.ExpiresAt > DateTime.UtcNow)
-            {
-                // Remove the used code
-                _magicLinks.Remove(code);
-                return Task.FromResult<MagicLinkRecord?>(record);
-            }
-            
-            // Remove expired code
-            _magicLinks.Remove(code);
+            return null;
         }
-        
-        return Task.FromResult<MagicLinkRecord?>(null);
+
+        // Check if the link is expired
+        if (magicLink.ExpiresAt <= DateTime.UtcNow)
+        {
+            _dbContext.MagicLinks.Remove(magicLink);
+            await _dbContext.SaveChangesAsync();
+            return null;
+        }
+
+        // Remove the used code
+        _dbContext.MagicLinks.Remove(magicLink);
+        await _dbContext.SaveChangesAsync();
+
+        return new MagicLinkRecord(
+            Code: magicLink.Code,
+            Email: magicLink.Email,
+            ExpiresAt: magicLink.ExpiresAt
+        );
     }
 } 
