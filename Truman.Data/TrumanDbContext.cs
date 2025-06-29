@@ -11,6 +11,7 @@ public class TrumanDbContext : DbContext
     }
 
     public DbSet<MagicLink> MagicLinks { get; set; } = null!;
+    public DbSet<RssItem> RssItems { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -26,6 +27,15 @@ public class TrumanDbContext : DbContext
             entity.Property(e => e.CreatedAt)
                 .IsRequired()
                 .HasDefaultValueSql("CURRENT_TIMESTAMP");
+        });
+
+        modelBuilder.Entity<RssItem>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Link).IsUnique();
+            entity.Property(e => e.Link).IsRequired();
+            entity.Property(e => e.PubDate).IsRequired(false);
+            entity.Property(e => e.TimeAnalysed).IsRequired(false);
         });
     }
 } 

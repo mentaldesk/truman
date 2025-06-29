@@ -1,5 +1,8 @@
 using CodeHollow.FeedReader;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Truman.Data;
+using Truman.Data.Entities;
 
 namespace Truman.Job.RssFetcher;
 
@@ -7,11 +10,16 @@ public class RssFetcher : IRssFetcher
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<RssFetcher> _logger;
+    private readonly IDbContextFactory<TrumanDbContext> _contextFactory;
 
-    public RssFetcher(IHttpClientFactory httpClientFactory, ILogger<RssFetcher> logger)
+    public RssFetcher(
+        IHttpClientFactory httpClientFactory, 
+        ILogger<RssFetcher> logger,
+        IDbContextFactory<TrumanDbContext> contextFactory)
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
+        _contextFactory = contextFactory;
     }
 
     public async Task RunAsync()
@@ -28,8 +36,11 @@ public class RssFetcher : IRssFetcher
 
         var client = _httpClientFactory.CreateClient();
 
-        var existingArticleCount = 0; // This should be replaced with a call to your database to get the count of existing articles
+        // Create a new context for this operation
+        await using var dbContext = await _contextFactory.CreateDbContextAsync();
+        var existingArticleCount = await dbContext.RssItems.CountAsync();
         var newArticleCount = 0;
+        
         foreach (var feedUrl in feeds)
         {
             try
@@ -39,11 +50,35 @@ public class RssFetcher : IRssFetcher
 
                 foreach (var item in feed.Items)
                 {
-                    var title = item.Title;
                     var link = item.Link;
+                    
+                    // Check if we already have this article
+                    var exists = await dbContext.RssItems.AnyAsync(a => a.Link == link);
+                    if (exists)
+                    {
+                        existingArticleCount++;
+                        continue;
+                    }
 
-                    // Insert to DB here
-                    _logger.LogInformation("New article found: {Title} ({Link})", title, link);
+                    // Try to parse the publication date
+                    DateTimeOffset? pubDate = null;
+                    if (item.PublishingDate.HasValue)
+                    {
+                        pubDate = item.PublishingDate.Value;
+                    }
+
+                    // Create new article
+                    var rssItem = new RssItem
+                    {
+                        Link = link,
+                        PubDate = pubDate,
+                        TimeAnalysed = null // This will be set by the analysis job
+                    };
+
+                    dbContext.RssItems.Add(rssItem);
+                    await dbContext.SaveChangesAsync();
+
+                    _logger.LogInformation("New article found: {Title} ({Link})", item.Title, link);
                     newArticleCount++;
                 }
             }
@@ -53,6 +88,9 @@ public class RssFetcher : IRssFetcher
             }
         }
 
-        _logger.LogInformation("RSS fetch job completed - {0} new articles found", newArticleCount);
+        _logger.LogInformation(
+            "RSS fetch job completed. Found {NewCount} new articles. Skipped {ExistingCount} existing articles.", 
+            newArticleCount,
+            existingArticleCount);
     }
 }

@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authentication;
 using Truman.Api.Features.Email;
 namespace Truman.Api.Features.Auth;
 
