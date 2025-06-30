@@ -4,27 +4,16 @@ using Microsoft.Extensions.Logging;
 using Truman.Data;
 using Truman.Data.Entities;
 
-namespace Truman.Job.RssFetcher;
+namespace Truman.JobRunner;
 
-public class RssFetcher : IRssFetcher
+public class RssFetcher(
+    IHttpClientFactory httpClientFactory,
+    ILogger<RssFetcher> logger,
+    IDbContextFactory<TrumanDbContext> contextFactory)
 {
-    private readonly IHttpClientFactory _httpClientFactory;
-    private readonly ILogger<RssFetcher> _logger;
-    private readonly IDbContextFactory<TrumanDbContext> _contextFactory;
-
-    public RssFetcher(
-        IHttpClientFactory httpClientFactory, 
-        ILogger<RssFetcher> logger,
-        IDbContextFactory<TrumanDbContext> contextFactory)
-    {
-        _httpClientFactory = httpClientFactory;
-        _logger = logger;
-        _contextFactory = contextFactory;
-    }
-
     public async Task RunAsync()
     {
-        _logger.LogInformation("Starting RSS fetch job...");
+        logger.LogInformation("Starting RSS fetch job...");
 
         var feeds = new[]
         {
@@ -34,10 +23,10 @@ public class RssFetcher : IRssFetcher
             // "https://another.com/feed",
         };
 
-        var client = _httpClientFactory.CreateClient();
+        var client = httpClientFactory.CreateClient();
 
         // Create a new context for this operation
-        await using var dbContext = await _contextFactory.CreateDbContextAsync();
+        await using var dbContext = await contextFactory.CreateDbContextAsync();
         var existingArticleCount = await dbContext.RssItems.CountAsync();
         var newArticleCount = 0;
         
@@ -78,17 +67,17 @@ public class RssFetcher : IRssFetcher
                     dbContext.RssItems.Add(rssItem);
                     await dbContext.SaveChangesAsync();
 
-                    _logger.LogInformation("New article found: {Title} ({Link})", item.Title, link);
+                    logger.LogInformation("New article found: {Title} ({Link})", item.Title, link);
                     newArticleCount++;
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to fetch or parse feed: {Url}", feedUrl);
+                logger.LogError(ex, "Failed to fetch or parse feed: {Url}", feedUrl);
             }
         }
 
-        _logger.LogInformation(
+        logger.LogInformation(
             "RSS fetch job completed. Found {NewCount} new articles. Skipped {ExistingCount} existing articles.", 
             newArticleCount,
             existingArticleCount);

@@ -10,7 +10,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Truman.Api", "Truman.Api\Truman.Api.csproj", "{2B5327C0-ACDC-4B8D-BF06-7F93B46E230D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Truman.Job.RssFetcher", "Truman.Job.RssFetcher\Truman.Job.RssFetcher.csproj", "{748936C1-3299-4F4B-A7E3-1F6D34BD66C4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Truman.JobRunner", "Truman.JobRunner\Truman.JobRunner.csproj", "{748936C1-3299-4F4B-A7E3-1F6D34BD66C4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Truman.Data", "Truman.Data\Truman.Data.csproj", "{4137BDC7-1414-4393-9910-6C5815DF7DD1}"
 EndProject
