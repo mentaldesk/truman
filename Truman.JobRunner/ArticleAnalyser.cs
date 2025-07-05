@@ -1,12 +1,12 @@
-using System.Collections.Immutable;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Truman.Data;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Truman.Data.Entities;
-using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel.Connectors.Google;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Truman.JobRunner;
 
@@ -68,11 +68,11 @@ public class ArticleAnalyser
         foreach (var rssItem in pending)
         {
             count++;
-            if (count > 1) break;
 
             var chatHistory = new ChatHistory(_instructions);
             chatHistory.AddUserMessage($"The article to be analysed is: {rssItem.Link}");
             var result = await chatService.GetChatMessageContentAsync(chatHistory, _promptSettings, _kernel);
+
             _logger.LogInformation("PromptTokenCount to analyse {Link}: {Tokens}", rssItem.Link, result.Metadata.ReadValue<int>("PromptTokenCount"));
             _logger.LogInformation("TotalTokenCount to analyse {Link}: {Tokens}", rssItem.Link, result.Metadata.ReadValue<int>("TotalTokenCount"));
 
@@ -91,9 +91,90 @@ public class ArticleAnalyser
             // Log the full response
             _logger.LogInformation("Analysis results for {Link}:", rssItem.Link);
             _logger.LogInformation("{Response}", responseContent);
+            
+            // Deserialize and save to database
+            try
+            {
+                _logger.LogInformation("Attempting to deserialize JSON response for {Link}", rssItem.Link);
+                _logger.LogInformation("Raw JSON response: {JsonResponse}", responseContent);
+                
+                var articleData = JsonSerializer.Deserialize<ArticleData>(responseContent);
+                if (!ValidateArticleData(articleData, out var validationErrors))
+                {
+                    RecordFailure(rssItem, $"Validation failed: {string.Join(", ", validationErrors)}");
+                    _logger.LogError("ArticleData validation failed for {Link}. Data: {@ArticleData}", rssItem.Link, articleData);
+                    continue;
+                }
+                
+                _logger.LogInformation("Successfully deserialized ArticleData for {Link}", rssItem.Link);
+                await SaveAnalysisResults(rssItem, articleData, db);
+            }
+            catch (JsonException ex)
+            {
+                RecordFailure(rssItem, $"JSON deserialization failed: {ex.Message}");
+                _logger.LogError(ex, "JSON deserialization exception for {Link}. JSON: {JsonResponse}", rssItem.Link, responseContent);
+            }
         }
         
         _logger.LogInformation("Analysis {Count} articles - job complete", count);
+    }
+
+    private async Task SaveAnalysisResults(RssItem rssItem, ArticleData articleData, TrumanDbContext db)
+    {
+        await using var transaction = await db.Database.BeginTransactionAsync();
+        try
+        {
+            // Create a new Article record
+            var article = new Article
+            {
+                Link = articleData.Link,
+                Title = articleData.Title,
+                Tldr = articleData.Tldr,
+                Content = articleData.Content,
+                Sentiment = articleData.Sentiment,
+                Tags = articleData.Tags,
+                Freedom = articleData.Freedom,
+                Independence = articleData.Independence,
+                SelfRespect = articleData.SelfRespect,
+                SelfActualization = articleData.SelfActualization,
+                Creativity = articleData.Creativity,
+                Honesty = articleData.Honesty,
+                Compassion = articleData.Compassion,
+                Loyalty = articleData.Loyalty,
+                Justice = articleData.Justice,
+                Responsibility = articleData.Responsibility,
+                Security = articleData.Security,
+                Equality = articleData.Equality,
+                Tradition = articleData.Tradition,
+                Obedience = articleData.Obedience,
+                Success = articleData.Success,
+                Ambition = articleData.Ambition,
+                Discipline = articleData.Discipline,
+                Knowledge = articleData.Knowledge,
+                OpenMindedness = articleData.OpenMindedness,
+                PeaceOfMind = articleData.PeaceOfMind,
+                Pleasure = articleData.Pleasure,
+                Connection = articleData.Connection,
+                Adventure = articleData.Adventure,
+                RssItemId = rssItem.Id,
+                CreatedAt = DateTimeOffset.UtcNow
+            };
+            
+            db.Articles.Add(article);
+            
+            // Mark RssItem as analysed
+            rssItem.TimeAnalysed = DateTimeOffset.UtcNow;
+            
+            await db.SaveChangesAsync();
+            await transaction.CommitAsync();
+            
+            _logger.LogInformation("Successfully saved analysis for {Link}", rssItem.Link);
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            RecordFailure(rssItem, $"Database save failed: {ex.Message}");
+        }
     }
 
     private void RecordFailure(RssItem rssItem, string reason)
@@ -101,5 +182,28 @@ public class ArticleAnalyser
         _logger.LogError("Article analysis failed for {Link}: {Reason}", rssItem.Link, reason);
         // TODO: We should still mark the article as analysed so that we don't retry it 
     }
-} 
+
+    private bool ValidateArticleData(ArticleData? articleData, out List<string> validationErrors)
+    {
+        validationErrors = new List<string>();
+        
+        if (articleData == null)
+        {
+            validationErrors.Add("JSON deserialization returned null");
+            return false;
+        }
+        
+        if (string.IsNullOrWhiteSpace(articleData.Link))
+            validationErrors.Add("Link is null or empty");
+        if (string.IsNullOrWhiteSpace(articleData.Title))
+            validationErrors.Add("Title is null or empty");
+        if (string.IsNullOrWhiteSpace(articleData.Tldr))
+            validationErrors.Add("Tldr is null or empty");
+        if (string.IsNullOrWhiteSpace(articleData.Content))
+            validationErrors.Add("Content is null or empty");
+        
+        return !validationErrors.Any();
+    }
+}
+
 #pragma warning restore SKEXP0070
