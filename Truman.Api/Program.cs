@@ -1,18 +1,21 @@
 using Microsoft.EntityFrameworkCore;
 using Truman.Api.Features.Email;
+using Truman.Api.Features.Articles;
 using Truman.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add database context
-builder.Services.AddDbContext<TrumanDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+builder.Services.AddDbContext<TrumanDbContext>(options => options.UseNpgsql(connectionString));
 
 // Add services
 builder.Services.AddAuthServices(builder.Configuration);
 builder.Services.Configure<EmailConfiguration>(builder.Configuration.GetSection("Email"));
 builder.Services.Configure<FrontendConfiguration>(builder.Configuration.GetSection("Frontend"));
 builder.Services.AddSingleton<IEmailService, EmailService>();
+builder.Services.AddScoped<IRelevantArticlesService, RelevantArticlesService>();
+builder.Services.AddOpenApi();
 
 builder.Services.AddCors(options =>
 {
@@ -35,12 +38,19 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate();
 }
 
+app.MapOpenApi();
+app.UseSwaggerUI(options =>
+{
+    options.SwaggerEndpoint("/openapi/v1.json", "v1");
+});
+
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
 // Map endpoints
 app.MapAuthEndpoints();
+app.MapArticleEndpoints();
 
 var target = Environment.GetEnvironmentVariable("TARGET") ?? "World";
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
