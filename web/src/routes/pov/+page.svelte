@@ -77,8 +77,9 @@
 </script>
 
 <div class="h-full flex flex-col">
-    <Header />
-    
+    <div class="sticky top-0 z-20 bg-gray-50 shadow-sm">
+        <Header />
+    </div>
     <main class="flex-1 max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex flex-col">
         <!-- Purpose section -->
         <div class="flex items-center gap-8 mb-8 flex-shrink-0">
