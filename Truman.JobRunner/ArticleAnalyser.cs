@@ -78,13 +78,13 @@ public class ArticleAnalyser
 
             if (result.Metadata!.ReadValue<GeminiFinishReason>("FinishReason") is { } finishReason && finishReason.Label != "STOP")
             {
-                RecordFailure(rssItem, $"GeminiFinishReason == {finishReason}");
+                await RecordFailure(rssItem, $"GeminiFinishReason == {finishReason}", db);
                 continue;
             }
 
             if (result.Content is not { } responseContent)
             {
-                RecordFailure(rssItem, "No content returned");
+                await RecordFailure(rssItem, "No content returned", db);
                 continue;
             }
             
@@ -101,7 +101,7 @@ public class ArticleAnalyser
                 var articleData = JsonSerializer.Deserialize<ArticleData>(responseContent);
                 if (!ValidateArticleData(articleData, out var validationErrors))
                 {
-                    RecordFailure(rssItem, $"Validation failed: {string.Join(", ", validationErrors)}");
+                    await RecordFailure(rssItem, $"Validation failed: {string.Join(", ", validationErrors)}", db);
                     _logger.LogError("ArticleData validation failed for {Link}. Data: {@ArticleData}", rssItem.Link, articleData);
                     continue;
                 }
@@ -111,7 +111,7 @@ public class ArticleAnalyser
             }
             catch (JsonException ex)
             {
-                RecordFailure(rssItem, $"JSON deserialization failed: {ex.Message}");
+                await RecordFailure(rssItem, $"JSON deserialization failed: {ex.Message}", db);
                 _logger.LogError(ex, "JSON deserialization exception for {Link}. JSON: {JsonResponse}", rssItem.Link, responseContent);
             }
         }
@@ -173,14 +173,17 @@ public class ArticleAnalyser
         catch (Exception ex)
         {
             await transaction.RollbackAsync();
-            RecordFailure(rssItem, $"Database save failed: {ex.Message}");
+            await RecordFailure(rssItem, $"Database save failed: {ex.Message}", db);
         }
     }
 
-    private void RecordFailure(RssItem rssItem, string reason)
+    private async Task RecordFailure(RssItem rssItem, string reason, TrumanDbContext db)
     {
         _logger.LogError("Article analysis failed for {Link}: {Reason}", rssItem.Link, reason);
-        // TODO: We should still mark the article as analysed so that we don't retry it 
+        
+        // Mark the RssItem as analysed to prevent infinite retry loops
+        rssItem.TimeAnalysed = DateTimeOffset.UtcNow;
+        await db.SaveChangesAsync();
     }
 
     private bool ValidateArticleData(ArticleData? articleData, out List<string> validationErrors)
