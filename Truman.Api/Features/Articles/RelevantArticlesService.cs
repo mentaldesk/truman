@@ -99,6 +99,10 @@ public class RelevantArticlesService : IRelevantArticlesService
     private double CalculateValueAlignmentScore(Article article, Dictionary<string, double> userValueWeights)
     {
         var totalScore = 0.0;
+        if (!userValueWeights.Any())
+        {
+            return totalScore;
+        }
 
         foreach (var (valueId, weight) in userValueWeights)
         {
