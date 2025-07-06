@@ -1,8 +1,9 @@
 <script lang="ts">
     import Header from '$lib/components/Header.svelte';
     import { mood } from '$lib/stores/mood';
-    import { onMount } from 'svelte';
+    import { onMount, onDestroy } from 'svelte';
     import { API_URL } from '$lib/config';
+    import { valuesStore } from '$lib/stores/values';
 
     type RelevantArticle = {
         id: number;
@@ -15,6 +16,7 @@
     let articles: RelevantArticle[] = [];
     let loading = true;
     let error: string | null = null;
+    let moodUnsubscribe: () => void;
 
     function handleSourcesClick() {
         console.log('Sources clicked');
@@ -26,14 +28,20 @@
         // TODO: Implement rules dialog
     }
 
-    onMount(async () => {
+    async function fetchArticles() {
         loading = true;
         error = null;
+        let minimumSentiment: number = 5;
+        let selectedValues: string[] = [];
+        const unsubscribeMood = mood.subscribe(value => { minimumSentiment = value; });
+        const unsubscribeValues = valuesStore.subscribe(state => { selectedValues = state.selected.map(v => v.id); });
+        unsubscribeMood();
+        unsubscribeValues();
         try {
             const res = await fetch(`${API_URL}/api/articles/relevant`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ minimumSentiment: 0, selectedValues: [] })
+                body: JSON.stringify({ minimumSentiment, selectedValues })
             });
             if (!res.ok) throw new Error('Failed to fetch articles');
             const data = await res.json();
@@ -43,6 +51,17 @@
         } finally {
             loading = false;
         }
+    }
+
+    onMount(() => {
+        fetchArticles();
+        moodUnsubscribe = mood.subscribe(() => {
+            fetchArticles();
+        });
+    });
+
+    onDestroy(() => {
+        if (moodUnsubscribe) moodUnsubscribe();
     });
 </script>
 
