@@ -14,6 +14,7 @@ public class TrumanDbContext : DbContext
     public DbSet<MagicLink> MagicLinks { get; set; } = null!;
     public DbSet<RssItem> RssItems { get; set; } = null!;
     public DbSet<Article> Articles { get; set; } = null!;
+    public DbSet<UserProfile> UserProfiles { get; set; } = null!;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

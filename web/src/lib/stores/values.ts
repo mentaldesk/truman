@@ -76,7 +76,11 @@ function createValuesStore() {
             selected.splice(toIndex, 0, removed);
             return { ...state, selected };
         }),
-        reset: () => set({ available: initialValues, selected: [] })
+        reset: () => set({ available: initialValues, selected: [] }),
+        setSelected: (ids: string[]) => set({
+            available: initialValues.filter(v => !ids.includes(v.id)),
+            selected: ids.map(id => initialValues.find(v => v.id === id)).filter(Boolean) as Value[]
+        })
     };
 }
 

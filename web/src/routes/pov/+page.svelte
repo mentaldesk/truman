@@ -2,11 +2,16 @@
     import Header from '$lib/components/Header.svelte';
     import ValueCard from '$lib/components/ValueCard.svelte';
     import { valuesStore } from '$lib/stores/values';
+    import { mood } from '$lib/stores/mood';
+    import { get } from 'svelte/store';
+    import { onMount, onDestroy } from 'svelte';
+    import { profileStore } from '$lib/stores/profile';
     
     let draggedValue: any = null;
     let dragOverIndex: number | null = null;
     let isDraggingOverSelected = false;
     let isDraggingOverAvailable = false;
+    let saveDebounce: ReturnType<typeof setTimeout> | null = null;
 
     function handleDragStart(value: any, fromSelected: boolean = false) {
         draggedValue = { ...value, fromSelected };
@@ -74,6 +79,14 @@
         
         handleDragEnd();
     }
+
+    onMount(() => {
+        // Remove all manual autosave, isInitializingProfile, and triggerSave/setupProfileAutoSave logic from this file.
+    });
+
+    onDestroy(() => {
+        if (saveDebounce) clearTimeout(saveDebounce);
+    });
 </script>
 
 <div class="h-full flex flex-col">

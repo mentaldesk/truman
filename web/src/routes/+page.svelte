@@ -4,6 +4,9 @@
     import { onMount, onDestroy } from 'svelte';
     import { API_URL } from '$lib/config';
     import { valuesStore } from '$lib/stores/values';
+    import { get } from 'svelte/store';
+    import { auth } from '$lib/stores/auth';
+    import { profileStore } from '$lib/stores/profile';
 
     type RelevantArticle = {
         id: number;
@@ -18,6 +21,9 @@
     let error: string | null = null;
     let moodUnsubscribe: () => void;
     let debounceTimeout: ReturnType<typeof setTimeout> | null = null;
+    let saveDebounce: ReturnType<typeof setTimeout> | null = null;
+    let moodUnsub: () => void;
+    let valuesUnsub: () => void;
 
     function handleSourcesClick() {
         console.log('Sources clicked');
