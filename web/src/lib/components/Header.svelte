@@ -3,6 +3,7 @@
     import { mood } from '$lib/stores/mood';
     import { auth } from '$lib/stores/auth';
     import { goto } from '$app/navigation';
+    import { patchUserMood } from '$lib/profile';
     
     const dispatch = createEventDispatcher<{
         profileClick: void;
@@ -11,10 +12,15 @@
     let showProfileMenu = false;
     let profileMenuRef: HTMLDivElement;
     let profileButtonRef: HTMLButtonElement;
+    let moodSaveDebounce: ReturnType<typeof setTimeout> | null = null;
     
     function handleMoodChange(event: Event) {
         const value = parseInt((event.target as HTMLInputElement).value);
         mood.set(value);
+        if (moodSaveDebounce) clearTimeout(moodSaveDebounce);
+        moodSaveDebounce = setTimeout(() => {
+            patchUserMood(value).catch(() => {/* Optionally handle error */});
+        }, 500);
     }
     
     function handleLogout() {

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Truman.Api.Features.Email;
 using Truman.Api.Features.Articles;
+using Truman.Api.Features.Profile;
 using Truman.Data;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,18 +26,12 @@ builder.Services.AddCors(options =>
         var frontendUrl = frontendConfig?.BaseUrl ?? "http://localhost:3000";
         policy.WithOrigins(frontendUrl)
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .AllowCredentials();
     });
 });
 
 var app = builder.Build();
-
-// Create and migrate the database
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<TrumanDbContext>();
-    db.Database.Migrate();
-}
 
 app.MapOpenApi();
 app.UseSwaggerUI(options =>
@@ -51,6 +46,7 @@ app.UseAuthorization();
 // Map endpoints
 app.MapAuthEndpoints();
 app.MapArticleEndpoints();
+app.MapProfileEndpoints();
 
 var target = Environment.GetEnvironmentVariable("TARGET") ?? "World";
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";

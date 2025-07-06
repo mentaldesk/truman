@@ -3,6 +3,7 @@
     import { auth } from '$lib/stores/auth';
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
+    import { profileStore } from '$lib/stores/profile';
     
     const API_URL = 'http://localhost:8080';
     let error: string | null = null;
@@ -32,6 +33,14 @@
 
             const token = await response.text();
             auth.setToken(token);
+
+            // Load user profile and set stores
+            try {
+                await profileStore.loadProfile();
+            } catch (e) {
+                // Ignore profile load errors, proceed to dashboard
+            }
+
             goto('/');
         } catch (e) {
             console.error('Failed to validate magic link:', e);

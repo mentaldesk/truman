@@ -20,15 +20,16 @@ public class TokenService : ITokenService
 
     public string GenerateToken(IEnumerable<Claim> claims)
     {
+        var jwtSettings = _configuration.GetSection("Authentication:Jwt").Get<JwtSettings>();
         var key = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? 
-                throw new InvalidOperationException("JWT Key not configured")));
+            Encoding.UTF8.GetBytes(jwtSettings?.Key ?? 
+                                   throw new InvalidOperationException("JWT Key not configured")));
         
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
-            issuer: _configuration["Jwt:Issuer"],
-            audience: _configuration["Jwt:Audience"],
+            issuer: jwtSettings.Issuer,
+            audience: jwtSettings.Audience,
             claims: claims,
             expires: DateTime.UtcNow.AddDays(7), // Token expires in 7 days
             signingCredentials: credentials
