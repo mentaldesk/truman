@@ -3,6 +3,7 @@
     import { auth } from '$lib/stores/auth';
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
+    import { profileStore } from '$lib/stores/profile';
     
     const API_URL = 'http://localhost:8080'; // Match our local development API
     let error: string | null = null;
@@ -75,7 +76,7 @@
     }
 
     // Handle the token if we're returning from a social login
-    onMount(() => {
+    onMount(async () => {
         console.log('Page URL:', $page.url.toString());
         console.log('Search params:', Object.fromEntries($page.url.searchParams.entries()));
         
@@ -86,6 +87,12 @@
             console.log('Setting token and redirecting...');
             try {
                 auth.setToken(token);
+                // Load user profile and set stores
+                try {
+                    await profileStore.loadProfile();
+                } catch (e) {
+                    // Ignore profile load errors, proceed to dashboard
+                }
                 goto('/');
             } catch (e) {
                 console.error('Failed to process token:', e);
