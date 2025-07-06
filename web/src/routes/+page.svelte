@@ -68,7 +68,7 @@
     }
 
     onMount(() => {
-        fetchArticles();
+        debounceFetchArticles();
         moodUnsubscribe = mood.subscribe(() => {
             debounceFetchArticles();
         });
