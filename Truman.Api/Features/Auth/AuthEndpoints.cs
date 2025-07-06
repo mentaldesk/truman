@@ -14,12 +14,15 @@ public static class AuthEndpoints
                 _ => throw new ArgumentException("Invalid provider", nameof(provider))
             };
             
+            // Get the frontend configuration
+            var frontendConfig = context.RequestServices.GetRequiredService<IOptions<FrontendConfiguration>>().Value;
+            
             // Store the frontend return URL for after authentication
             var returnUrl = context.Request.Query["returnUrl"].ToString();
             if (string.IsNullOrEmpty(returnUrl) || 
-                (!returnUrl.StartsWith("http://localhost:5174") && !returnUrl.StartsWith("http://localhost:3000")))
+                (!returnUrl.StartsWith(frontendConfig.BaseUrl)))
             {
-                returnUrl = "http://localhost:5174";
+                returnUrl = frontendConfig.BaseUrl;
             }
             
             var properties = new AuthenticationProperties
@@ -44,8 +47,11 @@ public static class AuthEndpoints
                 // Generate a new magic link code
                 var code = await magicLinkService.GenerateMagicLinkAsync(email);
                 
+                // Get the frontend configuration
+                var frontendConfig = context.RequestServices.GetRequiredService<IOptions<FrontendConfiguration>>().Value;
+                
                 // Create the magic link URL that points to the frontend verification page
-                var magicLinkUrl = $"http://localhost:5174/login/verify?code={code}";
+                var magicLinkUrl = $"{frontendConfig.BaseUrl}/login/verify?code={code}";
                 
                 // Send the magic link email
                 await emailService.SendMagicLinkEmailAsync(email, magicLinkUrl);

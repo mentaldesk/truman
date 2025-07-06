@@ -1,0 +1,205 @@
+{
+  "type": "object",
+  "properties": {
+    "link": {
+      "type": "string",
+      "description": "The URL of the original article"
+    },
+    "title": {
+      "type": "string",
+      "description": "A concise title conveying the key point of the article (in no more than 8 words)"
+    },
+    "tldr": {
+      "type": "string",
+      "description": "A summary of 30 words or less, gisting the entire article"
+    },
+    "content": {
+      "type": "string",
+      "description": "A bullet point style summary of the article, consisting of no more than 200 words"
+    },
+    "sentiment": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "A sentiment score for the article on a scale of 0 to 10, where 0 is very negative and 10 is very positive"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 10,
+      "description": "Up to 10 tags/keywords that capture the essence of the article"
+    },
+    "freedom": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "Score indicating how closely related the article is to the value of Freedom"
+    },
+    "independence": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "Score indicating how closely related the article is to the value of Independence"
+    },
+    "self-respect": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "Score indicating how closely related the article is to the value of Self-Respect"
+    },
+    "self-actualization": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "Score indicating how closely related the article is to the value of Self-Actualization"
+    },
+    "creativity": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "Score indicating how closely related the article is to the value of Creativity"
+    },
+    "honesty": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "Score indicating how closely related the article is to the value of Honesty"
+    },
+    "compassion": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "Score indicating how closely related the article is to the value of Compassion"
+    },
+    "loyalty": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "Score indicating how closely related the article is to the value of Loyalty"
+    },
+    "justice": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "Score indicating how closely related the article is to the value of Justice"
+    },
+    "responsibility": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "Score indicating how closely related the article is to the value of Responsibility"
+    },
+    "security": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "Score indicating how closely related the article is to the value of Security"
+    },
+    "equality": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "Score indicating how closely related the article is to the value of Equality"
+    },
+    "tradition": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "Score indicating how closely related the article is to the value of Tradition"
+    },
+    "obedience": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "Score indicating how closely related the article is to the value of Obedience"
+    },
+    "success": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "Score indicating how closely related the article is to the value of Success"
+    },
+    "ambition": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "Score indicating how closely related the article is to the value of Ambition"
+    },
+    "discipline": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "Score indicating how closely related the article is to the value of Discipline"
+    },
+    "knowledge": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "Score indicating how closely related the article is to the value of Knowledge"
+    },
+    "open-mindedness": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "Score indicating how closely related the article is to the value of Open-Mindedness"
+    },
+    "peace-of-mind": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "Score indicating how closely related the article is to the value of Peace of Mind"
+    },
+    "pleasure": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "Score indicating how closely related the article is to the value of Pleasure"
+    },
+    "connection": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "Score indicating how closely related the article is to the value of Connection"
+    },
+    "adventure": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "Score indicating how closely related the article is to the value of Adventure"
+    }
+  },
+  "required": [
+    "link",
+    "title",
+    "tldr",
+    "content",
+    "sentiment",
+    "tags",
+    "freedom",
+    "independence",
+    "self-respect",
+    "self-actualization",
+    "creativity",
+    "honesty",
+    "compassion",
+    "loyalty",
+    "justice",
+    "responsibility",
+    "security",
+    "equality",
+    "tradition",
+    "obedience",
+    "success",
+    "ambition",
+    "discipline",
+    "knowledge",
+    "open-mindedness",
+    "peace-of-mind",
+    "pleasure",
+    "connection",
+    "adventure"
+  ],
+  "additionalProperties": false
+} 

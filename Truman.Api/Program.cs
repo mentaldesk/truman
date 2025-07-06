@@ -11,13 +11,16 @@ builder.Services.AddDbContext<TrumanDbContext>(options =>
 // Add services
 builder.Services.AddAuthServices(builder.Configuration);
 builder.Services.Configure<EmailConfiguration>(builder.Configuration.GetSection("Email"));
+builder.Services.Configure<FrontendConfiguration>(builder.Configuration.GetSection("Frontend"));
 builder.Services.AddSingleton<IEmailService, EmailService>();
 
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "http://localhost:5173", "http://localhost:5174")
+        var frontendConfig = builder.Configuration.GetSection("Frontend").Get<FrontendConfiguration>();
+        var frontendUrl = frontendConfig?.BaseUrl ?? "http://localhost:3000";
+        policy.WithOrigins(frontendUrl)
               .AllowAnyMethod()
               .AllowAnyHeader();
     });

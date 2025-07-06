@@ -9,6 +9,10 @@ export default defineConfig({
 		sveltekit(),
 		devtoolsJson()
 	],
+	server: {
+		port: 3000,
+		host: true
+	},
 	build: {
 		sourcemap: true
 	},

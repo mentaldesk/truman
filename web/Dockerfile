@@ -14,9 +14,9 @@ FROM nginx:alpine
 # Copy the built assets from build stage
 COPY --from=build /app/build /usr/share/nginx/html
 
-# Copy a custom nginx config if needed
-# COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy custom nginx config to listen on port 3000
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-EXPOSE 80
+EXPOSE 3000
 
 CMD ["nginx", "-g", "daemon off;"] 

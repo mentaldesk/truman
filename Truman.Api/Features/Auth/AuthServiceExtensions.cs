@@ -92,10 +92,13 @@ public static class AuthServiceExtensions
     
     private static async Task HandleOAuthTicket(TicketReceivedContext context, string provider)
     {
+        // Get the frontend configuration
+        var frontendConfig = context.HttpContext.RequestServices.GetRequiredService<IOptions<FrontendConfiguration>>().Value;
+        
         // Get the return URL from the auth properties
         var returnUrl = context.Properties?.Items.TryGetValue("returnUrl", out var url) == true
             ? url
-            : "http://localhost:5174";
+            : frontendConfig.BaseUrl;
 
         // Generate JWT token
         var tokenService = context.HttpContext.RequestServices.GetRequiredService<TokenService>();
