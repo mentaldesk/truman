@@ -62,17 +62,17 @@ public class RelevantArticlesService : IRelevantArticlesService
         };
     }
 
-    private Dictionary<string, double> CalculateUserValueWeights(List<UserValue> selectedValues)
+    private Dictionary<string, double> CalculateUserValueWeights(List<string> selectedValues)
     {
         var weights = new Dictionary<string, double>();
         
         for (int i = 0; i < selectedValues.Count; i++)
         {
-            var value = selectedValues[i];
+            var valueId = selectedValues[i];
             // Exponential decay: weight = 1 / (base ^ position). Increasing the base will decrease the weight faster,
             // placing more emphasis on the values at the top of the stack rank.
             var weight = 1.0 / Math.Pow(ExponentialDecayBase, i);
-            weights[value.Id] = weight;
+            weights[valueId] = weight;
         }
 
         _logger.LogDebug("Calculated user value weights: {@Weights}", weights);
