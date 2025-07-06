@@ -17,6 +17,7 @@
     let loading = true;
     let error: string | null = null;
     let moodUnsubscribe: () => void;
+    let debounceTimeout: ReturnType<typeof setTimeout> | null = null;
 
     function handleSourcesClick() {
         console.log('Sources clicked');
@@ -53,15 +54,23 @@
         }
     }
 
+    function debounceFetchArticles() {
+        if (debounceTimeout) clearTimeout(debounceTimeout);
+        debounceTimeout = setTimeout(() => {
+            fetchArticles();
+        }, 300);
+    }
+
     onMount(() => {
         fetchArticles();
         moodUnsubscribe = mood.subscribe(() => {
-            fetchArticles();
+            debounceFetchArticles();
         });
     });
 
     onDestroy(() => {
         if (moodUnsubscribe) moodUnsubscribe();
+        if (debounceTimeout) clearTimeout(debounceTimeout);
     });
 </script>
 
