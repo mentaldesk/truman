@@ -6,12 +6,15 @@
     import { get } from 'svelte/store';
     import { onMount, onDestroy } from 'svelte';
     import { profileStore } from '$lib/stores/profile';
+    import { patchUserValues } from '$lib/profile';
+    import { derived } from 'svelte/store';
     
     let draggedValue: any = null;
     let dragOverIndex: number | null = null;
     let isDraggingOverSelected = false;
     let isDraggingOverAvailable = false;
     let saveDebounce: ReturnType<typeof setTimeout> | null = null;
+    let valuesSaveDebounce: ReturnType<typeof setTimeout> | null = null;
 
     function handleDragStart(value: any, fromSelected: boolean = false) {
         draggedValue = { ...value, fromSelected };
@@ -79,6 +82,15 @@
         
         handleDragEnd();
     }
+
+    // Debounced save when selected values change
+    const selectedIds = derived(valuesStore, $valuesStore => $valuesStore.selected.map(v => v.id));
+    selectedIds.subscribe(ids => {
+        if (valuesSaveDebounce) clearTimeout(valuesSaveDebounce);
+        valuesSaveDebounce = setTimeout(() => {
+            patchUserValues(ids).catch(() => {/* Optionally handle error */});
+        }, 500);
+    });
 
     onMount(() => {
         // Remove all manual autosave, isInitializingProfile, and triggerSave/setupProfileAutoSave logic from this file.

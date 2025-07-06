@@ -18,15 +18,28 @@ export async function loadUserProfile(): Promise<UserProfileDto | null> {
     return await res.json();
 }
 
-export async function saveUserProfile(profile: UserProfileDto): Promise<void> {
+export async function patchUserMood(mood: number): Promise<void> {
     const token = get(auth).token;
-    const res = await fetch(`${API_URL}/api/profile`, {
-        method: 'POST',
+    const res = await fetch(`${API_URL}/api/profile/mood`, {
+        method: 'PATCH',
         headers: {
             'Content-Type': 'application/json',
             ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
-        body: JSON.stringify(profile),
+        body: JSON.stringify({ mood }),
     });
-    if (!res.ok) throw new Error('Failed to save user profile');
+    if (!res.ok) throw new Error('Failed to update mood');
+}
+
+export async function patchUserValues(selectedValues: string[]): Promise<void> {
+    const token = get(auth).token;
+    const res = await fetch(`${API_URL}/api/profile/values`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ selectedValues }),
+    });
+    if (!res.ok) throw new Error('Failed to update values');
 } 
