@@ -3,9 +3,6 @@
     import { auth } from '$lib/stores/auth';
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
-    import { mood } from '$lib/stores/mood';
-    import { valuesStore } from '$lib/stores/values';
-    import { loadUserProfile } from '$lib/profile';
     import { profileStore } from '$lib/stores/profile';
     
     const API_URL = 'http://localhost:8080';

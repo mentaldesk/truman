@@ -33,19 +33,6 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// // Create and migrate the database
-// using (var scope = app.Services.CreateScope())
-// {
-//     var db = scope.ServiceProvider.GetRequiredService<TrumanDbContext>();
-//     db.Database.Migrate();
-// }
-
-app.MapOpenApi();
-app.UseSwaggerUI(options =>
-{
-    options.SwaggerEndpoint("/openapi/v1.json", "v1");
-});
-
 app.MapOpenApi();
 app.UseSwaggerUI(options =>
 {

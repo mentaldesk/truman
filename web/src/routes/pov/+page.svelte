@@ -2,10 +2,7 @@
     import Header from '$lib/components/Header.svelte';
     import ValueCard from '$lib/components/ValueCard.svelte';
     import { valuesStore } from '$lib/stores/values';
-    import { mood } from '$lib/stores/mood';
-    import { get } from 'svelte/store';
     import { onMount, onDestroy } from 'svelte';
-    import { profileStore } from '$lib/stores/profile';
     import { patchUserValues } from '$lib/profile';
     import { derived } from 'svelte/store';
     
@@ -15,6 +12,7 @@
     let isDraggingOverAvailable = false;
     let saveDebounce: ReturnType<typeof setTimeout> | null = null;
     let valuesSaveDebounce: ReturnType<typeof setTimeout> | null = null;
+    let selectedIdsUnsub: () => void;
 
     function handleDragStart(value: any, fromSelected: boolean = false) {
         draggedValue = { ...value, fromSelected };
@@ -85,7 +83,7 @@
 
     // Debounced save when selected values change
     const selectedIds = derived(valuesStore, $valuesStore => $valuesStore.selected.map(v => v.id));
-    selectedIds.subscribe(ids => {
+    selectedIdsUnsub = selectedIds.subscribe(ids => {
         if (valuesSaveDebounce) clearTimeout(valuesSaveDebounce);
         valuesSaveDebounce = setTimeout(() => {
             patchUserValues(ids).catch(() => {/* Optionally handle error */});
@@ -98,6 +96,8 @@
 
     onDestroy(() => {
         if (saveDebounce) clearTimeout(saveDebounce);
+        if (valuesSaveDebounce) clearTimeout(valuesSaveDebounce);
+        if (selectedIdsUnsub) selectedIdsUnsub();
     });
 </script>
 
