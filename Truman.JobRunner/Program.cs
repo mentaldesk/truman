@@ -44,16 +44,7 @@ var host = Host.CreateDefaultBuilder(args)
             .RedactLoggedHeaders(["Authorization"])
             .AddResilienceHandler("gemini-pipeline", static pipeline =>
             {
-                // Rate limit: 15 requests per minute
-                pipeline.AddRateLimiter(new FixedWindowRateLimiter(new FixedWindowRateLimiterOptions
-                {
-                    PermitLimit = 15,
-                    Window = TimeSpan.FromMinutes(1),
-                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                    QueueLimit = 0
-                }));
-
-                // Optional: Retry with exponential backoff on 429 responses
+                // Retry with exponential backoff on 429 responses
                 pipeline.AddRetry(new HttpRetryStrategyOptions
                 {
                     MaxRetryAttempts = 3,
@@ -63,7 +54,7 @@ var host = Host.CreateDefaultBuilder(args)
                         .HandleResult(msg => msg.StatusCode == HttpStatusCode.TooManyRequests)
                 });
 
-                // Optional: Add timeout per request
+                // Add timeout per request
                 pipeline.AddTimeout(TimeSpan.FromSeconds(10));
             });        
         
