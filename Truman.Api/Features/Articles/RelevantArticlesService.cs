@@ -29,10 +29,18 @@ public class RelevantArticlesService : IRelevantArticlesService
         // Calculate user value weights using exponential decay
         var userValueWeights = CalculateUserValueWeights(request.SelectedValues);
 
-        // Get all articles that meet the minimum sentiment threshold
+        // Get today's date for filtering (using UTC to avoid timezone issues with PostgreSQL)
+        var today = DateTime.UtcNow.Date;
+        var tomorrow = today.AddDays(1);
+
+        // Get all articles that meet the minimum sentiment threshold and are from today
         var articles = await _dbContext.Articles
             .Where(a => a.Sentiment >= request.MinimumSentiment)
+            .Where(a => a.CreatedAt >= today && a.CreatedAt < tomorrow)
             .ToListAsync();
+
+        _logger.LogInformation("Found {ArticleCount} articles from today with minimum sentiment {MinSentiment}", 
+            articles.Count, request.MinimumSentiment);
 
         // Calculate relevance scores for each article
         var articlesWithScores = articles.Select(article => new
