@@ -121,7 +121,7 @@
             </div>
         {:else}
             <div class="space-y-6">
-                {#each articles as article}
+                {#each articles as article (article.id)}
                     <div class="flex bg-white rounded-lg shadow p-4 gap-4 items-start hover:shadow-md transition-shadow cursor-pointer" on:click={() => openArticleDetails(article)}>
                         <div class="w-28 h-28 bg-gray-200 rounded flex-shrink-0 flex items-center justify-center">
                             <span class="text-gray-400 text-3xl">📰</span>
