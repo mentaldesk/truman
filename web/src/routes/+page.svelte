@@ -1,5 +1,6 @@
 <script lang="ts">
     import Header from '$lib/components/Header.svelte';
+    import ArticleDetailsPopup from '$lib/components/ArticleDetailsPopup.svelte';
     import { mood } from '$lib/stores/mood';
     import { onMount, onDestroy } from 'svelte';
     import { API_URL } from '$lib/config';
@@ -13,6 +14,10 @@
         link: string;
         title: string;
         tldr: string;
+        content: string;
+        sentiment: number;
+        tags: string[];
+        relevanceScore: number;
         createdAt: string;
     };
 
@@ -24,6 +29,10 @@
     let saveDebounce: ReturnType<typeof setTimeout> | null = null;
     let moodUnsub: () => void;
     let valuesUnsub: () => void;
+    
+    // Popup state
+    let selectedArticle: RelevantArticle | null = null;
+    let isPopupOpen = false;
 
     function handleSourcesClick() {
         console.log('Sources clicked');
@@ -33,6 +42,16 @@
     function handleRulesClick() {
         console.log('Rules clicked');
         // TODO: Implement rules dialog
+    }
+    
+    function openArticleDetails(article: RelevantArticle) {
+        selectedArticle = article;
+        isPopupOpen = true;
+    }
+    
+    function closePopup() {
+        isPopupOpen = false;
+        selectedArticle = null;
     }
 
     async function fetchArticles() {
@@ -102,16 +121,16 @@
             </div>
         {:else}
             <div class="space-y-6">
-                {#each articles as article}
-                    <div class="flex bg-white rounded-lg shadow p-4 gap-4 items-start">
+                {#each articles as article (article.id)}
+                    <div class="flex bg-white rounded-lg shadow p-4 gap-4 items-start hover:shadow-md transition-shadow cursor-pointer" on:click={() => openArticleDetails(article)}>
                         <div class="w-28 h-28 bg-gray-200 rounded flex-shrink-0 flex items-center justify-center">
                             <span class="text-gray-400 text-3xl">📰</span>
                         </div>
                         <div class="flex-1">
-                            <a href={article.link} target="_blank" rel="noopener" class="text-xl font-semibold text-blue-700 hover:underline flex items-center gap-2">
+                            <div class="text-xl font-semibold text-blue-700 hover:underline flex items-center gap-2">
                                 {article.title}
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 3h7m0 0v7m0-7L10 14m-7 7h7a2 2 0 002-2v-7" /></svg>
-                            </a>
+                            </div>
                             <p class="text-gray-500 mt-1">{article.tldr}</p>
                         </div>
                     </div>
@@ -120,3 +139,10 @@
         {/if}
     </main>
 </div>
+
+<!-- Article Details Popup -->
+<ArticleDetailsPopup 
+    article={selectedArticle} 
+    isOpen={isPopupOpen} 
+    on:close={closePopup} 
+/>
