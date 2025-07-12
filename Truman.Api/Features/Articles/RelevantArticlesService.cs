@@ -30,16 +30,15 @@ public class RelevantArticlesService : IRelevantArticlesService
         var userValueWeights = CalculateUserValueWeights(request.SelectedValues);
 
         // Get today's date for filtering (using UTC to avoid timezone issues with PostgreSQL)
-        var today = DateTime.UtcNow.Date;
-        var tomorrow = today.AddDays(1);
+        var earliest = DateTime.UtcNow.Date.AddDays(-1);
 
         // Get all articles that meet the minimum sentiment threshold and are from today
         var articles = await _dbContext.Articles
             .Where(a => a.Sentiment >= request.MinimumSentiment)
-            .Where(a => a.CreatedAt >= today && a.CreatedAt < tomorrow)
+            .Where(a => a.CreatedAt >= earliest)
             .ToListAsync();
 
-        _logger.LogInformation("Found {ArticleCount} articles from today with minimum sentiment {MinSentiment}", 
+        _logger.LogInformation("Found {ArticleCount} articles from yesterday and today with minimum sentiment {MinSentiment}", 
             articles.Count, request.MinimumSentiment);
 
         // Calculate relevance scores for each article
