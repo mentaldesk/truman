@@ -4,8 +4,8 @@
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
     import { profileStore } from '$lib/stores/profile';
+    import { API_URL } from '$lib/config';
     
-    const API_URL = 'http://localhost:8080';
     let error: string | null = null;
     let isLoading = true;
 

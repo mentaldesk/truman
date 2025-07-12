@@ -6,6 +6,7 @@ COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile
 
 COPY . .
+
 RUN yarn build
 
 # Production stage
@@ -14,9 +15,9 @@ FROM nginx:alpine
 # Copy the built assets from build stage
 COPY --from=build /app/build /usr/share/nginx/html
 
-# Copy custom nginx config to listen on port 3000
+# Copy custom nginx config to listen on port 80
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-EXPOSE 3000
+EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"] 

@@ -5,3 +5,8 @@ riderModule.iml
 /_ReSharper.Caches/
 .idea
 *.user
+
+# Environment files
+.env
+.env.local
+.env.*.local

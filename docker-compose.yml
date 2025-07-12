@@ -26,6 +26,17 @@ services:
       - "5001:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=${POSTGRES_DB:-trumandb};Username=${POSTGRES_USER:-truman};Password=${POSTGRES_PASSWORD:-devpassword}
+      - Authentication__Jwt__Key=${JWT_KEY:-your-secret-key-here}
+      - Authentication__Jwt__Issuer=${JWT_ISSUER:-truman-api}
+      - Authentication__Jwt__Audience=${JWT_AUDIENCE:-truman-web}
+      - Authentication__Facebook__AppId=${FACEBOOK_APP_ID:-your-facebook-app-id}
+      - Authentication__Facebook__AppSecret=${FACEBOOK_APP_SECRET:-your-facebook-app-secret}
+      - Authentication__Google__ClientId=${GOOGLE_CLIENT_ID:-your-google-client-id}
+      - Authentication__Google__ClientSecret=${GOOGLE_CLIENT_SECRET:-your-google-client-secret}
+      - Email__Brevo__ApiKey=${BREVO_API_KEY:-your-brevo-api-key}
+      - Email__Brevo__MagicLinkTemplateId=${BREVO_MAGIC_LINK_TEMPLATE_ID:-1}
+      - Frontend__BaseUrl=${FRONTEND_BASE_URL:-http://localhost:3000}
     depends_on:
       postgres:
         condition: service_healthy

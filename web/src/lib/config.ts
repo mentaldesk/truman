@@ -1,1 +1,2 @@
-export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'; 
+// Check for runtime configuration first, then fall back to build-time
+export const API_URL = (window as any).__API_URL__ || import.meta.env.VITE_API_URL || 'http://localhost:8080'; 
