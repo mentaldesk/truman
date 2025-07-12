@@ -99,8 +99,8 @@
     });
 </script>
 
-<div class="min-h-screen bg-gray-50">
-    <div class="sticky top-0 z-20 bg-gray-50 shadow-sm">
+<div class="min-h-screen">
+    <div class="sticky top-0 z-20 shadow-sm">
         <Header
             on:sourcesClick={handleSourcesClick}
             on:rulesClick={handleRulesClick}
