@@ -6,11 +6,11 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <InvariantGlobalization>true</InvariantGlobalization>
-        <UserSecretsId>f33ecd6b-81f1-4750-84cc-16cf5115575b</UserSecretsId>
   </PropertyGroup>
 
     <ItemGroup>
       <PackageReference Include="CodeHollow.FeedReader" />
+      <PackageReference Include="DotNetEnv" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         <PrivateAssets>all</PrivateAssets>

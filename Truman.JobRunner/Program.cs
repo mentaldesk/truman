@@ -10,6 +10,8 @@ using Microsoft.SemanticKernel;
 using Polly;
 using Truman.Data;
 using Truman.JobRunner;
+using DotNetEnv;
+using DotNetEnv.Configuration;
 
 #if DEBUG
 Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", "Development");
@@ -17,6 +19,11 @@ Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", "Development");
 
 #pragma warning disable SKEXP0070
 var host = Host.CreateDefaultBuilder(args)
+    .ConfigureAppConfiguration((context, config) =>
+    {
+        // Add dotnet-env configuration source to load from .env file
+        config.AddDotNetEnv(".env", LoadOptions.TraversePath());
+    })
     .ConfigureLogging(logging =>
     {
         logging.ClearProviders();
