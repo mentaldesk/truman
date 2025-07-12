@@ -52,12 +52,6 @@
 </script>
 
 <style>
-@media (max-width: 1500px) {
-  .hide-below-1500 {
-    display: none !important;
-  }
-}
-
 .header-bg {
   min-height: 72px;
 }
@@ -140,11 +134,5 @@
         </div>
       </div>
     </div>
-    <img
-      src="/images/door.png"
-      alt="Door"
-      class="absolute right-0 bottom-0 h-[62px] w-auto object-contain mr-8 hide-below-1500"
-      style="max-height:62px;"
-    />
   </header>
 </div>
