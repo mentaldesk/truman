@@ -60,10 +60,13 @@
 <div class="header-bg bg-gray-100/50 w-full">
   <header class="p-4 border-b border-gray-200">
     <div class="max-w-7xl mx-auto flex items-center justify-between">
-      <div class="flex-1 flex items-center">
+      <div class="flex flex-1 items-center">
         <a href="/" class="flex-shrink-0">
           <h1 class="text-2xl font-bold text-gray-900">TRUMAN.NEWS</h1>
         </a>
+      </div>
+      <div class="flex flex-2 items-end -mb-4">
+          <img src="/images/door.png" alt="Door" class="mx-8 h-[72px] w-auto object-contain self-end" style="max-height:72px;" />
       </div>
       <div class="flex items-center space-x-6">
         <!-- Mood Slider -->
