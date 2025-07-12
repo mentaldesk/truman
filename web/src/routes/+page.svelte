@@ -99,18 +99,7 @@
     });
 </script>
 
-<style>
-.horizon-bar {
-  width: 100%;
-  height: 120px;
-  background-image: url('/images/horizon.jpg');
-  background-repeat: repeat-x;
-  background-position: top center;
-  background-size: auto 100%;
-}
-</style>
-
-<div class="min-h-screen horizon-bar">
+<div class="min-h-screen">
     <div class="sticky top-0 z-20 shadow-sm">
         <Header
             on:sourcesClick={handleSourcesClick}
