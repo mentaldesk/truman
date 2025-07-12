@@ -4,20 +4,23 @@ The following dependencies will be required to work with this project locally.
 
 ## Dependencies
 
-### .NET
+### Docker Desktop
 
-- Download and install [the latest version of the .NET SDK](https://dotnet.microsoft.com/en-us/download) from Microsoft.
-- Run `dotnet workload restore` to install the required workloads.
-- Run `dotnet restore` do download the required NuGet packages.
+Please install Docker Desktop via their instructions (Install Docker Desktop on [Mac](https://docs.docker.com/desktop/install/mac-install/), [Windows](https://docs.docker.com/desktop/install/windows-install/), or [Linux](https://docs.docker.com/desktop/install/linux-install/).)
 
-### PostgreSQL
+### Devbox
 
-You can either install PostgreSQL locally or use Docker to run the PostgreSQL container in this repo.
+All other software dependencies for the course are defined in the `devbox.json` and `devbox.lock` files in the root directory.
 
-To run it as a container:
+Please install Devbox according to their instructions: https://www.jetify.com/devbox/docs/installing_devbox/
+
+Once installed you can run:
+
 ```
-docker compose up -d postgres
+devbox shell
 ```
+
+from anywhere in the repo and devbox will use Nix package manager to install a copy of all of the required software in an isolated environment.
 
 ## Configuration
 
