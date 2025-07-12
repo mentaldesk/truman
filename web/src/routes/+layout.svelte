@@ -8,12 +8,18 @@
 
 <style>
 	.horizon-bar {
-	  width: 100%;
-	  height: 120px;
-	  background-image: url('/images/horizon.jpg');
-	  background-repeat: repeat-x;
-	  background-position: top center;
-	  background-size: auto 100%;
+		width: 100%;
+		height: 120px;
+		background-image: url('/images/horizon.jpg');
+		background-repeat: repeat-x;
+		background-position: top center;
+		background-size: auto 100%;
+		background-attachment: fixed;
+	}
+	:global(html, body) {
+		height: 100%;
+		margin: 0;
+		padding: 0;
 	}
 </style>
 
@@ -26,19 +32,3 @@
 		{@render children()}
 	</div>
 {/if}
-
-<style>
-.horizon-bar {
-  width: 100%;
-  height: 120px;
-  background-image: url('/images/horizon.jpg');
-  background-repeat: repeat-x;
-  background-position: top center;
-  background-size: auto 100%;
-}
-:global(html, body) {
-	height: 100%;
-	margin: 0;
-	padding: 0;
-}
-</style>
