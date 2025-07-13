@@ -40,6 +40,11 @@ tasks:
       - kubectl delete secret truman-env --namespace=truman --ignore-not-found
       - kubectl create secret generic truman-env --from-env-file=.env --namespace=truman
 
+  k8s-create-configmap-dev:
+    desc: Create and apply k8s ConfigMap for development configuration
+    cmds:
+      - kubectl apply -f k8s/configmap-dev.yaml
+
   k8s-apply:
     desc: Apply all k8s manifests for the truman namespace
     cmds:
@@ -59,4 +64,5 @@ tasks:
       - kubectl delete -f k8s/web/ --ignore-not-found
       - kubectl delete -f k8s/api/ --ignore-not-found
       - kubectl delete -f k8s/postgres/ --ignore-not-found
+      - kubectl delete -f k8s/configmap-dev.yaml --ignore-not-found
       - kubectl delete -f k8s/namespace.yaml --ignore-not-found 
