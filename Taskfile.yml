@@ -20,3 +20,19 @@ tasks:
     desc: Delete the local kind cluster named 'truman'
     cmds:
       - kind delete cluster --name truman 
+
+  k8s-apply:
+    desc: Apply all k8s manifests for the truman namespace
+    cmds:
+      - kubectl apply -f k8s/namespace.yaml
+      - kubectl apply -f k8s/postgres/
+      - kubectl apply -f k8s/api/
+      - kubectl apply -f k8s/web/
+
+  k8s-delete:
+    desc: Delete all k8s manifests for the truman namespace
+    cmds:
+      - kubectl delete -f k8s/web/ --ignore-not-found
+      - kubectl delete -f k8s/api/ --ignore-not-found
+      - kubectl delete -f k8s/postgres/ --ignore-not-found
+      - kubectl delete -f k8s/namespace.yaml --ignore-not-found 
