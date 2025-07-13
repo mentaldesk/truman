@@ -1,12 +1,12 @@
 {
-  "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.10.7/.schema/devbox.schema.json",
-  "packages": [
-    "dotnet-sdk",
-    "nodejs",
-    "yarn",
-    "kubectl",
-    "kind",
-    "kubectx",
-    "kubernetes-helm"
-  ]
-} 
+    "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.10.7/.schema/devbox.schema.json",
+    "packages": [
+        "dotnet-sdk_9@latest",
+        "kind@latest",
+        "kubectl@latest",
+        "kubectx@latest",
+        "kubernetes-helm@latest",
+        "nodejs@latest",
+        "yarn@latest"
+    ]
+}
