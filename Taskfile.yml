@@ -1,0 +1,12 @@
+version: '3'
+
+tasks:
+  kind-create:
+    desc: Create a local kind cluster named 'truman'
+    cmds:
+      - kind create cluster --name truman
+
+  kind-delete:
+    desc: Delete the local kind cluster named 'truman'
+    cmds:
+      - kind delete cluster --name truman 

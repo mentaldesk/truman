@@ -1,57 +1,201 @@
 {
   "lockfile_version": "1",
   "packages": {
-    "dotnet-sdk_9@latest": {
+    "dotnet-sdk@latest": {
       "last_modified": "2025-07-01T05:58:53Z",
-      "resolved": "github:NixOS/nixpkgs/bdfd0f2afcf764e531d0960c821ab070a6174b15#dotnet-sdk_9",
+      "resolved": "github:NixOS/nixpkgs/bdfd0f2afcf764e531d0960c821ab070a6174b15#dotnet-sdk",
       "source": "devbox-search",
-      "version": "9.0.205",
+      "version": "8.0.411",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/nilskvvh6z6hhhdq1pvkxa9dqiz84sr1-dotnet-sdk-wrapped-9.0.205",
+              "path": "/nix/store/m4vlkn1fqq5b8wby189hn4vl7naw3cv8-dotnet-sdk-wrapped-8.0.411",
               "default": true
             }
           ],
-          "store_path": "/nix/store/nilskvvh6z6hhhdq1pvkxa9dqiz84sr1-dotnet-sdk-wrapped-9.0.205"
+          "store_path": "/nix/store/m4vlkn1fqq5b8wby189hn4vl7naw3cv8-dotnet-sdk-wrapped-8.0.411"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/ay2bb2pi2pqb6pl0lh573600s6rz6j7y-dotnet-sdk-wrapped-9.0.205",
+              "path": "/nix/store/z33pynfli9kfdbia8k6kww99zjwcxmjz-dotnet-sdk-wrapped-8.0.411",
               "default": true
             }
           ],
-          "store_path": "/nix/store/ay2bb2pi2pqb6pl0lh573600s6rz6j7y-dotnet-sdk-wrapped-9.0.205"
+          "store_path": "/nix/store/z33pynfli9kfdbia8k6kww99zjwcxmjz-dotnet-sdk-wrapped-8.0.411"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/aic9g8idi3q5fwz4fykhqi9md4cmnkzb-dotnet-sdk-wrapped-9.0.205",
+              "path": "/nix/store/w6q4l84ly3ipmmi1diw474j3zwiwsj5i-dotnet-sdk-wrapped-8.0.411",
               "default": true
             }
           ],
-          "store_path": "/nix/store/aic9g8idi3q5fwz4fykhqi9md4cmnkzb-dotnet-sdk-wrapped-9.0.205"
+          "store_path": "/nix/store/w6q4l84ly3ipmmi1diw474j3zwiwsj5i-dotnet-sdk-wrapped-8.0.411"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/vag61ja4zcgdbpmgljbwbdf0rziw56fw-dotnet-sdk-wrapped-9.0.205",
+              "path": "/nix/store/5dqw7pskbjqhnsxrp65kpry4kzzl7kyk-dotnet-sdk-wrapped-8.0.411",
               "default": true
             }
           ],
-          "store_path": "/nix/store/vag61ja4zcgdbpmgljbwbdf0rziw56fw-dotnet-sdk-wrapped-9.0.205"
+          "store_path": "/nix/store/5dqw7pskbjqhnsxrp65kpry4kzzl7kyk-dotnet-sdk-wrapped-8.0.411"
+        }
+      }
+    },
+    "envsubst@latest": {
+      "last_modified": "2025-06-20T02:24:11Z",
+      "resolved": "github:NixOS/nixpkgs/076e8c6678d8c54204abcb4b1b14c366835a58bb#envsubst",
+      "source": "devbox-search",
+      "version": "1.4.3",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/h2yh4h312d8iyk7ir1vir17dlxhzxx9y-envsubst-1.4.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/h2yh4h312d8iyk7ir1vir17dlxhzxx9y-envsubst-1.4.3"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/kwf2z9labxyv2sfkrl3afp2y49vn401d-envsubst-1.4.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/kwf2z9labxyv2sfkrl3afp2y49vn401d-envsubst-1.4.3"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/g7b3nsz93di45yxgpy8d31jq2xrvb0dp-envsubst-1.4.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/g7b3nsz93di45yxgpy8d31jq2xrvb0dp-envsubst-1.4.3"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/pzbhag181vcz13bdpym2q8a1dwip7yiw-envsubst-1.4.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/pzbhag181vcz13bdpym2q8a1dwip7yiw-envsubst-1.4.3"
         }
       }
     },
     "github:NixOS/nixpkgs/nixpkgs-unstable": {
       "last_modified": "2025-07-08T22:16:38Z",
       "resolved": "github:NixOS/nixpkgs/2a2130494ad647f953593c4e84ea4df839fbd68c?lastModified=1752012998&narHash=sha256-Q82Ms%2BFQmgOBkdoSVm%2BFBpuFoeUAffNerR5yVV7SgT8%3D"
+    },
+    "go-task@latest": {
+      "last_modified": "2025-06-25T00:36:27Z",
+      "resolved": "github:NixOS/nixpkgs/992f916556fcfaa94451ebc7fc6e396134bbf5b1#go-task",
+      "source": "devbox-search",
+      "version": "3.44.0",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/0g5ypvwzy9p11rn8jf42lbba97g1zihi-go-task-3.44.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/0g5ypvwzy9p11rn8jf42lbba97g1zihi-go-task-3.44.0"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/wzdbbx5shgywf77k8vfkwb13q22s6f02-go-task-3.44.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/wzdbbx5shgywf77k8vfkwb13q22s6f02-go-task-3.44.0"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/4rglfyhmw6rl30ilbgssfsl87l9z2s5b-go-task-3.44.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/4rglfyhmw6rl30ilbgssfsl87l9z2s5b-go-task-3.44.0"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/4r045p9bjv0c11sw72xnf2kdh3irlzff-go-task-3.44.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/4r045p9bjv0c11sw72xnf2kdh3irlzff-go-task-3.44.0"
+        }
+      }
+    },
+    "go@latest": {
+      "last_modified": "2025-06-20T02:24:11Z",
+      "resolved": "github:NixOS/nixpkgs/076e8c6678d8c54204abcb4b1b14c366835a58bb#go",
+      "source": "devbox-search",
+      "version": "1.24.4",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/rq7irijkj3nhapmjcv9d96xgkisj55x2-go-1.24.4",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/rq7irijkj3nhapmjcv9d96xgkisj55x2-go-1.24.4"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/9f64p4ip4iz2nba4wyhn1baq6b6pb6ss-go-1.24.4",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/9f64p4ip4iz2nba4wyhn1baq6b6pb6ss-go-1.24.4"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/n0gqcdpdk0ap2ikasi36r0szwpk2g35q-go-1.24.4",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/n0gqcdpdk0ap2ikasi36r0szwpk2g35q-go-1.24.4"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/mdn9hnvf0qmxywbrpbywmxww2adxdn5v-go-1.24.4",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/mdn9hnvf0qmxywbrpbywmxww2adxdn5v-go-1.24.4"
+        }
+      }
     },
     "kind@latest": {
       "last_modified": "2025-06-20T02:24:11Z",

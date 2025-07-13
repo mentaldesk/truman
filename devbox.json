@@ -1,17 +1,27 @@
 {
     "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.10.7/.schema/devbox.schema.json",
     "packages": [
-        "dotnet-sdk_9@latest",
-        "kind@latest",
+        "dotnet-sdk@latest",
+        "nodejs@latest",
+        "yarn@latest",
         "kubectl@latest",
+        "kind@latest",
         "kubectx@latest",
         "kubernetes-helm@latest",
-        "nodejs@latest",
-        "yarn@latest"
+        "go@latest",
+        "go-task@latest",
+        "envsubst@latest"
     ],
     "shell": {
       "init_hook": [
-        "alias k=kubectl"
+          "export GOBIN=$(git rev-parse --show-toplevel)/bin",
+          "export PATH=$GOBIN:$PATH",
+          "go install sigs.k8s.io/cloud-provider-kind@v0.2.0",
+          "alias k=kubectl",
+          "alias t=task",
+          "alias tl='task --list-all'",
+          "eval \"$(task --completion zsh)\"",
+          "eval \"$(kubectl completion zsh)\""
       ]
     }
 }
