@@ -8,5 +8,10 @@
         "kubernetes-helm@latest",
         "nodejs@latest",
         "yarn@latest"
-    ]
+    ],
+    "shell": {
+      "init_hook": [
+        "alias k=kubectl"
+      ]
+    }
 }
