@@ -52,6 +52,15 @@ tasks:
       - kubectl apply -f k8s/api/
       - kubectl apply -f k8s/web/
 
+  k8s-dev-up:
+    desc: Start the development environment
+    cmds:
+      - task k8s-create-namespace
+      - task k8s-create-configmap-dev
+      - task k8s-create-secret
+      - task k8s-build-and-load-images
+      - task k8s-apply
+
   # k8s-port-forward:
   #   desc: Port forward web (to 3000) and api (to 5001) services to localhost
   #   cmds:

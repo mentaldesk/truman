@@ -4,4 +4,5 @@ metadata:
   name: truman-config
   namespace: truman
 data:
-  VITE_API_URL: "http://localhost:5001" 
+  VITE_API_URL: "http://localhost:5001"
+  POSTGRES_HOST: "postgres.truman.svc.cluster.local" 

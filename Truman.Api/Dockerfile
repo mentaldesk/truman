@@ -12,7 +12,12 @@ RUN dotnet build "Truman.Api/Truman.Api.csproj" -c $BUILD_CONFIGURATION -o /app/
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
+# Install Entity Framework tools
+RUN dotnet tool install --global dotnet-ef
+ENV PATH="${PATH}:/root/.dotnet/tools"
 RUN dotnet publish "Truman.Api/Truman.Api.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+# Create EF migrations bundle
+RUN dotnet ef migrations bundle --startup-project "Truman.Api/Truman.Api.csproj" --project "Truman.Data/Truman.Data.csproj" -o /app/publish/efbundle
 
 FROM base AS final
 WORKDIR /app

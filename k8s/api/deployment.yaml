@@ -13,12 +13,34 @@ spec:
       labels:
         app: api
     spec:
+      initContainers:
+        - name: migrations
+          image: truman.api
+          imagePullPolicy: IfNotPresent
+          workingDir: /app
+          command: ["/bin/sh", "-c"]
+          args: ["/app/efbundle --connection \"Host=$POSTGRES_HOST;Database=$POSTGRES_DB;Username=$POSTGRES_USER;Password=$POSTGRES_PASSWORD\""]
+          env:
+            - name: POSTGRES_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: truman-config
+                  key: POSTGRES_HOST
+          envFrom:
+            - secretRef:
+                name: truman-env
       containers:
         - name: api
           image: truman.api
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
+          env:
+            - name: POSTGRES_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: truman-config
+                  key: POSTGRES_HOST
           envFrom:
             - secretRef:
                 name: truman-env 

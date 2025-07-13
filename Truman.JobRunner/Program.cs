@@ -33,8 +33,7 @@ var host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) =>
     {
         // Add database context factory instead of scoped DbContext
-        var connectionString = context.Configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+        var connectionString = context.Configuration.GetPostgresConnectionString();
             
         // Debug: Print current environment
         Console.WriteLine($"Current environment: {context.HostingEnvironment.EnvironmentName}");

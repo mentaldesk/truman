@@ -12,7 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddDotNetEnv(".env", LoadOptions.TraversePath());
 
 // Add database context
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var connectionString = builder.Configuration.GetPostgresConnectionString();
 builder.Services.AddDbContext<TrumanDbContext>(options => options.UseNpgsql(connectionString));
 
 // Add services
