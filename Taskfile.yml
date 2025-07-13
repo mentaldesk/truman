@@ -9,8 +9,12 @@ tasks:
   kind-create:
     desc: Create a local kind cluster using kind-config.yaml
     cmds:
-      - task kind-generate-config
-      - kind create cluster --name truman --config kind-config.yaml
+      - |
+        if [ ! -f kind-config.yaml ]; then
+          echo "kind-config.yaml not found, generating from template..."
+          export POSTGRES_DATA_PATH=${PWD}/.kind-data && envsubst < kind-config.yaml.TEMPLATE > kind-config.yaml
+        fi
+        kind create cluster --name truman --config kind-config.yaml
 
   kind-delete:
     desc: Delete the local kind cluster named 'truman'
