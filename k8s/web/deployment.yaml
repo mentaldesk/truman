@@ -18,4 +18,7 @@ spec:
           image: truman.web
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 80 
+            - containerPort: 80
+          envFrom:
+            - secretRef:
+                name: truman-env 

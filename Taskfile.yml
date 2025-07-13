@@ -21,13 +21,37 @@ tasks:
     cmds:
       - kind delete cluster --name truman 
 
+  k8s-create-namespace:
+    desc: Create the truman namespace
+    cmds:
+      - kubectl apply -f k8s/namespace.yaml
+
+  k8s-build-and-load-images:
+    desc: Build Docker images and load them into the kind cluster
+    cmds:
+      - docker build -t truman.api -f Truman.Api/Dockerfile .
+      - docker build -t truman.web -f web/Dockerfile ./web
+      - kind load docker-image truman.api --name truman
+      - kind load docker-image truman.web --name truman
+
+  k8s-create-secret:
+    desc: Create and apply k8s secret from .env for the truman namespace
+    cmds:
+      - kubectl delete secret truman-env --namespace=truman --ignore-not-found
+      - kubectl create secret generic truman-env --from-env-file=.env --namespace=truman
+
   k8s-apply:
     desc: Apply all k8s manifests for the truman namespace
     cmds:
-      - kubectl apply -f k8s/namespace.yaml
       - kubectl apply -f k8s/postgres/
       - kubectl apply -f k8s/api/
       - kubectl apply -f k8s/web/
+
+  # k8s-port-forward:
+  #   desc: Port forward web (to 3000) and api (to 5001) services to localhost
+  #   cmds:
+  #     - kubectl port-forward svc/web 3000:80 -n truman &
+  #     - kubectl port-forward svc/api 5001:8080 -n truman & 
 
   k8s-delete:
     desc: Delete all k8s manifests for the truman namespace
