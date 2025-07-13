@@ -10,3 +10,7 @@ riderModule.iml
 .env
 .env.local
 .env.*.local
+
+# Kind local data and config
+.kind-data/
+kind-config.yaml
