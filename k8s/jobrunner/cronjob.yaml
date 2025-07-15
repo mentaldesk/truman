@@ -1,0 +1,18 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: jobrunner
+  namespace: truman
+spec:
+  schedule: "0 */4 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: jobrunner
+            image: truman-jobrunner:latest
+            imagePullPolicy: IfNotPresent
+            env:
+              # Add environment variables here if needed
+          restartPolicy: OnFailure 

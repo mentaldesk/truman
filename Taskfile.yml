@@ -36,8 +36,10 @@ tasks:
     cmds:
       - docker build -t truman.api -f Truman.Api/Dockerfile .
       - docker build -t truman.web -f web/Dockerfile ./web
+      - docker build -t truman-jobrunner -f Truman.JobRunner/Dockerfile .
       - kind load docker-image truman.api --name truman
       - kind load docker-image truman.web --name truman
+      - kind load docker-image truman-jobrunner --name truman
 
   k8s-create-secret:
     desc: Create and apply k8s secret from .env for the truman namespace
@@ -56,6 +58,7 @@ tasks:
       - kubectl apply -f k8s/postgres/
       - kubectl apply -f k8s/api/
       - kubectl apply -f k8s/web/
+      - kubectl apply -f k8s/jobrunner/cronjob.yaml
 
   k8s-dev-up:
     desc: Start the development environment
