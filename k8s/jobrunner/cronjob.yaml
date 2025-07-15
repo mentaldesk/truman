@@ -4,7 +4,7 @@ metadata:
   name: jobrunner
   namespace: truman
 spec:
-  schedule: "0 */4 * * *"
+  schedule: "* */4 * * *"
   jobTemplate:
     spec:
       template:
@@ -14,5 +14,12 @@ spec:
             image: truman-jobrunner:latest
             imagePullPolicy: IfNotPresent
             env:
-              # Add environment variables here if needed
+              - name: POSTGRES_HOST
+                valueFrom:
+                  configMapKeyRef:
+                    name: truman-config
+                    key: POSTGRES_HOST
+            envFrom:
+              - secretRef:
+                  name: truman-env 
           restartPolicy: OnFailure 
