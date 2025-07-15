@@ -57,10 +57,10 @@
 }
 </style>
 
-<div class="header-bg bg-gray-100/50 w-full">
+<div class="header-bg bg-gray-100/50 w-full relative">
   <header class="p-4 border-b border-gray-200">
     <div class="max-w-7xl mx-auto flex items-center justify-between">
-      <div class="flex-1 flex items-center">
+      <div class="flex flex-1 items-center">
         <a href="/" class="flex-shrink-0">
           <h1 class="text-2xl font-bold text-gray-900">TRUMAN.NEWS</h1>
         </a>

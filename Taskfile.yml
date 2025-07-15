@@ -1,0 +1,87 @@
+version: '3'
+
+tasks:
+  kind-generate-config:
+    desc: Generate kind-config.yaml from template
+    cmds:
+      - export POSTGRES_DATA_PATH=${PWD}/.kind-data && envsubst < k8s/kind-config.yaml.TEMPLATE > k8s/kind-config.yaml
+
+  kind-create:
+    desc: Create a local kind cluster using kind-config.yaml
+    cmds:
+      - |
+        if [ ! -f k8s/kind-config.yaml ]; then
+          echo "kind-config.yaml not found, generating from template..."
+          export POSTGRES_DATA_PATH=${PWD}/.kind-data && envsubst < k8s/kind-config.yaml.TEMPLATE > k8s/kind-config.yaml
+        fi
+        kind create cluster --name truman --config k8s/kind-config.yaml
+
+  kind-delete:
+    desc: Delete the local kind cluster named 'truman'
+    cmds:
+      - kind delete cluster --name truman 
+
+  k8s-create-namespace:
+    desc: Create the truman namespace
+    cmds:
+      - kubectl apply -f k8s/namespace.yaml
+
+  k8s-set-default-namespace:
+    desc: Create the truman namespace
+    cmds:
+      - kubectl config set-context --current --namespace=truman
+
+  k8s-build-and-load-images:
+    desc: Build Docker images and load them into the kind cluster
+    cmds:
+      - docker build -t truman.api -f Truman.Api/Dockerfile .
+      - docker build -t truman.web -f web/Dockerfile ./web
+      - docker build -t truman-jobrunner -f Truman.JobRunner/Dockerfile .
+      - kind load docker-image truman.api --name truman
+      - kind load docker-image truman.web --name truman
+      - kind load docker-image truman-jobrunner --name truman
+
+  k8s-create-secret:
+    desc: Create and apply k8s secret from .env for the truman namespace
+    cmds:
+      - kubectl delete secret truman-env --namespace=truman --ignore-not-found
+      - kubectl create secret generic truman-env --from-env-file=.env --namespace=truman
+
+  k8s-create-configmap-dev:
+    desc: Create and apply k8s ConfigMap for development configuration
+    cmds:
+      - kubectl apply -f k8s/configmap-dev.yaml
+
+  k8s-apply:
+    desc: Apply all k8s manifests for the truman namespace
+    cmds:
+      - kubectl apply -f k8s/postgres/
+      - kubectl apply -f k8s/api/
+      - kubectl apply -f k8s/web/
+      - kubectl apply -f k8s/jobrunner/cronjob.yaml
+
+  k8s-dev-up:
+    desc: Start the development environment
+    cmds:
+      - task k8s-create-namespace
+      - task k8s-set-default-namespace
+      - task k8s-create-configmap-dev
+      - task k8s-create-secret
+      - task k8s-build-and-load-images
+      - task k8s-apply
+
+  # k8s-port-forward:
+  #   desc: Port forward web (to 3000) and api (to 5001) services to localhost
+  #   cmds:
+  #     - kubectl port-forward svc/web 3000:80 -n truman &
+  #     - kubectl port-forward svc/api 5001:8080 -n truman & 
+
+  k8s-delete:
+    desc: Delete all k8s manifests for the truman namespace
+    cmds:
+      - kubectl delete -f k8s/jobrunner/cronjob.yaml --ignore-not-found
+      - kubectl delete -f k8s/web/ --ignore-not-found
+      - kubectl delete -f k8s/api/ --ignore-not-found
+      - kubectl delete -f k8s/postgres/ --ignore-not-found
+      - kubectl delete -f k8s/configmap-dev.yaml --ignore-not-found
+      - kubectl delete -f k8s/namespace.yaml --ignore-not-found 

@@ -1,3 +1,5 @@
+using DotNetEnv;
+using DotNetEnv.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Truman.Api.Features.Email;
 using Truman.Api.Features.Articles;
@@ -6,8 +8,11 @@ using Truman.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add dotnet-env configuration source to load from .env file
+builder.Configuration.AddDotNetEnv(".env", LoadOptions.TraversePath());
+
 // Add database context
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var connectionString = builder.Configuration.GetPostgresConnectionString();
 builder.Services.AddDbContext<TrumanDbContext>(options => options.UseNpgsql(connectionString));
 
 // Add services

@@ -5,7 +5,6 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-        <UserSecretsId>d7650d41-d975-49b0-b2ef-7299aee3a12c</UserSecretsId>
     </PropertyGroup>
 
     <ItemGroup>
@@ -16,6 +15,7 @@
 
     <ItemGroup>
         <PackageReference Include="brevo_csharp" />
+        <PackageReference Include="DotNetEnv" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.Facebook" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
