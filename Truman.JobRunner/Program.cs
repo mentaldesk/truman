@@ -95,7 +95,11 @@ else if (args.Contains("--analyse"))
 }
 else
 {
-    Console.WriteLine("Usage: dotnet run -- --fetch | --analyse");
-    Environment.Exit(1);
+    // By default, we fetch and analyse
+    var fetcher = host.Services.GetRequiredService<RssFetcher>();
+    await fetcher.RunAsync();
+
+    var analyser = host.Services.GetRequiredService<ArticleAnalyser>();
+    await analyser.RunAsync();
 }
 #pragma warning restore SKEXP0070
