@@ -79,6 +79,7 @@ tasks:
   k8s-delete:
     desc: Delete all k8s manifests for the truman namespace
     cmds:
+      - kubectl delete -f k8s/jobrunner/cronjob.yaml --ignore-not-found
       - kubectl delete -f k8s/web/ --ignore-not-found
       - kubectl delete -f k8s/api/ --ignore-not-found
       - kubectl delete -f k8s/postgres/ --ignore-not-found
