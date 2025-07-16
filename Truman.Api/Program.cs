@@ -15,6 +15,19 @@ builder.Configuration.AddDotNetEnv(".env", LoadOptions.TraversePath());
 var connectionString = builder.Configuration.GetPostgresConnectionString();
 builder.Services.AddDbContext<TrumanDbContext>(options => options.UseNpgsql(connectionString));
 
+// Add Sentry for diagnostics
+builder.WebHost.UseSentry(options =>
+{
+    options.Dsn = builder.Configuration["Sentry:Dsn"];
+    options.Environment = builder.Environment.EnvironmentName;
+    options.TracesSampleRate = 1.0; // Adjust as needed
+    options.CaptureBlockingCalls = true;
+    options.CaptureFailedRequests = true;
+    options.Debug = true;
+    options.SendDefaultPii = true;
+    options.StackTraceMode = StackTraceMode.Enhanced;
+});
+
 // Add services
 builder.Services.AddAuthServices(builder.Configuration);
 builder.Services.Configure<EmailConfiguration>(builder.Configuration.GetSection("Email"));

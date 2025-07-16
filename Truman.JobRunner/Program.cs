@@ -1,7 +1,5 @@
 ﻿using System.Net;
-using System.Threading.RateLimiting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Http.Resilience;
@@ -26,9 +24,20 @@ try
             // Add dotnet-env configuration source to load from .env file
             config.AddDotNetEnv(".env", LoadOptions.TraversePath());
         })
-        .ConfigureLogging(logging =>
+        .ConfigureLogging((context, logging) =>
         {
+            
             logging.ClearProviders();
+            logging.AddSentry(options =>
+            {
+                options.Dsn = context.Configuration["Sentry:Dsn"];
+                options.Environment = context.HostingEnvironment.EnvironmentName; 
+                options.TracesSampleRate = 1.0; // Adjust as needed
+                options.CaptureFailedRequests = true;
+                options.Debug = true;
+                options.SendDefaultPii = true;
+                options.StackTraceMode = StackTraceMode.Enhanced;
+            });
             logging.AddConsole();
             logging.SetMinimumLevel(LogLevel.Information);
         })
