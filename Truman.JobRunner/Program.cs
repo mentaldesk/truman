@@ -106,18 +106,30 @@ try
     }
     else
     {
-        // By default, we fetch and analyse
-        var fetcher = host.Services.GetRequiredService<RssFetcher>();
-        await fetcher.RunAsync();
+        var checkInId = SentrySdk.CaptureCheckIn("update-articles", CheckInStatus.InProgress);
+        try
+        {
+            // By default, we fetch and analyse
+            var fetcher = host.Services.GetRequiredService<RssFetcher>();
+            await fetcher.RunAsync();
 
-        var analyser = host.Services.GetRequiredService<ArticleAnalyser>();
-        await analyser.RunAsync();
+            var analyser = host.Services.GetRequiredService<ArticleAnalyser>();
+            await analyser.RunAsync();
+            
+            SentrySdk.CaptureCheckIn("update-articles", CheckInStatus.Ok, checkInId);
+        }
+        catch
+        {
+            SentrySdk.CaptureCheckIn("update-articles", CheckInStatus.Error, checkInId);            
+            throw;
+        }
+        
     }
 }
 catch (Exception e)
 {
-    Console.WriteLine(e);
-    // This is required to force an error code to be returned to k8s if an exception occurs... Otherwise the CronJob
+    SentrySdk.CaptureException(e);
+    // This is required to force an error code to be returned to k8s if an exception occurs... Otherwise, the CronJob
     // in k8s doesn't know the job has failed.
     Environment.Exit(1); 
 }

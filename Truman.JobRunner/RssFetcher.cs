@@ -78,7 +78,7 @@ public class RssFetcher(
         }
 
         logger.LogInformation(
-            "RSS fetch job completed. Found {NewCount} new articles. Skipped {ExistingCount} existing articles.", 
+            "RSS fetch job completed with {NewCount} new articles and {ExistingCount} existing articles", 
             newArticleCount,
             existingArticleCount);
     }
