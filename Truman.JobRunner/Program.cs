@@ -30,11 +30,13 @@ try
             logging.ClearProviders();
             logging.AddSentry(options =>
             {
+#if DEBUG                
+                options.Debug = true;
+#endif
                 options.Dsn = context.Configuration["Sentry:Dsn"];
                 options.Environment = context.HostingEnvironment.EnvironmentName; 
                 options.TracesSampleRate = 1.0; // Adjust as needed
                 options.CaptureFailedRequests = true;
-                options.Debug = true;
                 options.SendDefaultPii = true;
                 options.StackTraceMode = StackTraceMode.Enhanced;
             });

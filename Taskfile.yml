@@ -84,4 +84,9 @@ tasks:
       - kubectl delete -f k8s/api/ --ignore-not-found
       - kubectl delete -f k8s/postgres/ --ignore-not-found
       - kubectl delete -f k8s/configmap-dev.yaml --ignore-not-found
-      - kubectl delete -f k8s/namespace.yaml --ignore-not-found 
+      - kubectl delete -f k8s/namespace.yaml --ignore-not-found
+
+  migrations-bundle:
+    desc: Generate EF migrations bundle
+    cmds:
+      - cd Truman.Api && ./migrations.sh 

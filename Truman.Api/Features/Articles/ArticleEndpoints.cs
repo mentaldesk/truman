@@ -19,6 +19,7 @@ public static class ArticleEndpoints
             }
             catch (Exception ex)
             {
+                SentrySdk.CaptureException(ex);
                 return Results.BadRequest(new { error = ex.Message });
             }
         });

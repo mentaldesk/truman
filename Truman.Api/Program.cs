@@ -18,15 +18,18 @@ builder.Services.AddDbContext<TrumanDbContext>(options => options.UseNpgsql(conn
 // Add Sentry for diagnostics
 builder.WebHost.UseSentry(options =>
 {
+#if DEBUG    
+    options.Debug = true;
+#endif    
     options.Dsn = builder.Configuration["Sentry:Dsn"];
     options.Environment = builder.Environment.EnvironmentName;
     options.TracesSampleRate = 1.0; // Adjust as needed
     options.CaptureBlockingCalls = true;
     options.CaptureFailedRequests = true;
-    options.Debug = true;
     options.SendDefaultPii = true;
     options.StackTraceMode = StackTraceMode.Enhanced;
 });
+builder.Services.AddSentryTunneling();
 
 // Add services
 builder.Services.AddAuthServices(builder.Configuration);
@@ -35,6 +38,7 @@ builder.Services.Configure<FrontendConfiguration>(builder.Configuration.GetSecti
 builder.Services.AddSingleton<IEmailService, EmailService>();
 builder.Services.AddScoped<IRelevantArticlesService, RelevantArticlesService>();
 builder.Services.AddOpenApi();
+builder.Services.AddHttpClient();
 
 builder.Services.AddCors(options =>
 {
@@ -65,6 +69,7 @@ app.UseAuthorization();
 app.MapAuthEndpoints();
 app.MapArticleEndpoints();
 app.MapProfileEndpoints();
+app.UseSentryTunneling();
 
 var target = Environment.GetEnvironmentVariable("TARGET") ?? "World";
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
