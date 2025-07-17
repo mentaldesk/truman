@@ -73,8 +73,10 @@ public class ArticleAnalyser
             chatHistory.AddUserMessage($"The article to be analysed is: {rssItem.Link}");
             var result = await chatService.GetChatMessageContentAsync(chatHistory, _promptSettings, _kernel);
 
-            _logger.LogInformation("PromptTokenCount to analyse {Link}: {Tokens}", rssItem.Link, result.Metadata.ReadValue<int>("PromptTokenCount"));
-            _logger.LogInformation("TotalTokenCount to analyse {Link}: {Tokens}", rssItem.Link, result.Metadata.ReadValue<int>("TotalTokenCount"));
+            _logger.LogInformation("PromptTokenCount to analyse {Link}: {Tokens}", rssItem.Link,
+                result.Metadata.ReadValue<int>("PromptTokenCount"));
+            _logger.LogInformation("TotalTokenCount to analyse {Link}: {Tokens}", rssItem.Link,
+                result.Metadata.ReadValue<int>("TotalTokenCount"));
 
             if (result.Metadata!.ReadValue<GeminiFinishReason>("FinishReason") is { } finishReason && finishReason.Label != "STOP")
             {
@@ -107,7 +109,7 @@ public class ArticleAnalyser
                 }
                 
                 _logger.LogInformation("Successfully deserialized ArticleData for {Link}", rssItem.Link);
-                await SaveAnalysisResults(rssItem, articleData, db);
+                await SaveAnalysisResults(rssItem, articleData!, db); // ValidateArticleData ensures articleData is not null
             }
             catch (JsonException ex)
             {
