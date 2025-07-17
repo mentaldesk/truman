@@ -7,6 +7,9 @@ RUN yarn install --frozen-lockfile
 
 COPY . .
 
+# Clear cache to ensure fresh build
+RUN rm -rf .svelte-kit node_modules/.vite
+
 RUN yarn build
 
 # Production stage
