@@ -4,9 +4,12 @@ EXPOSE 8080
 
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
+ARG SENTRY_AUTH_TOKEN
+ENV SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN
 WORKDIR /src
 COPY ["Truman.Api/Truman.Api.csproj", "Truman.Api/"]
 COPY Directory.Packages.props ./
+COPY Directory.Build.props ./
 RUN dotnet restore "Truman.Api/Truman.Api.csproj"
 COPY . .
 RUN dotnet build "Truman.Api/Truman.Api.csproj" -c $BUILD_CONFIGURATION -o /app/build

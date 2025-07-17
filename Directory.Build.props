@@ -1,0 +1,15 @@
+<Project>
+  <PropertyGroup>   
+    <SentryOrg>mental-desk-ltd</SentryOrg>
+    <SentryProject>truman</SentryProject>
+    <SentryUploadSymbols>true</SentryUploadSymbols>
+    <SentryUploadSources>true</SentryUploadSources>
+    <SentryCreateRelease>true</SentryCreateRelease>
+    <SentrySetCommits>true</SentrySetCommits>
+    <SentrySetCommitOptions>--local</SentrySetCommitOptions>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="$(Configuration) == Debug">
+    <UseSentryCLI>false</UseSentryCLI>
+  </PropertyGroup>
+</Project> 
