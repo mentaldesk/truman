@@ -5,4 +5,5 @@ metadata:
   namespace: truman
 data:
   VITE_API_URL: "http://localhost:5001"
-  POSTGRES_HOST: "postgres.truman.svc.cluster.local" 
+  VITE_ENVIRONMENT: "kind"
+  POSTGRES_HOST: "postgres.truman.svc.cluster.local"

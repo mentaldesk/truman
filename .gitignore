@@ -14,3 +14,6 @@ riderModule.iml
 # Kind local data and config
 .kind-data/
 kind-config.yaml
+
+# EF Core migration bundles
+Truman.Api/efbundle

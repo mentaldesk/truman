@@ -2,6 +2,7 @@
 	import '../app.css';
 	import { auth } from '$lib/stores/auth';
 	import { page } from '$app/stores';
+	import ErrorBoundary from '$lib/components/ErrorBoundary.svelte';
 	
 	let { children } = $props();
 </script>
@@ -24,7 +25,9 @@
 		<div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
 	</div>
 {:else}
-	<div class="min-h-screen">
-		{@render children()}
-	</div>
+	<ErrorBoundary>
+		<div class="min-h-screen">
+			{@render children()}
+		</div>
+	</ErrorBoundary>
 {/if}

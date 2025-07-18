@@ -26,7 +26,6 @@ services:
       - "5001:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=postgres;Database=${POSTGRES_DB:-trumandb};Username=${POSTGRES_USER:-truman};Password=${POSTGRES_PASSWORD:-devpassword}
       - Authentication__Jwt__Key=${JWT_KEY:-your-secret-key-here}
       - Authentication__Jwt__Issuer=${JWT_ISSUER:-truman-api}
       - Authentication__Jwt__Audience=${JWT_AUDIENCE:-truman-web}

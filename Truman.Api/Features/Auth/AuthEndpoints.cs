@@ -5,7 +5,7 @@ public static class AuthEndpoints
 {
     public static void MapAuthEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/auth/{provider}/login", async (string provider, HttpContext context) =>
+        app.MapGet("/auth/{provider}/login", (string provider, HttpContext context) =>
         {
             var scheme = provider.ToLowerInvariant() switch
             {
@@ -60,6 +60,7 @@ public static class AuthEndpoints
             }
             catch (Exception ex)
             {
+                SentrySdk.CaptureException(ex);
                 return Results.BadRequest(new { error = "Failed to send magic link" });
             }
         });

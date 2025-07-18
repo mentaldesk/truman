@@ -34,12 +34,14 @@ tasks:
   k8s-build-and-load-images:
     desc: Build Docker images and load them into the kind cluster
     cmds:
-      - docker build -t truman.api -f Truman.Api/Dockerfile .
+      # So Sentry can upload symbols during build, we need to make the auth token available
+      - export SENTRY_AUTH_TOKEN_TRUMAN=$(grep SENTRY_AUTH_TOKEN_TRUMAN .env | cut -d '=' -f2)
+      - docker build --build-arg SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN_TRUMAN -t truman-jobrunner -f Truman.JobRunner/Dockerfile .
+      - docker build --build-arg SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN_TRUMAN -t truman.api -f Truman.Api/Dockerfile .
       - docker build -t truman.web -f web/Dockerfile ./web
-      - docker build -t truman-jobrunner -f Truman.JobRunner/Dockerfile .
+      - kind load docker-image truman-jobrunner --name truman
       - kind load docker-image truman.api --name truman
       - kind load docker-image truman.web --name truman
-      - kind load docker-image truman-jobrunner --name truman
 
   k8s-create-secret:
     desc: Create and apply k8s secret from .env for the truman namespace
@@ -84,4 +86,9 @@ tasks:
       - kubectl delete -f k8s/api/ --ignore-not-found
       - kubectl delete -f k8s/postgres/ --ignore-not-found
       - kubectl delete -f k8s/configmap-dev.yaml --ignore-not-found
-      - kubectl delete -f k8s/namespace.yaml --ignore-not-found 
+      - kubectl delete -f k8s/namespace.yaml --ignore-not-found
+
+  migrations-bundle:
+    desc: Generate EF migrations bundle
+    cmds:
+      - cd Truman.Api && ./migrations.sh 

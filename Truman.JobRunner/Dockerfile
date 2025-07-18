@@ -3,9 +3,12 @@ WORKDIR /app
 
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
+ARG SENTRY_AUTH_TOKEN
+ENV SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN
 WORKDIR /src
 COPY ["Truman.JobRunner/Truman.JobRunner.csproj", "Truman.JobRunner/"]
 COPY Directory.Packages.props ./
+COPY Directory.Build.props ./
 RUN dotnet restore "Truman.JobRunner/Truman.JobRunner.csproj"
 COPY . .
 RUN dotnet build "Truman.JobRunner/Truman.JobRunner.csproj" -c $BUILD_CONFIGURATION -o /app/build

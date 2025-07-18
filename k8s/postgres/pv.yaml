@@ -8,5 +8,6 @@ spec:
     storage: 1Gi
   accessModes:
     - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
   hostPath:
     path: /var/lib/postgresql/data 
