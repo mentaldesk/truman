@@ -20,4 +20,4 @@ dotnet ef migrations bundle \
 echo "Bundle generated successfully: $(pwd)/efbundle"
 echo ""
 echo "To run migrations:"
-echo "  ./efbundle --connection \"your-connection-string\""
+echo "  ./efbundle --connection \"Host=postgres;Port=5432;Database=trumandb;Username=truman;Password=yourpassword\""
