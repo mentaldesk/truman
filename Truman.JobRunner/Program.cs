@@ -10,6 +10,7 @@ using Truman.Data;
 using Truman.JobRunner;
 using DotNetEnv;
 using DotNetEnv.Configuration;
+using Microsoft.Extensions.Configuration;
 
 #if DEBUG
 Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", "Development");
@@ -56,7 +57,14 @@ try
             
             // Register as Singleton since this is a console app with a single operation
             services.AddSingleton<RssFetcher>();
-            services.AddSingleton<ArticleAnalyser>();
+            services.AddSingleton<ArticleAnalyser>(sp =>
+                new ArticleAnalyser(
+                    sp.GetRequiredService<ILogger<ArticleAnalyser>>(),
+                    sp.GetRequiredService<IDbContextFactory<TrumanDbContext>>(),
+                    sp.GetRequiredService<Kernel>(),
+                    sp.GetRequiredService<IConfiguration>()
+                )
+            );
 
             services
                 .AddHttpClient("GeminiClient")

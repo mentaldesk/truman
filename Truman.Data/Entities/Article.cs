@@ -8,7 +8,7 @@ public class Article
     public string Link { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
     public string Tldr { get; set; } = string.Empty;
-    public string Content { get; set; } = string.Empty;
+    public Dictionary<string, string> PresenterContents { get; set; } = new();
     public int Sentiment { get; set; }
     public string[] Tags { get; set; } = Array.Empty<string>();
     

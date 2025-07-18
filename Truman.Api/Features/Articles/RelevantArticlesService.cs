@@ -56,7 +56,7 @@ public class RelevantArticlesService : IRelevantArticlesService
             Link = x.Article.Link,
             Title = x.Article.Title,
             Tldr = x.Article.Tldr,
-            Content = x.Article.Content,
+            Content = x.Article.PresenterContents.Values.FirstOrDefault() ?? string.Empty,
             Sentiment = x.Article.Sentiment,
             Tags = x.Article.Tags,
             RelevanceScore = x.RelevanceScore,

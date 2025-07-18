@@ -15,10 +15,7 @@ public class ArticleData
     
     [JsonPropertyName("tldr")]
     public string Tldr { get; set; } = string.Empty;
-    
-    [JsonPropertyName("content")]
-    public string Content { get; set; } = string.Empty;
-    
+       
     [JsonPropertyName("sentiment")]
     public int Sentiment { get; set; }
     
@@ -93,4 +90,7 @@ public class ArticleData
     
     [JsonPropertyName("adventure")]
     public int Adventure { get; set; }
+    
+    [JsonPropertyName("presenterContents")]
+    public Dictionary<string, string> PresenterContents { get; set; } = new();
 }

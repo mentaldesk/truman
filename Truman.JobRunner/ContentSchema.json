@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "properties": {
+    "content": {
+      "type": "string",
+      "description": "A bullet point style summary of the article, consisting of no more than 200 words"
+    }
+  },
+  "required": [
+    "content"
+  ],
+  "additionalProperties": false
+}

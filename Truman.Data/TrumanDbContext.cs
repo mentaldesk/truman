@@ -56,7 +56,7 @@ public class TrumanDbContext : DbContext
             entity.Property(e => e.Link).IsRequired();
             entity.Property(e => e.Title).IsRequired();
             entity.Property(e => e.Tldr).IsRequired();
-            entity.Property(e => e.Content).IsRequired();
+            entity.Property(e => e.PresenterContents).HasColumnType("jsonb");
             entity.Property(e => e.Sentiment).IsRequired();
             entity.Property(e => e.Tags).HasColumnType("jsonb"); // Store as JSON in PostgreSQL
             entity.Property(e => e.CreatedAt).IsRequired();
