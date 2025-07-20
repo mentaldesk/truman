@@ -1,0 +1,23 @@
+{
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "A concise title conveying the key point of the article (in no more than 8 words)"
+    },
+    "tldr": {
+      "type": "string",
+      "description": "A summary of 30 words or less, gisting the entire article"
+    },
+    "content": {
+      "type": "string",
+      "description": "A paragraph-style summary of the article, consisting of no more than 400 words"
+    }
+  },
+  "required": [
+    "title",
+    "tldr",
+    "content"
+  ],
+  "additionalProperties": false
+}

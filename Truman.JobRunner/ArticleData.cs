@@ -9,12 +9,6 @@ public class ArticleData
 {
     [JsonPropertyName("link")]
     public string Link { get; set; } = string.Empty;
-    
-    [JsonPropertyName("title")]
-    public string Title { get; set; } = string.Empty;
-    
-    [JsonPropertyName("tldr")]
-    public string Tldr { get; set; } = string.Empty;
        
     [JsonPropertyName("sentiment")]
     public int Sentiment { get; set; }
@@ -90,7 +84,4 @@ public class ArticleData
     
     [JsonPropertyName("adventure")]
     public int Adventure { get; set; }
-    
-    [JsonPropertyName("presenterContents")]
-    public Dictionary<string, string> PresenterContents { get; set; } = new();
 }
