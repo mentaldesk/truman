@@ -154,8 +154,9 @@ public class ArticleAnalyser
 
             foreach (var presenter in presenterStyles)
             {
-                var presenterChatHistory = new ChatHistory("Look on the bright side and emphasise what good can be found.");
-                presenterChatHistory.AddUserMessage($"Rewrite the article at {rssItem.Link} in no more than 400 words, in the style of {presenter}.");
+                var presenterChatHistory = new ChatHistory($"Rewrite the article at {rssItem.Link} in no more than 400 words, in the style of {presenter}.");
+                presenterChatHistory.AddUserMessage("Look on the bright side and emphasise what good can be found.");
+                presenterChatHistory.AddUserMessage("Write it in paragraph form, not bullet points.");
                 var presenterResult = await chatService.GetChatMessageContentAsync(presenterChatHistory,
                     _contentPromptSettings, _kernel);
                 if (await ProcessArticleContent(presenterResult, rssItem, db) is { } content)

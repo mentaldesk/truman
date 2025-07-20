@@ -56,7 +56,7 @@ public class RelevantArticlesService : IRelevantArticlesService
             Link = x.Article.Link,
             Title = x.Article.Title,
             Tldr = x.Article.Tldr,
-            Content = x.Article.PresenterContents.Values.FirstOrDefault() ?? string.Empty,
+            Content = GetPresenterContent(x.Article.PresenterContents, request.Presenter),
             Sentiment = x.Article.Sentiment,
             Tags = x.Article.Tags,
             RelevanceScore = x.RelevanceScore,
@@ -150,5 +150,17 @@ public class RelevantArticlesService : IRelevantArticlesService
             "adventure" => article.Adventure,
             _ => 0 // Default to 0 for unknown values
         };
+    }
+
+    private string GetPresenterContent(Dictionary<string, string> presenterContents, string requestedPresenter)
+    {
+        // Find a presenter whose name starts with the requested presenter
+        var matchingPresenter = presenterContents.Keys
+            .FirstOrDefault(key => key.StartsWith(requestedPresenter, StringComparison.OrdinalIgnoreCase));
+
+        // Return the matching presenter's content, or the first available content if no match
+        return matchingPresenter != null 
+            ? presenterContents[matchingPresenter] 
+            : presenterContents.Values.FirstOrDefault() ?? string.Empty;
     }
 } 
