@@ -2,6 +2,7 @@
     import { createEventDispatcher, onMount } from 'svelte';
     import { mood } from '$lib/stores/mood';
     import { auth } from '$lib/stores/auth';
+    import { selectedPresenter, presenterOptions } from '$lib/stores/presenter';
     import { goto } from '$app/navigation';
     import { patchUserMood } from '$lib/profile';
     
@@ -80,6 +81,20 @@
             aria-label="News mood filter level"
           />
           <span class="text-xl" aria-hidden="true">😊</span>
+        </div>
+        <!-- Presenter Dropdown -->
+        <div class="flex items-center space-x-2">
+          <label for="presenter-select" class="text-sm font-medium text-gray-700">Presenter:</label>
+          <select
+            id="presenter-select"
+            bind:value={$selectedPresenter}
+            class="block w-32 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            aria-label="Select news presenter style"
+          >
+            {#each presenterOptions as option}
+              <option value={option}>{option}</option>
+            {/each}
+          </select>
         </div>
         <!-- Perspective Button -->
         <button

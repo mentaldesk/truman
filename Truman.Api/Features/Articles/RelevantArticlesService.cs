@@ -154,7 +154,13 @@ public class RelevantArticlesService : IRelevantArticlesService
 
     private string GetPresenterContent(Dictionary<string, string> presenterContents, string requestedPresenter)
     {
+        const string DefaultPresenter = "A British news presenter";
+        
         // Find a presenter whose name starts with the requested presenter
+        if (string.IsNullOrEmpty(requestedPresenter))
+        {
+            requestedPresenter = DefaultPresenter;
+        }
         var matchingPresenter = presenterContents.Keys
             .FirstOrDefault(key => key.StartsWith(requestedPresenter, StringComparison.OrdinalIgnoreCase));
 

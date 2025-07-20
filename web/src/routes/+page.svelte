@@ -5,6 +5,7 @@
     import { onMount, onDestroy } from 'svelte';
     import { API_URL } from '$lib/config';
     import { valuesStore } from '$lib/stores/values';
+    import { selectedPresenter } from '$lib/stores/presenter';
     import { get } from 'svelte/store';
     import { auth } from '$lib/stores/auth';
     import { profileStore } from '$lib/stores/profile';
@@ -25,6 +26,7 @@
     let loading = true;
     let error: string | null = null;
     let moodUnsubscribe: () => void;
+    let presenterUnsubscribe: () => void;
     let debounceTimeout: ReturnType<typeof setTimeout> | null = null;
     let saveDebounce: ReturnType<typeof setTimeout> | null = null;
     let moodUnsub: () => void;
@@ -59,15 +61,18 @@
         error = null;
         let minimumSentiment: number = 5;
         let selectedValues: string[] = [];
+        let presenter: string = '';
         const unsubscribeMood = mood.subscribe(value => { minimumSentiment = value; });
         const unsubscribeValues = valuesStore.subscribe(state => { selectedValues = state.selected.map(v => v.id); });
+        const unsubscribePresenter = selectedPresenter.subscribe(value => { presenter = value === 'Default' ? '' : value; });
         unsubscribeMood();
         unsubscribeValues();
+        unsubscribePresenter();
         try {
             const res = await fetch(`${API_URL}/api/articles/relevant`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ minimumSentiment, selectedValues })
+                body: JSON.stringify({ minimumSentiment, selectedValues, presenter })
             });
             if (!res.ok) throw new Error('Failed to fetch articles');
             const data = await res.json();
@@ -91,10 +96,14 @@
         moodUnsubscribe = mood.subscribe(() => {
             debounceFetchArticles();
         });
+        presenterUnsubscribe = selectedPresenter.subscribe(() => {
+            debounceFetchArticles();
+        });
     });
 
     onDestroy(() => {
         if (moodUnsubscribe) moodUnsubscribe();
+        if (presenterUnsubscribe) presenterUnsubscribe();
         if (debounceTimeout) clearTimeout(debounceTimeout);
     });
 </script>
