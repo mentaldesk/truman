@@ -23,7 +23,7 @@ services:
       context: .
       dockerfile: Truman.Api/Dockerfile
     ports:
-      - "5001:8080"
+      - "5001:5001"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - Authentication__Jwt__Key=${JWT_KEY:-your-secret-key-here}

@@ -1,1 +1,1 @@
-window.__API_URL__ = "http://localhost:8080";
+window.__API_URL__ = "http://localhost:5001";

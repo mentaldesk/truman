@@ -75,7 +75,7 @@ tasks:
   #   desc: Port forward web (to 3000) and api (to 5001) services to localhost
   #   cmds:
   #     - kubectl port-forward svc/web 3000:80 -n truman &
-  #     - kubectl port-forward svc/api 5001:8080 -n truman & 
+  #     - kubectl port-forward svc/api 5001:5001 -n truman & 
 
   k8s-delete:
     desc: Delete all k8s manifests for the truman namespace
