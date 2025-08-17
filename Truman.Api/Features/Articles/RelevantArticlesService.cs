@@ -177,11 +177,4 @@ public class RelevantArticlesService : IRelevantArticlesService
                ?? articlePresenters.ByLabel(DefaultPresenter)?.Tldr 
                ?? string.Empty;
     }
-} 
-    
-static class ArticlePresenterExtensions
-{
-    public static ArticlePresenter? ByLabel(this ICollection<ArticlePresenter> articlePresenters, string presenter) =>
-        articlePresenters.FirstOrDefault(
-            ap => ap.Presenter.Label.Equals(presenter, StringComparison.OrdinalIgnoreCase));
 }
