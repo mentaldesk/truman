@@ -33,9 +33,8 @@ tasks:
 
   k8s-build-and-load-images:
     desc: Build Docker images and load them into the kind cluster
+    dotenv: ['.env']
     cmds:
-      # So Sentry can upload symbols during build, we need to make the auth token available
-      - export SENTRY_AUTH_TOKEN_TRUMAN=$(grep SENTRY_AUTH_TOKEN_TRUMAN .env | cut -d '=' -f2)
       - docker build --build-arg SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN_TRUMAN -t truman-jobrunner -f Truman.JobRunner/Dockerfile .
       - docker build --build-arg SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN_TRUMAN -t truman.api -f Truman.Api/Dockerfile .
       - docker build -t truman.web -f web/Dockerfile ./web
@@ -76,7 +75,7 @@ tasks:
   #   desc: Port forward web (to 3000) and api (to 5001) services to localhost
   #   cmds:
   #     - kubectl port-forward svc/web 3000:80 -n truman &
-  #     - kubectl port-forward svc/api 5001:8080 -n truman & 
+  #     - kubectl port-forward svc/api 5001:5001 -n truman & 
 
   k8s-delete:
     desc: Delete all k8s manifests for the truman namespace

@@ -34,14 +34,9 @@ I have the following set of values:
 I need to analyse a number of articles. For each article, I need to extract the following fields:
 
 * A link to the original article
-* title: A title for the article. Should not be click bait and no more than 8 words.
-* tldr: Gist the article in less than 30 words
-* content: A short form of the article in no more than 200 words, in the style of John Cleese
 * sentiment: A sentiment score for the article on a scale of 0 to 10, where 0 is very negative and 10 is very positive
 * tags: Up to 10 tags... keywords that capture the essence of the article
 
-In addition to the fields above, I also need one field for each of the values listed above, with a score between 0 and 10 indicating how closely related the article is to that topic. A score of 0 means no relation, while a score of 10 means it is highly related.
-
-Try to write the title, tldr and content in a positive and upbeat tone. Look on the bright side and emphasise what good can be found in the article. 
+In addition to the fields above, I also need one field for each of the values listed above, with a score between 0 and 10 indicating how closely related the article is to that value. A score of 0 means no relation, while a score of 10 means it is highly related.
 
 I need the response as a JSON object (so in JSON format).

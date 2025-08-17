@@ -7,6 +7,7 @@ namespace Truman.Api.Features.Articles;
 
 public class RelevantArticlesService : IRelevantArticlesService
 {
+    private const string DefaultPresenter = "Default";
     private readonly TrumanDbContext _dbContext;
     private readonly ILogger<RelevantArticlesService> _logger;
     
@@ -34,6 +35,8 @@ public class RelevantArticlesService : IRelevantArticlesService
 
         // Get all articles that meet the minimum sentiment threshold and are from today
         var articles = await _dbContext.Articles
+            .Include(a => a.ArticlePresenters)
+                .ThenInclude(ap => ap.Presenter)
             .Where(a => a.Sentiment >= request.MinimumSentiment)
             .Where(a => a.CreatedAt >= earliest)
             .ToListAsync();
@@ -50,13 +53,15 @@ public class RelevantArticlesService : IRelevantArticlesService
         .OrderByDescending(x => x.RelevanceScore);
 
         // Convert to response DTOs
+       
+        // Find a presenter whose name starts with the requested presenter
         var relevantArticles = articlesWithScores.Select(x => new RelevantArticle
         {
             Id = x.Article.Id,
             Link = x.Article.Link,
-            Title = x.Article.Title,
-            Tldr = x.Article.Tldr,
-            Content = x.Article.Content,
+            Title = GetPresenterTitle(x.Article.ArticlePresenters, request.Presenter),
+            Tldr = GetPresenterTldr(x.Article.ArticlePresenters, request.Presenter),
+            Content = GetPresenterContent(x.Article.ArticlePresenters, request.Presenter),
             Sentiment = x.Article.Sentiment,
             Tags = x.Article.Tags,
             RelevanceScore = x.RelevanceScore,
@@ -151,4 +156,25 @@ public class RelevantArticlesService : IRelevantArticlesService
             _ => 0 // Default to 0 for unknown values
         };
     }
-} 
+
+    private string GetPresenterContent(ICollection<ArticlePresenter> articlePresenters, string requestedPresenter)
+    {
+        return articlePresenters.ByLabel(requestedPresenter)?.Content 
+               ?? articlePresenters.ByLabel(DefaultPresenter)?.Content
+               ?? string.Empty;
+    }
+
+    private string GetPresenterTitle(ICollection<ArticlePresenter> articlePresenters, string requestedPresenter)
+    {
+        return articlePresenters.ByLabel(requestedPresenter)?.Title 
+               ?? articlePresenters.ByLabel(DefaultPresenter)?.Title 
+               ?? string.Empty;
+    }
+
+    private string GetPresenterTldr(ICollection<ArticlePresenter> articlePresenters, string requestedPresenter)
+    {
+        return articlePresenters.ByLabel(requestedPresenter)?.Tldr 
+               ?? articlePresenters.ByLabel(DefaultPresenter)?.Tldr 
+               ?? string.Empty;
+    }
+}

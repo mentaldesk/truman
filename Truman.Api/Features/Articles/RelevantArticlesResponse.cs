@@ -11,6 +11,7 @@ public class RelevantArticle
     public string Link { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
     public string Tldr { get; set; } = string.Empty;
+    // Content is now the first presenter's content for backward compatibility
     public string Content { get; set; } = string.Empty;
     public int Sentiment { get; set; }
     public string[] Tags { get; set; } = Array.Empty<string>();

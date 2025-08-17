@@ -6,7 +6,7 @@ using Microsoft.SemanticKernel.ChatCompletion;
 using Truman.Data.Entities;
 using Microsoft.SemanticKernel.Connectors.Google;
 using System.Text.Json;
-using System.Text.Json.Serialization;
+using Microsoft.Extensions.Configuration;
 
 namespace Truman.JobRunner;
 
@@ -17,30 +17,45 @@ public class ArticleAnalyser
     private readonly ILogger<ArticleAnalyser> _logger;
     private readonly IDbContextFactory<TrumanDbContext> _contextFactory;
     private readonly Kernel _kernel;
-    private readonly string _instructions;
-    private readonly GeminiPromptExecutionSettings _promptSettings;
+    private readonly string _analysisInstructions;
+    private readonly string _contentInstructions;
+    private readonly GeminiPromptExecutionSettings _analyserPromptSettings;
+    private readonly GeminiPromptExecutionSettings _contentPromptSettings;
+    private readonly IConfiguration _configuration;
 
     public ArticleAnalyser(ILogger<ArticleAnalyser> logger,
         IDbContextFactory<TrumanDbContext> contextFactory,
-        Kernel kernel)
+        Kernel kernel,
+        IConfiguration configuration)
     {
         _logger = logger;
         _contextFactory = contextFactory;
         _kernel = kernel;
+        _configuration = configuration;
 
-        var instructionsPath = Path.Combine(AppContext.BaseDirectory, "AnalyserInstructions.md");
-        _instructions = File.ReadAllText(instructionsPath);
-        
-        var schemaPath = Path.Combine(AppContext.BaseDirectory, "AnalyserSchema.json");
-        var jsonSchemaText = File.ReadAllText(schemaPath);
-        var jsonSchema = System.Text.Json.JsonDocument.Parse(jsonSchemaText).RootElement;
-        _promptSettings = new GeminiPromptExecutionSettings
+        _analysisInstructions = LoadInstructions("AnalyserInstructions.md");
+        _contentInstructions = LoadInstructions("ContentInstructions.md");
+
+        var analyserSchemaPath = Path.Combine(AppContext.BaseDirectory, "AnalyserSchema.json");
+        var analyserSchema = JsonDocument.Parse(File.ReadAllText(analyserSchemaPath)).RootElement;
+        _analyserPromptSettings = new GeminiPromptExecutionSettings
         {
             MaxTokens = MaxTokens, 
             ResponseMimeType = "application/json",
-            ResponseSchema = jsonSchema
+            ResponseSchema = analyserSchema
         };
-        
+
+        var contentSchemaPath = Path.Combine(AppContext.BaseDirectory, "PresenterContentSchema.json");
+        var contentSchema = JsonDocument.Parse(File.ReadAllText(contentSchemaPath)).RootElement;
+        _contentPromptSettings = new GeminiPromptExecutionSettings
+        {
+            MaxTokens = MaxTokens, 
+            ResponseMimeType = "application/json",
+            ResponseSchema = contentSchema
+        };
+
+        return;
+        string LoadInstructions(string fileName) => File.ReadAllText(Path.Combine(AppContext.BaseDirectory, fileName));
     }
 
     const int MaxTokens = 10_000;
@@ -59,69 +74,123 @@ public class ArticleAnalyser
         await AnalyzePendingArticles(pending, db);
     }
 
+    private async Task<ArticleData?> ProcessArticleAnalysis(ChatMessageContent result, RssItem rssItem, TrumanDbContext db)
+    {
+        if (result.Metadata!.ReadValue<GeminiFinishReason>("FinishReason") is { } finishReason && finishReason.Label != "STOP")
+        {
+            await RecordFailure(rssItem, $"GeminiFinishReason == {finishReason}", db);
+            return null;
+        }
+        if (result.Content is not { } responseContent)
+        {
+            await RecordFailure(rssItem, "No content returned", db);
+            return null;
+        }
+        _logger.LogInformation("Analysis results for {Link}:", rssItem.Link);
+        _logger.LogInformation("{Response}", responseContent);
+        try
+        {
+            var articleData = JsonSerializer.Deserialize<ArticleData>(result.Content);
+            if (articleData == null)
+            {
+                await RecordFailure(rssItem, "Deserialization returned null", db);
+                return null;
+            }
+
+            return articleData;
+        }
+        catch (JsonException ex)
+        {
+            await RecordFailure(rssItem, $"JSON deserialization failed: {ex.Message}", db);
+            _logger.LogError(ex, "JSON deserialization exception for {Link}. JSON: {JsonResponse}", rssItem.Link, responseContent);
+            return null;
+        }
+    }
+
+    private async Task<PresenterContentData?> ProcessArticleContent(ChatMessageContent result, RssItem rssItem, TrumanDbContext db)
+    {
+        if (result.Metadata!.ReadValue<GeminiFinishReason>("FinishReason") is { } finishReason && finishReason.Label != "STOP")
+        {
+            await RecordFailure(rssItem, $"GeminiFinishReason == {finishReason}", db);
+            return null;
+        }
+        if (result.Content is not { } responseContent)
+        {
+            await RecordFailure(rssItem, "No content returned", db);
+            return null;
+        }
+        try
+        {
+            var presenterContent = JsonSerializer.Deserialize<PresenterContentData>(responseContent);
+            if (presenterContent == null)
+            {
+                await RecordFailure(rssItem, "Deserialization returned null", db);
+                return null;
+            }
+
+            return presenterContent;
+        }
+        catch (JsonException ex)
+        {
+            await RecordFailure(rssItem, $"JSON deserialization failed: {ex.Message}", db);
+            _logger.LogError(ex, "JSON deserialization exception for {Link}. JSON: {JsonResponse}", rssItem.Link, responseContent);
+            return null;
+        }                
+    }
+
     private async Task AnalyzePendingArticles(List<RssItem> pending, TrumanDbContext db)
     {
         var chatService = _kernel.GetRequiredService<IChatCompletionService>();
+        var presenterStyles = _configuration.GetSection("PresenterStyles").Get<Dictionary<string, string>>() ?? new Dictionary<string, string>();
+        
+        // Cache presenters to avoid repeated database calls
+        var presenters = new List<Presenter>();
+        foreach (var (label, presenterStyle) in presenterStyles)
+        {
+            var presenter = await GetOrCreatePresenter(presenterStyle, label, db);
+            presenters.Add(presenter);
+        }
         
         int count = 0;
-        
         foreach (var rssItem in pending)
         {
             count++;
 
-            var chatHistory = new ChatHistory(_instructions);
+            var chatHistory = new ChatHistory(_analysisInstructions);
             chatHistory.AddUserMessage($"The article to be analysed is: {rssItem.Link}");
-            var result = await chatService.GetChatMessageContentAsync(chatHistory, _promptSettings, _kernel);
-
-            _logger.LogInformation("PromptTokenCount to analyse {Link}: {Tokens}", rssItem.Link,
-                result.Metadata.ReadValue<int>("PromptTokenCount"));
-            _logger.LogInformation("TotalTokenCount to analyse {Link}: {Tokens}", rssItem.Link,
-                result.Metadata.ReadValue<int>("TotalTokenCount"));
-
-            if (result.Metadata!.ReadValue<GeminiFinishReason>("FinishReason") is { } finishReason && finishReason.Label != "STOP")
+            var analyserResponse = await chatService.GetChatMessageContentAsync(chatHistory, _analyserPromptSettings, _kernel);
+            if (await ProcessArticleAnalysis(analyserResponse, rssItem, db) is not { } articleData)
             {
-                await RecordFailure(rssItem, $"GeminiFinishReason == {finishReason}", db);
                 continue;
             }
 
-            if (result.Content is not { } responseContent)
+            var presenterContents = new Dictionary<int, PresenterContentData>();
+            foreach (var presenter in presenters)
             {
-                await RecordFailure(rssItem, "No content returned", db);
-                continue;
-            }
-            
-            // Log the full response
-            _logger.LogInformation("Analysis results for {Link}:", rssItem.Link);
-            _logger.LogInformation("{Response}", responseContent);
-            
-            // Deserialize and save to database
-            try
-            {
-                _logger.LogInformation("Attempting to deserialize JSON response for {Link}", rssItem.Link);
-                _logger.LogInformation("Raw JSON response: {JsonResponse}", responseContent);
-                
-                var articleData = JsonSerializer.Deserialize<ArticleData>(responseContent);
-                if (!ValidateArticleData(articleData, out var validationErrors))
+                var presenterChatHistory = new ChatHistory(_contentInstructions);
+                presenterChatHistory.AddUserMessage($"Rewrite the article at {rssItem.Link} in the style of {presenter.PresenterStyle}.");
+                var presenterResult = await chatService.GetChatMessageContentAsync(presenterChatHistory,
+                    _contentPromptSettings, _kernel);
+                if (await ProcessArticleContent(presenterResult, rssItem, db) is { } presenterContent)
                 {
-                    await RecordFailure(rssItem, $"Validation failed: {string.Join(", ", validationErrors)}", db);
-                    _logger.LogError("ArticleData validation failed for {Link}. Data: {@ArticleData}", rssItem.Link, articleData);
-                    continue;
+                    presenterContents[presenter.Id] = presenterContent;
                 }
-                
-                _logger.LogInformation("Successfully deserialized ArticleData for {Link}", rssItem.Link);
-                await SaveAnalysisResults(rssItem, articleData!, db); // ValidateArticleData ensures articleData is not null
             }
-            catch (JsonException ex)
+
+            if (!ValidateArticleData(articleData, presenterContents, out var validationErrors))
             {
-                await RecordFailure(rssItem, $"JSON deserialization failed: {ex.Message}", db);
-                _logger.LogError(ex, "JSON deserialization exception for {Link}. JSON: {JsonResponse}", rssItem.Link, responseContent);
+                await RecordFailure(rssItem, $"Validation failed: {string.Join(", ", validationErrors)}", db);
+                _logger.LogError("ArticleData validation failed for {Link}. Data: {@ArticleData}", rssItem.Link, articleData);
+                continue;
             }
+
+            _logger.LogInformation("Successfully deserialized and aggregated ArticleData for {Link}", rssItem.Link);
+            await SaveAnalysisResults(rssItem, articleData, presenterContents, db);
         }
-        
         _logger.LogInformation("Analysis {Count} articles - job complete", count);
     }
 
-    private async Task SaveAnalysisResults(RssItem rssItem, ArticleData articleData, TrumanDbContext db)
+    private async Task SaveAnalysisResults(RssItem rssItem, ArticleData articleData, Dictionary<int, PresenterContentData> presenterContents, TrumanDbContext db)
     {
         await using var transaction = await db.Database.BeginTransactionAsync();
         try
@@ -130,9 +199,6 @@ public class ArticleAnalyser
             var article = new Article
             {
                 Link = articleData.Link,
-                Title = articleData.Title,
-                Tldr = articleData.Tldr,
-                Content = articleData.Content,
                 Sentiment = articleData.Sentiment,
                 Tags = articleData.Tags,
                 Freedom = articleData.Freedom,
@@ -163,6 +229,22 @@ public class ArticleAnalyser
             };
             
             db.Articles.Add(article);
+            await db.SaveChangesAsync(); // Save to get the article ID
+            
+            // Save presenter content using presenter IDs as keys
+            foreach (var (presenterId, content) in presenterContents)
+            {
+                var articlePresenter = new ArticlePresenter
+                {
+                    ArticleId = article.Id,
+                    PresenterId = presenterId,
+                    Title = content.Title,
+                    Tldr = content.Tldr,
+                    Content = content.Content
+                };
+                
+                db.ArticlePresenters.Add(articlePresenter);
+            }
             
             // Mark RssItem as analysed
             rssItem.TimeAnalysed = DateTimeOffset.UtcNow;
@@ -179,6 +261,24 @@ public class ArticleAnalyser
         }
     }
 
+    private async Task<Presenter> GetOrCreatePresenter(string presenterStyle, string label, TrumanDbContext db)
+    {
+        var presenter = await db.Presenters.FirstOrDefaultAsync(p => p.PresenterStyle == presenterStyle);
+        if (presenter == null)
+        {
+            presenter = new Presenter
+            {
+                PresenterStyle = presenterStyle,
+                Label = label
+            };
+            
+            db.Presenters.Add(presenter);
+            await db.SaveChangesAsync();
+        }
+        
+        return presenter;
+    }
+
     private async Task RecordFailure(RssItem rssItem, string reason, TrumanDbContext db)
     {
         _logger.LogError("Article analysis failed for {Link}: {Reason}", rssItem.Link, reason);
@@ -188,7 +288,7 @@ public class ArticleAnalyser
         await db.SaveChangesAsync();
     }
 
-    private bool ValidateArticleData(ArticleData? articleData, out List<string> validationErrors)
+    private bool ValidateArticleData(ArticleData? articleData, Dictionary<int, PresenterContentData> presenterContents, out List<string> validationErrors)
     {
         validationErrors = new List<string>();
         
@@ -200,12 +300,18 @@ public class ArticleAnalyser
         
         if (string.IsNullOrWhiteSpace(articleData.Link))
             validationErrors.Add("Link is null or empty");
-        if (string.IsNullOrWhiteSpace(articleData.Title))
-            validationErrors.Add("Title is null or empty");
-        if (string.IsNullOrWhiteSpace(articleData.Tldr))
-            validationErrors.Add("Tldr is null or empty");
-        if (string.IsNullOrWhiteSpace(articleData.Content))
-            validationErrors.Add("Content is null or empty");
+        if (!presenterContents.Any())
+            validationErrors.Add("No presenter content generated");
+        
+        foreach (var (presenterId, content) in presenterContents)
+        {
+            if (string.IsNullOrWhiteSpace(content.Title))
+                validationErrors.Add($"Title is null or empty for presenter {presenterId}");
+            if (string.IsNullOrWhiteSpace(content.Tldr))
+                validationErrors.Add($"Tldr is null or empty for presenter {presenterId}");
+            if (string.IsNullOrWhiteSpace(content.Content))
+                validationErrors.Add($"Content is null or empty for presenter {presenterId}");
+        }
         
         return !validationErrors.Any();
     }

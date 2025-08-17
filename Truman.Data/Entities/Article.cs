@@ -8,9 +8,11 @@ public class Article
     public string Link { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
     public string Tldr { get; set; } = string.Empty;
-    public string Content { get; set; } = string.Empty;
     public int Sentiment { get; set; }
     public string[] Tags { get; set; } = Array.Empty<string>();
+    
+    // Navigation property for presenter-specific content
+    public ICollection<ArticlePresenter> ArticlePresenters { get; set; } = new List<ArticlePresenter>();
     
     // Value scores (0-10)
     public int Freedom { get; set; }

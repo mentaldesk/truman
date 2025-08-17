@@ -1,6 +1,6 @@
 #!/bin/sh
 # Write the runtime configuration to config.js
-: "${VITE_API_URL:=http://localhost:8080}"
+: "${VITE_API_URL:=http://localhost:5001}"
 : "${VITE_ENVIRONMENT:=production}"
 : "${Sentry__Dsn:=}"
 

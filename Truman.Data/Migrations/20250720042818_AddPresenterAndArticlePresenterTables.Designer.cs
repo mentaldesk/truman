@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Truman.Data;
@@ -11,9 +12,11 @@ using Truman.Data;
 namespace Truman.Data.Migrations
 {
     [DbContext(typeof(TrumanDbContext))]
-    partial class TrumanDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250720042818_AddPresenterAndArticlePresenterTables")]
+    partial class AddPresenterAndArticlePresenterTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

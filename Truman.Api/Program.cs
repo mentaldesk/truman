@@ -72,7 +72,7 @@ app.MapProfileEndpoints();
 app.UseSentryTunneling();
 
 var target = Environment.GetEnvironmentVariable("TARGET") ?? "World";
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+var port = Environment.GetEnvironmentVariable("PORT") ?? "5001";
 var url = $"http://0.0.0.0:{port}";
 
 app.MapGet("/", () => $"Hello {target}!");

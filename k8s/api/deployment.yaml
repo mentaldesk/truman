@@ -18,7 +18,7 @@ spec:
           image: truman.api
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 8080
+            - containerPort: 5001
           env:
             - name: POSTGRES_HOST
               valueFrom:

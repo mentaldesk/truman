@@ -9,16 +9,7 @@ public class ArticleData
 {
     [JsonPropertyName("link")]
     public string Link { get; set; } = string.Empty;
-    
-    [JsonPropertyName("title")]
-    public string Title { get; set; } = string.Empty;
-    
-    [JsonPropertyName("tldr")]
-    public string Tldr { get; set; } = string.Empty;
-    
-    [JsonPropertyName("content")]
-    public string Content { get; set; } = string.Empty;
-    
+       
     [JsonPropertyName("sentiment")]
     public int Sentiment { get; set; }
     
