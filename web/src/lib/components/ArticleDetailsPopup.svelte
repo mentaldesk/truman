@@ -1,21 +1,41 @@
 <script lang="ts">
     import { createEventDispatcher } from 'svelte';
+    import TagWithHoverMenu from './TagWithHoverMenu.svelte';
+    import { tagPreferences } from '../stores/tagPreferences';
+    import { onMount } from 'svelte';
     
-    export let article: {
-        id: number;
-        link: string;
-        title: string;
-        tldr: string;
-        content: string;
-        sentiment: number;
-        tags: string[];
-        relevanceScore: number;
-        createdAt: string;
-    } | null = null;
+    export let isOpen: boolean = false;
+    export let article: any = null;
     
-    export let isOpen = false;
+    const dispatch = createEventDispatcher<{ close: void }>();
     
-    const dispatch = createEventDispatcher();
+    // Declare tagStatuses variable
+    let tagStatuses: Array<{tag: string; isFavorite: boolean; isBanned: boolean; weight: number}> = [];
+    
+    onMount(() => {
+        // Load tag preferences when component mounts
+        tagPreferences.loadPreferences();
+    });
+    
+    // Subscribe to tag preferences store to trigger re-renders
+    $: tagPreferencesStore = $tagPreferences;
+    
+    // Reactive statement to recalculate tag statuses when store changes
+    $: {
+        console.log('Store changed, recalculating tag statuses:', $tagPreferences);
+        tagStatuses = article?.tags?.map((tag: string) => {
+            const preference = $tagPreferences.preferences.find(p => 
+                p.tag.toLowerCase() === tag.toLowerCase()
+            );
+            return {
+                tag,
+                isFavorite: preference ? preference.weight > 0 : false,
+                isBanned: preference ? preference.weight === 0 : false,
+                weight: preference?.weight || 0
+            };
+        }) || [];
+        console.log('New tag statuses:', tagStatuses);
+    }
     
     function closePopup() {
         dispatch('close');
@@ -31,6 +51,21 @@
         if (article?.link) {
             window.open(article.link, '_blank');
         }
+    }
+    
+    function handleTagFavorite(event: CustomEvent) {
+        const { tag } = event.detail;
+        tagPreferences.favoriteTag(tag);
+    }
+    
+    function handleTagBan(event: CustomEvent) {
+        const { tag } = event.detail;
+        tagPreferences.banTag(tag);
+    }
+    
+    function handleTagRemove(event: CustomEvent) {
+        const { tag } = event.detail;
+        tagPreferences.removeTagPreference(tag);
     }
 </script>
 
@@ -90,12 +125,22 @@
                     
                     {#if article.tags && article.tags.length > 0}
                         <div class="flex flex-wrap gap-2">
-                            {#each article.tags as tag}
-                                <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                                    {tag}
-                                </span>
+                            {#each tagStatuses as tagStatus (`${tagStatus.tag}-${tagStatus.isFavorite}-${tagStatus.isBanned}`)}
+                                <TagWithHoverMenu 
+                                    tag={tagStatus.tag}
+                                    isFavorite={tagStatus.isFavorite}
+                                    isBanned={tagStatus.isBanned}
+                                    on:favorite={handleTagFavorite}
+                                    on:ban={handleTagBan}
+                                    on:remove={handleTagRemove}
+                                />
                             {/each}
                         </div>
+                    {/if}
+                    
+                    <!-- Subscribe to tag preferences store to trigger re-renders -->
+                    {#if $tagPreferences.loading}
+                        <div class="text-sm text-gray-500 mt-2">Loading tag preferences...</div>
                     {/if}
                 </div>
                 
