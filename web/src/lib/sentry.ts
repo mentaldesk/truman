@@ -16,7 +16,7 @@ if (browser) {
     tracePropagationTargets: [
       'localhost',
       '127.0.0.1',
-      (window as any).__API_URL__
+      ...((window as any).__API_URL__ ? [(window as any).__API_URL__] : [])
     ],
     
     // Enable automatic instrumentation
