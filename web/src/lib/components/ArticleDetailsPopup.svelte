@@ -101,11 +101,18 @@
                 
                 <!-- Article content -->
                 <div class="prose prose-gray max-w-none">
-                    <div class="whitespace-pre-wrap text-gray-700 leading-relaxed">
+                    <div class="article-content text-gray-700 leading-relaxed">
                         {article.content}
                     </div>
                 </div>
             </div>
         </div>
     </div>
-{/if} 
+{/if}
+
+<style>
+    .article-content {
+        white-space: pre-line; /* Preserves line breaks and wraps text */
+        line-height: 1.6; /* Good readability for article content */
+    }
+</style> 
