@@ -39,17 +39,60 @@
             return `${baseClasses} bg-blue-100 text-blue-800 hover:bg-blue-200`;
         }
     }
-    
-    function getMenuPosition() {
-        // Simple positioning - could be enhanced with more sophisticated logic
-        return 'absolute top-full left-0 mt-1 z-10';
-    }
 </script>
 
+<style>
+    .tag-container {
+        position: relative;
+        display: inline-block;
+    }
+    
+    .hover-menu {
+        position: absolute;
+        top: calc(100% - 8px); /* Overlap by 8px */
+        left: 0;
+        z-index: 10;
+        /* No margin needed since we're overlapping */
+    }
+    
+    /* Visual connector between tag and menu */
+    .hover-menu::before {
+        content: '';
+        position: absolute;
+        top: -4px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 4px solid transparent;
+        border-right: 4px solid transparent;
+        border-bottom: 4px solid #e5e7eb; /* border-gray-200 */
+    }
+    
+    .hover-menu::after {
+        content: '';
+        position: absolute;
+        top: -3px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 4px solid transparent;
+        border-right: 4px solid transparent;
+        border-bottom: 4px solid white;
+    }
+</style>
+
 <div 
-    class="relative inline-block"
+    class="tag-container"
     on:mouseenter={() => showMenu = true}
-    on:mouseleave={() => showMenu = false}
+    on:mouseleave={() => {
+        // Small delay to prevent menu from disappearing when moving to menu
+        setTimeout(() => {
+            if (!showMenu) return; // Menu was already closed
+            showMenu = false;
+        }, 100);
+    }}
 >
     <span class={getTagClasses()}>
         {tag}
@@ -62,8 +105,12 @@
     </span>
     
     {#if showMenu}
-        <div class={getMenuPosition()}>
-            <div class="bg-white border border-gray-200 rounded-lg shadow-lg p-2 min-w-[120px]">
+        <div class="hover-menu">
+            <div 
+                class="bg-white border border-gray-200 rounded-lg shadow-lg p-2 min-w-[120px]"
+                on:mouseenter={() => showMenu = true}
+                on:mouseleave={() => showMenu = false}
+            >
                 {#if !isFavorite && !isBanned}
                     <!-- Neutral tag - show favorite and ban options -->
                     <button
