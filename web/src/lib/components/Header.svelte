@@ -31,7 +31,13 @@
     }
 
     function handlePerspectiveClick() {
+        showProfileMenu = false;
         goto('/pov');
+    }
+    
+    function handleTagsClick() {
+        showProfileMenu = false;
+        goto('/tags');
     }
     
     function handleClickOutside(event: MouseEvent) {
@@ -96,15 +102,6 @@
             {/each}
           </select>
         </div>
-        <!-- Perspective Button -->
-        <button
-          on:click={handlePerspectiveClick}
-          class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          aria-label="Define your perspective"
-        >
-          <img src="/icons/telescope.svg" alt="Telescope" class="w-5 h-5 mr-2" />
-          Perspective
-        </button>
         <!-- Profile Button -->
         <div class="relative">
           <button
@@ -137,10 +134,29 @@
               </div>
               <div class="py-1" role="none">
                 <button
+                  on:click={handlePerspectiveClick}
+                  class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  role="menuitem"
+                >
+                  <img src="/icons/telescope.svg" alt="Telescope" class="w-5 h-5 mr-2 inline-block" />
+                  Perspective
+                </button>
+                <button
+                  on:click={handleTagsClick}
+                  class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  role="menuitem"
+                >
+                  <img src="/icons/tags.svg" alt="Tags" class="w-5 h-5 mr-2 inline-block" />
+                  Tags
+                </button>
+                <button
                   on:click={handleLogout}
                   class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   role="menuitem"
                 >
+                  <svg class="w-5 h-5 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
                   Sign out
                 </button>
               </div>
