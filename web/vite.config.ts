@@ -16,6 +16,9 @@ export default defineConfig({
 	build: {
 		sourcemap: true
 	},
+	optimizeDeps: {
+		force: true
+	},
 	test: {
 		projects: [
 			{
