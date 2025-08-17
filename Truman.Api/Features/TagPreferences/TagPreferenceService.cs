@@ -7,19 +7,17 @@ namespace Truman.Api.Features.TagPreferences;
 
 public class TagPreferenceService : ITagPreferenceService
 {
-    private readonly IDbContextFactory<TrumanDbContext> _contextFactory;
+    private readonly TrumanDbContext _dbContext;
 
-    public TagPreferenceService(IDbContextFactory<TrumanDbContext> contextFactory)
+    public TagPreferenceService(TrumanDbContext dbContext)
     {
-        _contextFactory = contextFactory;
+        _dbContext = dbContext;
     }
 
     public async Task<TagPreferenceResponse> SetTagPreferenceAsync(string userEmail, string tag, int weight)
     {
-        await using var context = await _contextFactory.CreateDbContextAsync();
-        
         // Get or create user profile
-        var userProfile = await context.UserProfiles
+        var userProfile = await _dbContext.UserProfiles
             .Include(u => u.TagPreferences)
             .FirstOrDefaultAsync(u => u.Email == userEmail);
 
@@ -49,10 +47,10 @@ public class TagPreferenceService : ITagPreferenceService
                 Tag = tag,
                 Weight = finalWeight
             };
-            context.UserTagPreferences.Add(newPreference);
+            _dbContext.UserTagPreferences.Add(newPreference);
         }
 
-        await context.SaveChangesAsync();
+        await _dbContext.SaveChangesAsync();
 
         return new TagPreferenceResponse
         {
@@ -63,9 +61,7 @@ public class TagPreferenceService : ITagPreferenceService
 
     public async Task<bool> RemoveTagPreferenceAsync(string userEmail, string tag)
     {
-        await using var context = await _contextFactory.CreateDbContextAsync();
-        
-        var userProfile = await context.UserProfiles
+        var userProfile = await _dbContext.UserProfiles
             .Include(u => u.TagPreferences)
             .FirstOrDefaultAsync(u => u.Email == userEmail);
 
@@ -82,17 +78,15 @@ public class TagPreferenceService : ITagPreferenceService
             return false;
         }
 
-        context.UserTagPreferences.Remove(preferenceToRemove);
-        await context.SaveChangesAsync();
+        _dbContext.UserTagPreferences.Remove(preferenceToRemove);
+        await _dbContext.SaveChangesAsync();
         
         return true;
     }
 
     public async Task<List<TagPreferenceResponse>> GetUserTagPreferencesAsync(string userEmail)
     {
-        await using var context = await _contextFactory.CreateDbContextAsync();
-        
-        var userProfile = await context.UserProfiles
+        var userProfile = await _dbContext.UserProfiles
             .Include(u => u.TagPreferences)
             .FirstOrDefaultAsync(u => u.Email == userEmail);
 
@@ -112,9 +106,7 @@ public class TagPreferenceService : ITagPreferenceService
 
     public async Task<TagPreferenceResponse> BumpTagPriorityAsync(string userEmail, string tag)
     {
-        using var context = await _contextFactory.CreateDbContextAsync();
-        
-        var userProfile = await context.UserProfiles
+        var userProfile = await _dbContext.UserProfiles
             .Include(u => u.TagPreferences)
             .FirstOrDefaultAsync(u => u.Email == userEmail);
 
@@ -138,7 +130,7 @@ public class TagPreferenceService : ITagPreferenceService
 
         // Bump the tag to the next priority group
         preference.Weight++;
-        await context.SaveChangesAsync();
+        await _dbContext.SaveChangesAsync();
 
         return new TagPreferenceResponse
         {
@@ -149,9 +141,7 @@ public class TagPreferenceService : ITagPreferenceService
 
     public async Task<Dictionary<int, List<string>>> GetTagsByWeightGroupAsync(string userEmail)
     {
-        using var context = await _contextFactory.CreateDbContextAsync();
-        
-        var userProfile = await context.UserProfiles
+        var userProfile = await _dbContext.UserProfiles
             .Include(u => u.TagPreferences)
             .FirstOrDefaultAsync(u => u.Email == userEmail);
 
