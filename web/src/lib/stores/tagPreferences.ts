@@ -147,6 +147,47 @@ function createTagPreferencesStore() {
             await this.setTagPreference(tag, 0); // Weight 0 = banned
         },
 
+        async bumpTagPriority(tag: string) {
+            try {
+                const authStore = get(auth);
+                if (!authStore.isAuthenticated) {
+                    throw new Error('User not authenticated');
+                }
+
+                const response = await fetch(`${API_URL}/api/tag-preferences/${encodeURIComponent(tag)}/bump`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authStore.token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to bump tag priority: ${response.statusText}`);
+                }
+
+                const updatedPreference = await response.json();
+                
+                update(state => {
+                    const existingIndex = state.preferences.findIndex(p => 
+                        p.tag.toLowerCase() === tag.toLowerCase()
+                    );
+                    
+                    if (existingIndex >= 0) {
+                        // Update existing preference
+                        const newPreferences = [...state.preferences];
+                        newPreferences[existingIndex] = updatedPreference;
+                        return { ...state, preferences: newPreferences };
+                    }
+                    
+                    return state;
+                });
+            } catch (error) {
+                console.error('Error bumping tag priority:', error);
+                throw error;
+            }
+        },
+
         getTagStatus(tag: string): { isFavorite: boolean; isBanned: boolean; weight: number } {
             const state = get({ subscribe });
             const preference = state.preferences.find(p => 
