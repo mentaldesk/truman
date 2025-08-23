@@ -23,16 +23,19 @@ public class RelevantArticlesService : IRelevantArticlesService
         _logger = logger;
     }
 
-    public async Task<RelevantArticlesResponse> GetRelevantArticlesAsync(RelevantArticlesRequest request, string? userEmail)
+    public async Task<RelevantArticlesResponse> GetRelevantArticlesAsync(RelevantArticlesRequest request, UserProfile userProfile)
     {
+        // Parse the selected values from JSON string
+        var selectedValues = ParseSelectedValues(userProfile.SelectedValues);
+        
         _logger.LogInformation("Getting relevant articles for user {UserEmail} with {ValueCount} values and minimum sentiment {MinSentiment}", 
-            userEmail, request.SelectedValues.Count, request.MinimumSentiment);
+            userProfile.Email, selectedValues.Count, userProfile.Mood);
 
         // Calculate user value weights using exponential decay
-        var userValueWeights = CalculateUserValueWeights(request.SelectedValues);
+        var userValueWeights = CalculateUserValueWeights(selectedValues);
 
         // Calculate user tag weights using ranking system
-        var userTagWeights = await CalculateUserTagWeights(userEmail);
+        var userTagWeights = CalculateUserTagWeights(userProfile);
 
         // Get today's date for filtering (using UTC to avoid timezone issues with PostgreSQL)
         var earliest = DateTime.UtcNow.Date.AddDays(-1);
@@ -41,18 +44,18 @@ public class RelevantArticlesService : IRelevantArticlesService
         var articles = await _dbContext.Articles
             .Include(a => a.ArticlePresenters)
                 .ThenInclude(ap => ap.Presenter)
-            .Where(a => a.Sentiment >= request.MinimumSentiment)
+            .Where(a => a.Sentiment >= userProfile.Mood)
             .Where(a => a.CreatedAt >= earliest)
             .ToListAsync();
 
         _logger.LogInformation("Found {ArticleCount} articles from yesterday and today with minimum sentiment {MinSentiment}", 
-            articles.Count, request.MinimumSentiment);
+            articles.Count, userProfile.Mood);
 
         // Calculate relevance scores for each article
         var articlesWithScores = articles.Select(article => new
         {
             Article = article,
-            RelevanceScore = CalculateRelevanceScore(article, userValueWeights, userTagWeights, request.MinimumSentiment)
+            RelevanceScore = CalculateRelevanceScore(article, userValueWeights, userTagWeights, userProfile.Mood)
         })
         .OrderByDescending(x => x.RelevanceScore);
 
@@ -78,6 +81,24 @@ public class RelevantArticlesService : IRelevantArticlesService
         };
     }
 
+    private List<string> ParseSelectedValues(string selectedValuesJson)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(selectedValuesJson))
+                return new List<string>();
+            
+            // Parse the JSON array of strings
+            var values = System.Text.Json.JsonSerializer.Deserialize<List<string>>(selectedValuesJson);
+            return values ?? new List<string>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to parse selected values JSON: {SelectedValuesJson}", selectedValuesJson);
+            return new List<string>();
+        }
+    }
+
     private Dictionary<string, double> CalculateUserValueWeights(List<string> selectedValues)
     {
         var weights = new Dictionary<string, double>();
@@ -95,36 +116,19 @@ public class RelevantArticlesService : IRelevantArticlesService
         return weights;
     }
 
-    private async Task<Dictionary<string, double>> CalculateUserTagWeights(string? userEmail)
+    private Dictionary<string, double> CalculateUserTagWeights(UserProfile userProfile)
     {
-        if (string.IsNullOrEmpty(userEmail))
-        {
-            _logger.LogDebug("No user email available, skipping tag preference calculation");
-            return new Dictionary<string, double>();
-        }
-
         try
         {
-            // Get user profile with tag preferences
-            var userProfile = await _dbContext.UserProfiles
-                .Include(u => u.TagPreferences)
-                .FirstOrDefaultAsync(u => u.Email == userEmail);
-
-            if (userProfile == null)
-            {
-                _logger.LogDebug("User profile not found for email: {UserEmail}", userEmail);
-                return new Dictionary<string, double>();
-            }
-
             // Get tag preferences with weight > 0 (not banned)
             var tagPreferences = userProfile.TagPreferences
                 .Where(tp => tp.Weight > 0)
                 .OrderByDescending(tp => tp.Weight)
                 .ToList();
 
-            if (!tagPreferences.Any())
+            if (tagPreferences.Count == 0)
             {
-                _logger.LogDebug("No tag preferences found for user: {UserEmail}", userEmail);
+                _logger.LogDebug("No favorite tag preferences found for user: {UserEmail}", userProfile.Email);
                 return new Dictionary<string, double>();
             }
 
@@ -153,7 +157,7 @@ public class RelevantArticlesService : IRelevantArticlesService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error calculating user tag weights for user: {UserEmail}", userEmail);
+            _logger.LogError(ex, "Error calculating user tag weights for user: {UserEmail}", userProfile.Email);
             return new Dictionary<string, double>();
         }
     }
@@ -183,7 +187,7 @@ public class RelevantArticlesService : IRelevantArticlesService
     private double CalculateValueAlignmentScore(Article article, Dictionary<string, double> userValueWeights)
     {
         var totalScore = 0.0;
-        if (!userValueWeights.Any())
+        if (userValueWeights.Count == 0)
         {
             return totalScore;
         }
@@ -201,7 +205,7 @@ public class RelevantArticlesService : IRelevantArticlesService
     private double CalculateTagAlignmentScore(Article article, Dictionary<string, double> userTagWeights)
     {
         var totalScore = 0.0;
-        if (!userTagWeights.Any() || article.Tags == null || article.Tags.Length == 0)
+        if (userTagWeights.Count == 0 || article.Tags == null || article.Tags.Length == 0)
         {
             return totalScore;
         }

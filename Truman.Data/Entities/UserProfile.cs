@@ -9,9 +9,6 @@ public class UserProfile
     [Required]
     public string Email { get; set; } = string.Empty;
     public int Mood { get; set; } = 5;
-    // Store the stack rank as a JSON array of strings
     public string SelectedValues { get; set; } = "[]";
-    
-    // Navigation properties
-    public ICollection<UserTagPreference> TagPreferences { get; set; } = new List<UserTagPreference>();
+    public ICollection<UserTagPreference> TagPreferences { get; set; } = [];
 } 

@@ -39,6 +39,7 @@ builder.Services.Configure<FrontendConfiguration>(builder.Configuration.GetSecti
 builder.Services.AddSingleton<IEmailService, EmailService>();
 builder.Services.AddScoped<IRelevantArticlesService, RelevantArticlesService>();
 builder.Services.AddScoped<ITagPreferenceService, TagPreferenceService>();
+builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddOpenApi();
 builder.Services.AddHttpClient();
 

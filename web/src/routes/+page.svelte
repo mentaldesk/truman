@@ -59,16 +59,10 @@
     async function fetchArticles() {
         loading = true;
         error = null;
-        let minimumSentiment: number = 5;
-        let selectedValues: string[] = [];
         let presenter: string = '';
         
-        const unsubscribeMood = mood.subscribe((value: number) => { minimumSentiment = value; });
-        const unsubscribeValues = valuesStore.subscribe((state: any) => { selectedValues = state.selected.map((v: any) => v.id); });
         const unsubscribePresenter = selectedPresenter.subscribe((value: string) => { presenter = value === 'Default' ? '' : value; });
         
-        unsubscribeMood();
-        unsubscribeValues();
         unsubscribePresenter();
         
         try {
@@ -84,7 +78,7 @@
             const res = await fetch(`${API_URL}/api/articles/relevant`, {
                 method: 'POST',
                 headers,
-                body: JSON.stringify({ minimumSentiment, selectedValues, presenter })
+                body: JSON.stringify({ presenter })
             });
             if (!res.ok) throw new Error('Failed to fetch articles');
             const data = await res.json();

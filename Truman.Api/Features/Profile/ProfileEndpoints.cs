@@ -15,11 +15,11 @@ public static class ProfileEndpoints
 {
     public static void MapProfileEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/profile", async (HttpContext http, TrumanDbContext db) =>
+        app.MapGet("/api/profile", async (HttpContext http, IProfileService profileService) =>
         {
             var email = http.User.FindFirst(ClaimTypes.Email)?.Value;
             if (string.IsNullOrEmpty(email)) return Results.Unauthorized();
-            var profile = await db.UserProfiles.FirstOrDefaultAsync(p => p.Email == email);
+            var profile = await profileService.GetUserProfileAsync(email);
             if (profile == null) return Results.NotFound();
             var dto = new UserProfileDto
             {
