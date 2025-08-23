@@ -40,13 +40,32 @@ public class RelevantArticlesService : IRelevantArticlesService
         // Get today's date for filtering (using UTC to avoid timezone issues with PostgreSQL)
         var earliest = DateTime.UtcNow.Date.AddDays(-1);
 
+        // Get banned tags for filtering
+        var bannedTags = userProfile.TagPreferences?
+            .Where(tp => tp.Weight == 0)
+            .Select(tp => tp.Tag)
+            .ToList() ?? [];
+
         // Get all articles that meet the minimum sentiment threshold and are from today
+        // Exclude articles that contain any banned tags
         var articles = await _dbContext.Articles
             .Include(a => a.ArticlePresenters)
                 .ThenInclude(ap => ap.Presenter)
             .Where(a => a.Sentiment >= userProfile.Mood)
             .Where(a => a.CreatedAt >= earliest)
             .ToListAsync();
+
+        // Filter out articles with banned tags (case-insensitive comparison)
+        if (bannedTags.Count > 0)
+        {
+            articles = articles.Where(a => 
+                !a.Tags.Any(articleTag => 
+                    bannedTags.Any(bannedTag => 
+                        string.Equals(articleTag, bannedTag, StringComparison.OrdinalIgnoreCase)
+                    )
+                )
+            ).ToList();
+        }
 
         _logger.LogInformation("Found {ArticleCount} articles from yesterday and today with minimum sentiment {MinSentiment}", 
             articles.Count, userProfile.Mood);
@@ -59,8 +78,6 @@ public class RelevantArticlesService : IRelevantArticlesService
         })
         .OrderByDescending(x => x.RelevanceScore);
 
-        // Convert to response DTOs
-       
         // Find a presenter whose name starts with the requested presenter
         var relevantArticles = articlesWithScores.Select(x => new RelevantArticle
         {
