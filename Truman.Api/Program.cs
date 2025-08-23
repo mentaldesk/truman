@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Truman.Api.Features.Email;
 using Truman.Api.Features.Articles;
 using Truman.Api.Features.Profile;
+using Truman.Api.Features.TagPreferences;
 using Truman.Data;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -37,6 +38,8 @@ builder.Services.Configure<EmailConfiguration>(builder.Configuration.GetSection(
 builder.Services.Configure<FrontendConfiguration>(builder.Configuration.GetSection("Frontend"));
 builder.Services.AddSingleton<IEmailService, EmailService>();
 builder.Services.AddScoped<IRelevantArticlesService, RelevantArticlesService>();
+builder.Services.AddScoped<ITagPreferenceService, TagPreferenceService>();
+builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddOpenApi();
 builder.Services.AddHttpClient();
 
@@ -69,6 +72,7 @@ app.UseAuthorization();
 app.MapAuthEndpoints();
 app.MapArticleEndpoints();
 app.MapProfileEndpoints();
+app.MapTagPreferenceEndpoints();
 app.UseSentryTunneling();
 
 var target = Environment.GetEnvironmentVariable("TARGET") ?? "World";

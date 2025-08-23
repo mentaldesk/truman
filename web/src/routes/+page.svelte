@@ -9,6 +9,7 @@
     import { get } from 'svelte/store';
     import { auth } from '$lib/stores/auth';
     import { profileStore } from '$lib/stores/profile';
+    import { tagPreferences } from '$lib/stores/tagPreferences';
 
     type RelevantArticle = {
         id: number;
@@ -27,6 +28,7 @@
     let error: string | null = null;
     let moodUnsubscribe: () => void;
     let presenterUnsubscribe: () => void;
+    let tagPreferencesUnsubscribe: () => void;
     let debounceTimeout: ReturnType<typeof setTimeout> | null = null;
     let saveDebounce: ReturnType<typeof setTimeout> | null = null;
     let moodUnsub: () => void;
@@ -59,20 +61,26 @@
     async function fetchArticles() {
         loading = true;
         error = null;
-        let minimumSentiment: number = 5;
-        let selectedValues: string[] = [];
         let presenter: string = '';
-        const unsubscribeMood = mood.subscribe(value => { minimumSentiment = value; });
-        const unsubscribeValues = valuesStore.subscribe(state => { selectedValues = state.selected.map(v => v.id); });
-        const unsubscribePresenter = selectedPresenter.subscribe(value => { presenter = value === 'Default' ? '' : value; });
-        unsubscribeMood();
-        unsubscribeValues();
+        
+        const unsubscribePresenter = selectedPresenter.subscribe((value: string) => { presenter = value === 'Default' ? '' : value; });
+        
         unsubscribePresenter();
+        
         try {
+            // Get the current auth token directly from the store
+            const authState = get(auth);
+            const authToken = authState.token;
+            
+            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+            if (authToken) {
+                headers['Authorization'] = `Bearer ${authToken}`;
+            }
+            
             const res = await fetch(`${API_URL}/api/articles/relevant`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ minimumSentiment, selectedValues, presenter })
+                headers,
+                body: JSON.stringify({ presenter })
             });
             if (!res.ok) throw new Error('Failed to fetch articles');
             const data = await res.json();
@@ -99,11 +107,15 @@
         presenterUnsubscribe = selectedPresenter.subscribe(() => {
             debounceFetchArticles();
         });
+        tagPreferencesUnsubscribe = tagPreferences.subscribe(() => {
+            debounceFetchArticles();
+        });
     });
 
     onDestroy(() => {
         if (moodUnsubscribe) moodUnsubscribe();
         if (presenterUnsubscribe) presenterUnsubscribe();
+        if (tagPreferencesUnsubscribe) tagPreferencesUnsubscribe();
         if (debounceTimeout) clearTimeout(debounceTimeout);
     });
 </script>
