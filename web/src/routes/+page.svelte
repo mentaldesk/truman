@@ -9,6 +9,7 @@
     import { get } from 'svelte/store';
     import { auth } from '$lib/stores/auth';
     import { profileStore } from '$lib/stores/profile';
+    import { tagPreferences } from '$lib/stores/tagPreferences';
 
     type RelevantArticle = {
         id: number;
@@ -27,6 +28,7 @@
     let error: string | null = null;
     let moodUnsubscribe: () => void;
     let presenterUnsubscribe: () => void;
+    let tagPreferencesUnsubscribe: () => void;
     let debounceTimeout: ReturnType<typeof setTimeout> | null = null;
     let saveDebounce: ReturnType<typeof setTimeout> | null = null;
     let moodUnsub: () => void;
@@ -105,11 +107,15 @@
         presenterUnsubscribe = selectedPresenter.subscribe(() => {
             debounceFetchArticles();
         });
+        tagPreferencesUnsubscribe = tagPreferences.subscribe(() => {
+            debounceFetchArticles();
+        });
     });
 
     onDestroy(() => {
         if (moodUnsubscribe) moodUnsubscribe();
         if (presenterUnsubscribe) presenterUnsubscribe();
+        if (tagPreferencesUnsubscribe) tagPreferencesUnsubscribe();
         if (debounceTimeout) clearTimeout(debounceTimeout);
     });
 </script>
