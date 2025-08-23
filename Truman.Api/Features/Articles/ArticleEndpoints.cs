@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Truman.Data;
 using Truman.Api.Features.Articles;
+using System.Security.Claims;
 
 namespace Truman.Api.Features.Articles;
 
@@ -10,11 +11,13 @@ public static class ArticleEndpoints
     {
         app.MapPost("/api/articles/relevant", async (
             RelevantArticlesRequest request,
-            IRelevantArticlesService relevantArticlesService) =>
+            IRelevantArticlesService relevantArticlesService,
+            HttpContext http) =>
         {
             try
             {
-                var articles = await relevantArticlesService.GetRelevantArticlesAsync(request);
+                var email = http.User.FindFirst(ClaimTypes.Email)?.Value;
+                var articles = await relevantArticlesService.GetRelevantArticlesAsync(request, email);
                 return Results.Ok(articles);
             }
             catch (Exception ex)
@@ -22,6 +25,6 @@ public static class ArticleEndpoints
                 SentrySdk.CaptureException(ex);
                 return Results.BadRequest(new { error = ex.Message });
             }
-        });
+        }).RequireAuthorization();
     }
 } 

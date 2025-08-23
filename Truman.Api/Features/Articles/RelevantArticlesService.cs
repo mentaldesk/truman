@@ -12,8 +12,9 @@ public class RelevantArticlesService : IRelevantArticlesService
     private readonly ILogger<RelevantArticlesService> _logger;
     
     // Weighting constants for relevance calculation
-    private const double ValueAlignmentWeight = 0.7;
-    private const double SentimentDeltaWeight = 0.3;
+    private const double ValueAlignmentWeight = 0.4;
+    private const double TagAlignmentWeight = 0.4;
+    private const double SentimentDeltaWeight = 0.2;
     private const double ExponentialDecayBase = 1.5;
 
     public RelevantArticlesService(TrumanDbContext dbContext, ILogger<RelevantArticlesService> logger)
@@ -22,13 +23,16 @@ public class RelevantArticlesService : IRelevantArticlesService
         _logger = logger;
     }
 
-    public async Task<RelevantArticlesResponse> GetRelevantArticlesAsync(RelevantArticlesRequest request)
+    public async Task<RelevantArticlesResponse> GetRelevantArticlesAsync(RelevantArticlesRequest request, string? userEmail)
     {
-        _logger.LogInformation("Getting relevant articles for user with {ValueCount} values and minimum sentiment {MinSentiment}", 
-            request.SelectedValues.Count, request.MinimumSentiment);
+        _logger.LogInformation("Getting relevant articles for user {UserEmail} with {ValueCount} values and minimum sentiment {MinSentiment}", 
+            userEmail, request.SelectedValues.Count, request.MinimumSentiment);
 
         // Calculate user value weights using exponential decay
         var userValueWeights = CalculateUserValueWeights(request.SelectedValues);
+
+        // Calculate user tag weights using ranking system
+        var userTagWeights = await CalculateUserTagWeights(userEmail);
 
         // Get today's date for filtering (using UTC to avoid timezone issues with PostgreSQL)
         var earliest = DateTime.UtcNow.Date.AddDays(-1);
@@ -48,7 +52,7 @@ public class RelevantArticlesService : IRelevantArticlesService
         var articlesWithScores = articles.Select(article => new
         {
             Article = article,
-            RelevanceScore = CalculateRelevanceScore(article, userValueWeights, request.MinimumSentiment)
+            RelevanceScore = CalculateRelevanceScore(article, userValueWeights, userTagWeights, request.MinimumSentiment)
         })
         .OrderByDescending(x => x.RelevanceScore);
 
@@ -91,19 +95,87 @@ public class RelevantArticlesService : IRelevantArticlesService
         return weights;
     }
 
-    private double CalculateRelevanceScore(Article article, Dictionary<string, double> userValueWeights, int minimumSentiment)
+    private async Task<Dictionary<string, double>> CalculateUserTagWeights(string? userEmail)
+    {
+        if (string.IsNullOrEmpty(userEmail))
+        {
+            _logger.LogDebug("No user email available, skipping tag preference calculation");
+            return new Dictionary<string, double>();
+        }
+
+        try
+        {
+            // Get user profile with tag preferences
+            var userProfile = await _dbContext.UserProfiles
+                .Include(u => u.TagPreferences)
+                .FirstOrDefaultAsync(u => u.Email == userEmail);
+
+            if (userProfile == null)
+            {
+                _logger.LogDebug("User profile not found for email: {UserEmail}", userEmail);
+                return new Dictionary<string, double>();
+            }
+
+            // Get tag preferences with weight > 0 (not banned)
+            var tagPreferences = userProfile.TagPreferences
+                .Where(tp => tp.Weight > 0)
+                .OrderByDescending(tp => tp.Weight)
+                .ToList();
+
+            if (!tagPreferences.Any())
+            {
+                _logger.LogDebug("No tag preferences found for user: {UserEmail}", userEmail);
+                return new Dictionary<string, double>();
+            }
+
+            // Group by weight to determine ranks
+            var weightGroups = tagPreferences
+                .GroupBy(tp => tp.Weight)
+                .OrderByDescending(g => g.Key)
+                .ToList();
+
+            var tagWeights = new Dictionary<string, double>();
+            var currentRank = 1;
+
+            foreach (var weightGroup in weightGroups)
+            {
+                foreach (var preference in weightGroup)
+                {
+                    // Calculate weight using exponential decay based on rank
+                    var weight = 1.0 / Math.Pow(ExponentialDecayBase, currentRank - 1);
+                    tagWeights[preference.Tag] = weight;
+                }
+                currentRank++;
+            }
+
+            _logger.LogDebug("Calculated user tag weights for {TagCount} tags: {@TagWeights}", tagWeights.Count, tagWeights);
+            return tagWeights;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error calculating user tag weights for user: {UserEmail}", userEmail);
+            return new Dictionary<string, double>();
+        }
+    }
+
+    private double CalculateRelevanceScore(Article article, Dictionary<string, double> userValueWeights, Dictionary<string, double> userTagWeights, int minimumSentiment)
     {
         // Calculate value alignment score (weighted dot product)
         var valueAlignmentScore = CalculateValueAlignmentScore(article, userValueWeights);
+        
+        // Calculate tag alignment score
+        var tagAlignmentScore = CalculateTagAlignmentScore(article, userTagWeights);
         
         // Calculate sentiment delta
         var sentimentDelta = article.Sentiment - minimumSentiment;
         
         // Calculate overall relevance score
-        var relevanceScore = ValueAlignmentWeight * valueAlignmentScore + SentimentDeltaWeight * sentimentDelta;
+        var relevanceScore = ValueAlignmentWeight * valueAlignmentScore + 
+                           TagAlignmentWeight * tagAlignmentScore + 
+                           SentimentDeltaWeight * sentimentDelta;
         
-        _logger.LogDebug("Article {ArticleId}: valueAlignment={ValueAlignment}, sentimentDelta={SentimentDelta}, relevance={Relevance}", 
-            article.Id, valueAlignmentScore, sentimentDelta, relevanceScore);
+        _logger.LogDebug("Article {ArticleId}: valueAlignment={ValueAlignment}, tagAlignment={TagAlignment}, sentimentDelta={SentimentDelta}, relevance={Relevance}", 
+            article.Id, valueAlignmentScore, tagAlignmentScore, sentimentDelta, relevanceScore);
         
         return relevanceScore;
     }
@@ -124,6 +196,41 @@ public class RelevantArticlesService : IRelevantArticlesService
 
         // So that "more values" doesn't always mean "more relevant", we divide by the number of values
         return totalScore / userValueWeights.Count;
+    }
+
+    private double CalculateTagAlignmentScore(Article article, Dictionary<string, double> userTagWeights)
+    {
+        var totalScore = 0.0;
+        if (!userTagWeights.Any() || article.Tags == null || article.Tags.Length == 0)
+        {
+            return totalScore;
+        }
+
+        // Normalize article tags for comparison
+        var articleTags = article.Tags
+            .Where(t => !string.IsNullOrEmpty(t))
+            .Select(t => t.Trim().ToLowerInvariant())
+            .ToHashSet();
+
+        var matchedTags = 0;
+        foreach (var (tag, weight) in userTagWeights)
+        {
+            var normalizedTag = tag.ToLowerInvariant();
+            if (articleTags.Contains(normalizedTag))
+            {
+                totalScore += weight;
+                matchedTags++;
+            }
+        }
+
+        // If no tags matched, return 0
+        if (matchedTags == 0)
+        {
+            return 0.0;
+        }
+
+        // Normalize by the number of matched tags to avoid bias towards articles with many tags
+        return totalScore / matchedTags;
     }
 
     private int GetArticleValueScore(Article article, string valueId)

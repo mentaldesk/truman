@@ -62,16 +62,28 @@
         let minimumSentiment: number = 5;
         let selectedValues: string[] = [];
         let presenter: string = '';
-        const unsubscribeMood = mood.subscribe(value => { minimumSentiment = value; });
-        const unsubscribeValues = valuesStore.subscribe(state => { selectedValues = state.selected.map(v => v.id); });
-        const unsubscribePresenter = selectedPresenter.subscribe(value => { presenter = value === 'Default' ? '' : value; });
+        
+        const unsubscribeMood = mood.subscribe((value: number) => { minimumSentiment = value; });
+        const unsubscribeValues = valuesStore.subscribe((state: any) => { selectedValues = state.selected.map((v: any) => v.id); });
+        const unsubscribePresenter = selectedPresenter.subscribe((value: string) => { presenter = value === 'Default' ? '' : value; });
+        
         unsubscribeMood();
         unsubscribeValues();
         unsubscribePresenter();
+        
         try {
+            // Get the current auth token directly from the store
+            const authState = get(auth);
+            const authToken = authState.token;
+            
+            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+            if (authToken) {
+                headers['Authorization'] = `Bearer ${authToken}`;
+            }
+            
             const res = await fetch(`${API_URL}/api/articles/relevant`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify({ minimumSentiment, selectedValues, presenter })
             });
             if (!res.ok) throw new Error('Failed to fetch articles');
