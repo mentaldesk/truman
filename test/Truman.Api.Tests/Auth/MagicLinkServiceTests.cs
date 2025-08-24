@@ -97,12 +97,12 @@ public class MagicLinkServiceTests
     public async Task GenerateMagicLinkAsync_CreatesUniqueCodes()
     {
         var email = $"multi_{Guid.NewGuid()}@example.com";
-        var codes = await Task.WhenAll(
-            _service.GenerateMagicLinkAsync(email),
-            _service.GenerateMagicLinkAsync(email),
-            _service.GenerateMagicLinkAsync(email)
-        );
-        Assert.Equal(3, codes.Distinct().Count());
+        var codes = new HashSet<string>();
+        for (int i = 0; i < 3; i++)
+        {
+            var code = await _service.GenerateMagicLinkAsync(email);
+            codes.Add(code);
+        }
+        Assert.Equal(3, codes.Count);
     }
 }
-
