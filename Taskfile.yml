@@ -35,12 +35,12 @@ tasks:
     desc: Build Docker images and load them into the kind cluster
     dotenv: ['.env']
     cmds:
-      - docker build --build-arg SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN_TRUMAN -t truman-jobrunner -f src/Truman.JobRunner/Dockerfile src
-      - docker build --build-arg SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN_TRUMAN -t truman.api -f src/Truman.Api/Dockerfile src
-      - docker build -t truman.web -f src/web/Dockerfile src/web
-      - kind load docker-image truman-jobrunner --name truman
-      - kind load docker-image truman.api --name truman
-      - kind load docker-image truman.web --name truman
+      - docker build --build-arg SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN_TRUMAN -t truman-jobrunner:latest -f src/Truman.JobRunner/Dockerfile src
+      - docker build --build-arg SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN_TRUMAN -t truman-api:latest -f src/Truman.Api/Dockerfile src
+      - docker build -t truman-web:latest -f src/web/Dockerfile src/web
+      - kind load docker-image truman-jobrunner:latest --name truman
+      - kind load docker-image truman-api:latest --name truman
+      - kind load docker-image truman-web:latest --name truman
 
   k8s-create-secret:
     desc: Create and apply k8s secret from .env for the truman namespace
@@ -59,6 +59,14 @@ tasks:
       - kubectl apply -f k8s/postgres/
       - kubectl apply -f k8s/api/
       - kubectl apply -f k8s/web/
+      - kubectl apply -f k8s/jobrunner/cronjob.yaml
+
+  k8s-rollout-restart:
+    desc: Rollout restart all k8s manifests for the truman namespace
+    cmds:
+      - kubectl rollout restart deployment/web -n truman
+      - kubectl rollout restart deployment/api -n truman
+      - kubectl delete cronjob jobrunner -n truman
       - kubectl apply -f k8s/jobrunner/cronjob.yaml
 
   k8s-dev-up:
