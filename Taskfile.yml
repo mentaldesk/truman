@@ -35,9 +35,9 @@ tasks:
     desc: Build Docker images and load them into the kind cluster
     dotenv: ['.env']
     cmds:
-      - docker build --build-arg SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN_TRUMAN -t truman-jobrunner -f Truman.JobRunner/Dockerfile .
-      - docker build --build-arg SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN_TRUMAN -t truman.api -f Truman.Api/Dockerfile .
-      - docker build -t truman.web -f web/Dockerfile ./web
+      - docker build --build-arg SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN_TRUMAN -t truman-jobrunner -f src/Truman.JobRunner/Dockerfile src
+      - docker build --build-arg SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN_TRUMAN -t truman.api -f src/Truman.Api/Dockerfile src
+      - docker build -t truman.web -f src/web/Dockerfile src/web
       - kind load docker-image truman-jobrunner --name truman
       - kind load docker-image truman.api --name truman
       - kind load docker-image truman.web --name truman
@@ -74,8 +74,9 @@ tasks:
   # k8s-port-forward:
   #   desc: Port forward web (to 3000) and api (to 5001) services to localhost
   #   cmds:
-  #     - kubectl port-forward svc/web 3000:80 -n truman &
+  #     - kubectl port-forward svc/postgres 5432:5432 &
   #     - kubectl port-forward svc/api 5001:5001 -n truman & 
+  #     - kubectl port-forward svc/web 3000:80 -n truman &
 
   k8s-delete:
     desc: Delete all k8s manifests for the truman namespace
@@ -90,4 +91,4 @@ tasks:
   migrations-bundle:
     desc: Generate EF migrations bundle
     cmds:
-      - cd Truman.Api && ./migrations.sh 
+      - cd src/Truman.Api && ./migrations.sh 

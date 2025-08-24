@@ -56,11 +56,11 @@ jobs:
 
       - name: Build Container
         run: docker build . -t "${{ env.IMAGE_URL }}:${{ github.sha }}" 
-        working-directory: ./Truman.Api
+        working-directory: ./src/Truman.Api
         
       - name: Push Container
         run: docker push "${{ env.IMAGE_URL }}:${{ github.sha }}"
-        working-directory: ./Truman.Api
+        working-directory: ./src/Truman.Api
        
       - name: Deploy to Cloud Run
         run: |
