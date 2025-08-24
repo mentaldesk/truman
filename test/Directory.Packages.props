@@ -14,6 +14,7 @@
     <!-- Align with EF Core used in src (explicit for direct references in tests) -->
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="9.0.6" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.6" />
+    <!-- Mocking -->
+    <PackageVersion Include="NSubstitute" Version="5.1.0" />
   </ItemGroup>
 </Project>
-
