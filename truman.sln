@@ -21,6 +21,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{612008FE-8DB
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{F85E4EED-12C6-4971-B44F-1321687821C5}"
+	ProjectSection(SolutionItems) = preProject
+		test\Directory.Packages.props = test\Directory.Packages.props
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Truman.Api.Tests", "test\Truman.Api.Tests\Truman.Api.Tests.csproj", "{CF42AD46-AB66-4E00-A1F4-2BA85AB13C48}"
 EndProject

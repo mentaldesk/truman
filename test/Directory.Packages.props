@@ -1,0 +1,19 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Testing framework -->
+    <PackageVersion Include="xunit.v3" Version="3.0.1" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.14.2" />
+    <!-- Integration support -->
+    <PackageVersion Include="Testcontainers.PostgreSql" Version="4.5.0" />
+    <!-- Align with EF Core used in src (explicit for direct references in tests) -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="9.0.6" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.6" />
+  </ItemGroup>
+</Project>
+
