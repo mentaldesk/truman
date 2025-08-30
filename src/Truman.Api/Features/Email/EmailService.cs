@@ -14,25 +14,23 @@ public interface IEmailService
 public class EmailService : IEmailService
 {
     private readonly BrevoSettings _settings;
-    private readonly TransactionalEmailsApi _emailsApi;
+    private readonly ITransactionalEmailsApi _emailsApi;
 
-    public EmailService(IOptions<EmailConfiguration> options)
+    public EmailService(IOptions<EmailConfiguration> options, ITransactionalEmailsApi emailsApi)
     {
         _settings = options.Value.Brevo;
-        
-        brevo_csharp.Client.Configuration.Default.ApiKey.Add("api-key", _settings.ApiKey);
-        _emailsApi = new TransactionalEmailsApi();
+        _emailsApi = emailsApi;
     }
 
     public async Task SendMagicLinkEmailAsync(string toEmail, string magicLink)
     {
         var email = new SendSmtpEmail
         {
-            To = new List<SendSmtpEmailTo> { new SendSmtpEmailTo(email: toEmail) },
+            To = [new(email: toEmail)],
             TemplateId = _settings.MagicLinkTemplateId,
             Params = new Dictionary<string, object> { { "link", magicLink } }
         };
 
         await _emailsApi.SendTransacEmailAsync(email);
     }
-} 
+}

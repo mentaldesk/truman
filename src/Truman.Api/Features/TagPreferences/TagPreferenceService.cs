@@ -104,7 +104,7 @@ public class TagPreferenceService : ITagPreferenceService
             .ToList();
     }
 
-    public async Task<TagPreferenceResponse> BumpTagPriorityAsync(string userEmail, string tag)
+    public async Task<TagPreferenceResponse> PromoteTagAsync(string userEmail, string tag)
     {
         var userProfile = await _dbContext.UserProfiles
             .Include(u => u.TagPreferences)
@@ -125,11 +125,85 @@ public class TagPreferenceService : ITagPreferenceService
 
         if (preference.Weight == 0)
         {
-            throw new InvalidOperationException($"Cannot bump priority of banned tag '{tag}'");
+            throw new InvalidOperationException($"Cannot promote banned tag '{tag}'");
         }
 
-        // Bump the tag to the next priority group
-        preference.Weight++;
+        // Determine next existing higher weight group (skip gaps). Exclude banned (weight 0)
+        var higherGroups = userProfile.TagPreferences
+            .Where(tp => tp.Weight > preference.Weight && tp.Weight > 0)
+            .Select(tp => tp.Weight)
+            .Distinct()
+            .OrderBy(w => w)
+            .ToList();
+
+        if (higherGroups.Count > 0)
+        {
+            // Jump to next existing group
+            preference.Weight = higherGroups.First();
+        }
+        else
+        {
+            // No higher group exists – create a new top group by incrementing
+            preference.Weight++;
+        }
+
+        await _dbContext.SaveChangesAsync();
+
+        return new TagPreferenceResponse
+        {
+            Tag = preference.Tag,
+            Weight = preference.Weight
+        };
+    }
+
+    public async Task<TagPreferenceResponse> DemoteTagAsync(string userEmail, string tag)
+    {
+        var userProfile = await _dbContext.UserProfiles
+            .Include(u => u.TagPreferences)
+            .FirstOrDefaultAsync(u => u.Email == userEmail);
+
+        if (userProfile == null)
+        {
+            throw new InvalidOperationException($"User profile not found for email: {userEmail}");
+        }
+
+        var preference = userProfile.TagPreferences
+            .FirstOrDefault(tp => tp.Tag.Equals(tag, StringComparison.OrdinalIgnoreCase));
+
+        if (preference == null)
+        {
+            throw new InvalidOperationException($"Tag preference '{tag}' not found for user");
+        }
+
+        if (preference.Weight == 0)
+        {
+            throw new InvalidOperationException($"Cannot demote banned tag '{tag}'");
+        }
+
+        if (preference.Weight == 1)
+        {
+            throw new InvalidOperationException($"Cannot demote tag '{tag}' below weight 1");
+        }
+
+        // Determine previous existing lower weight group (skip gaps). Exclude banned (weight 0)
+        var lowerGroups = userProfile.TagPreferences
+            .Where(tp => tp.Weight < preference.Weight && tp.Weight > 0)
+            .Select(tp => tp.Weight)
+            .Distinct()
+            .OrderByDescending(w => w)
+            .ToList();
+
+        if (lowerGroups.Count > 0)
+        {
+            // Jump to previous existing group (largest lower)
+            preference.Weight = lowerGroups.First();
+        }
+        else
+        {
+            // No lower group (should not really happen if weight >1) – fallback to decrement by 1
+            preference.Weight--;
+        }
+
         await _dbContext.SaveChangesAsync();
 
         return new TagPreferenceResponse

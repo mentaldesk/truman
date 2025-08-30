@@ -38,7 +38,7 @@
     async function handlePromote(event: CustomEvent) {
         const { tag } = event.detail;
         try {
-            await tagPreferences.bumpTagPriority(tag);
+            await tagPreferences.promoteTag(tag);
         } catch (error) {
             console.error('Failed to promote tag:', error);
         }
@@ -47,11 +47,7 @@
     async function handleDemote(event: CustomEvent) {
         const { tag } = event.detail;
         try {
-            // Find current weight and reduce by 1
-            const currentPref = $tagPreferences.preferences.find(p => p.tag === tag);
-            if (currentPref && currentPref.weight > 1) {
-                await tagPreferences.setTagPreference(tag, currentPref.weight - 1);
-            }
+            await tagPreferences.demoteTag(tag);
         } catch (error) {
             console.error('Failed to demote tag:', error);
         }

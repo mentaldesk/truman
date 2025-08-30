@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: truman.web
+          image: truman-web:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80

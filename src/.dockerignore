@@ -1,0 +1,29 @@
+# .NET specific
+**/bin/
+**/obj/
+**/*.user
+**/*.suo
+**/*.cache
+**/*.dll
+**/*.exe
+**/*.pdb
+**/*.log
+
+# Node.js specific (for web project)
+**/node_modules
+**/npm-debug.log
+**/yarn-debug.log
+**/yarn-error.log
+**/.nyc_output
+**/coverage
+
+# General
+**/.dockerignore
+**/.env
+**/.git
+**/.gitignore
+**/README.md
+**/Dockerfile*
+**/docker-compose*
+**/.DS_Store
+**/*.log

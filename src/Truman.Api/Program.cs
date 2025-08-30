@@ -36,6 +36,17 @@ builder.Services.AddSentryTunneling();
 builder.Services.AddAuthServices(builder.Configuration);
 builder.Services.Configure<EmailConfiguration>(builder.Configuration.GetSection("Email"));
 builder.Services.Configure<FrontendConfiguration>(builder.Configuration.GetSection("Frontend"));
+// Configure Brevo transactional email API client with isolated configuration instance
+builder.Services.AddSingleton<brevo_csharp.Api.ITransactionalEmailsApi>(sp => {
+    var opts = sp.GetRequiredService<IOptions<EmailConfiguration>>();
+    var cfg = new brevo_csharp.Client.Configuration(); // fresh instance, avoids static global state
+    var apiKey = opts.Value.Brevo.ApiKey;
+    if (!string.IsNullOrWhiteSpace(apiKey))
+    {
+        cfg.ApiKey["api-key"] = apiKey;
+    }
+    return new brevo_csharp.Api.TransactionalEmailsApi(cfg);
+});
 builder.Services.AddSingleton<IEmailService, EmailService>();
 builder.Services.AddScoped<IRelevantArticlesService, RelevantArticlesService>();
 builder.Services.AddScoped<ITagPreferenceService, TagPreferenceService>();

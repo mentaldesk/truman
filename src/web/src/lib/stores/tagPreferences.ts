@@ -147,14 +147,14 @@ function createTagPreferencesStore() {
             await this.setTagPreference(tag, 0); // Weight 0 = banned
         },
 
-        async bumpTagPriority(tag: string) {
+        async promoteTag(tag: string) {
             try {
                 const authStore = get(auth);
                 if (!authStore.isAuthenticated) {
                     throw new Error('User not authenticated');
                 }
 
-                const response = await fetch(`${API_URL}/api/tag-preferences/${encodeURIComponent(tag)}/bump`, {
+                const response = await fetch(`${API_URL}/api/tag-preferences/${encodeURIComponent(tag)}/promote`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${authStore.token}`,
@@ -163,7 +163,7 @@ function createTagPreferencesStore() {
                 });
 
                 if (!response.ok) {
-                    throw new Error(`Failed to bump tag priority: ${response.statusText}`);
+                    throw new Error(`Failed to promote tag: ${response.statusText}`);
                 }
 
                 const updatedPreference = await response.json();
@@ -183,7 +183,48 @@ function createTagPreferencesStore() {
                     return state;
                 });
             } catch (error) {
-                console.error('Error bumping tag priority:', error);
+                console.error('Error promoting tag:', error);
+                throw error;
+            }
+        },
+
+        async demoteTag(tag: string) {
+            try {
+                const authStore = get(auth);
+                if (!authStore.isAuthenticated) {
+                    throw new Error('User not authenticated');
+                }
+
+                const response = await fetch(`${API_URL}/api/tag-preferences/${encodeURIComponent(tag)}/demote`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authStore.token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to demote tag: ${response.statusText}`);
+                }
+
+                const updatedPreference = await response.json();
+                
+                update(state => {
+                    const existingIndex = state.preferences.findIndex(p => 
+                        p.tag.toLowerCase() === tag.toLowerCase()
+                    );
+                    
+                    if (existingIndex >= 0) {
+                        // Update existing preference
+                        const newPreferences = [...state.preferences];
+                        newPreferences[existingIndex] = updatedPreference;
+                        return { ...state, preferences: newPreferences };
+                    }
+                    
+                    return state;
+                });
+            } catch (error) {
+                console.error('Error demoting tag:', error);
                 throw error;
             }
         },

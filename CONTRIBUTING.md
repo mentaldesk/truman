@@ -10,7 +10,7 @@ Please install Docker Desktop via their instructions (Install Docker Desktop on 
 
 ### Devbox
 
-All other software dependencies for the course are defined in the `devbox.json` and `devbox.lock` files in the root directory.
+All other software dependencies to work locally with the solution are defined in the `devbox.json` and `devbox.lock` files in the root directory.
 
 Please install Devbox according to their instructions: https://www.jetify.com/devbox/docs/installing_devbox/
 
@@ -41,12 +41,10 @@ Most application configuration is stored and read from `.env` files.
 
 ### Configuration Structure
 
-The `.env` file uses hierarchical configuration keys with double underscores (`__`) to map to ASP.NET Core's 
-configuration sections:
+The `.env` file uses hierarchical configuration keys with double underscores (`__`) to map to ASP.NET Core's configuration sections:
 
 - `Authentication__Google__ClientId` maps to `Authentication:Google:ClientId`
 - `Email__Brevo__ApiKey` maps to `Email:Brevo:ApiKey`
 - `AI__ApiKey` maps to `AI:ApiKey`
 
-This approach ensures that sensitive configuration is kept out of source control and can be easily overridden in 
-different environments (local development, Docker, production).
+This approach ensures that sensitive configuration is kept out of source control and can be easily overridden in different environments (local development, Docker, production).

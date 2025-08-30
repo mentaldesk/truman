@@ -19,7 +19,7 @@ FROM nginx:alpine
 COPY --from=build /app/build /usr/share/nginx/html
 
 # Copy default config.js for local dev (will be overwritten in container)
-COPY config.js /usr/share/nginx/html/config.js
+COPY static/config.js /usr/share/nginx/html/config.js
 
 # Copy custom nginx config to listen on port 80
 COPY nginx.conf /etc/nginx/conf.d/default.conf
