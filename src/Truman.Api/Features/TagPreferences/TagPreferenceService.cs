@@ -104,7 +104,7 @@ public class TagPreferenceService : ITagPreferenceService
             .ToList();
     }
 
-    public async Task<TagPreferenceResponse> BumpTagPriorityAsync(string userEmail, string tag)
+    public async Task<TagPreferenceResponse> PromoteTagAsync(string userEmail, string tag)
     {
         var userProfile = await _dbContext.UserProfiles
             .Include(u => u.TagPreferences)
@@ -125,11 +125,51 @@ public class TagPreferenceService : ITagPreferenceService
 
         if (preference.Weight == 0)
         {
-            throw new InvalidOperationException($"Cannot bump priority of banned tag '{tag}'");
+            throw new InvalidOperationException($"Cannot promote banned tag '{tag}'");
         }
 
-        // Bump the tag to the next priority group
+        // Promote the tag to the next priority group
         preference.Weight++;
+        await _dbContext.SaveChangesAsync();
+
+        return new TagPreferenceResponse
+        {
+            Tag = preference.Tag,
+            Weight = preference.Weight
+        };
+    }
+
+    public async Task<TagPreferenceResponse> DemoteTagAsync(string userEmail, string tag)
+    {
+        var userProfile = await _dbContext.UserProfiles
+            .Include(u => u.TagPreferences)
+            .FirstOrDefaultAsync(u => u.Email == userEmail);
+
+        if (userProfile == null)
+        {
+            throw new InvalidOperationException($"User profile not found for email: {userEmail}");
+        }
+
+        var preference = userProfile.TagPreferences
+            .FirstOrDefault(tp => tp.Tag.Equals(tag, StringComparison.OrdinalIgnoreCase));
+
+        if (preference == null)
+        {
+            throw new InvalidOperationException($"Tag preference '{tag}' not found for user");
+        }
+
+        if (preference.Weight == 0)
+        {
+            throw new InvalidOperationException($"Cannot demote banned tag '{tag}'");
+        }
+
+        if (preference.Weight == 1)
+        {
+            throw new InvalidOperationException($"Cannot demote tag '{tag}' below weight 1");
+        }
+
+        // Demote the tag to the previous priority group
+        preference.Weight--;
         await _dbContext.SaveChangesAsync();
 
         return new TagPreferenceResponse

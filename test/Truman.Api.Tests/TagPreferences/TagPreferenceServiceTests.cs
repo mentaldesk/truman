@@ -133,44 +133,97 @@ public class TagPreferenceServiceTests
     }
 
     [Fact]
-    public async Task BumpTagPriorityAsync_Throws_WhenUserMissing()
+    public async Task PromoteTagAsync_Throws_WhenUserMissing()
     {
         var email = $"nouser_{Guid.NewGuid()}@example.com";
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.BumpTagPriorityAsync(email, "ai"));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.PromoteTagAsync(email, "ai"));
     }
 
     [Fact]
-    public async Task BumpTagPriorityAsync_Throws_WhenTagMissing()
+    public async Task PromoteTagAsync_Throws_WhenTagMissing()
     {
         var email = $"user_notag_{Guid.NewGuid()}@example.com";
         await CreateUserAsync(email);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.BumpTagPriorityAsync(email, "ai"));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.PromoteTagAsync(email, "ai"));
     }
 
     [Fact]
-    public async Task BumpTagPriorityAsync_Throws_WhenTagIsBanned()
+    public async Task PromoteTagAsync_Throws_WhenTagIsBanned()
     {
         var email = $"user_banned_{Guid.NewGuid()}@example.com";
         var user = await CreateUserAsync(email);
         _context.UserTagPreferences.Add(new UserTagPreference { UserProfileId = user.Id, Tag = "ai", Weight = 0 });
         await _context.SaveChangesAsync();
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _service.BumpTagPriorityAsync(email, "ai"));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _service.PromoteTagAsync(email, "ai"));
         Assert.Contains("banned", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
-    public async Task BumpTagPriorityAsync_IncrementsWeight()
+    public async Task PromoteTagAsync_IncrementsWeight()
     {
-        var email = $"user_bump_{Guid.NewGuid()}@example.com";
+        var email = $"user_promote_{Guid.NewGuid()}@example.com";
         var user = await CreateUserAsync(email);
         _context.UserTagPreferences.Add(new UserTagPreference { UserProfileId = user.Id, Tag = "ai", Weight = 2 });
         await _context.SaveChangesAsync();
 
-        var resp = await _service.BumpTagPriorityAsync(email, "ai");
+        var resp = await _service.PromoteTagAsync(email, "ai");
         Assert.Equal(3, resp.Weight);
         var stored = await _context.UserTagPreferences.SingleAsync(p => p.UserProfileId == user.Id && p.Tag == "ai");
         Assert.Equal(3, stored.Weight);
+    }
+
+    [Fact]
+    public async Task DemoteTagAsync_Throws_WhenUserMissing()
+    {
+        var email = $"nouser_{Guid.NewGuid()}@example.com";
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.DemoteTagAsync(email, "ai"));
+    }
+
+    [Fact]
+    public async Task DemoteTagAsync_Throws_WhenTagMissing()
+    {
+        var email = $"user_notag_{Guid.NewGuid()}@example.com";
+        await CreateUserAsync(email);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.DemoteTagAsync(email, "ai"));
+    }
+
+    [Fact]
+    public async Task DemoteTagAsync_Throws_WhenTagIsBanned()
+    {
+        var email = $"user_banned_{Guid.NewGuid()}@example.com";
+        var user = await CreateUserAsync(email);
+        _context.UserTagPreferences.Add(new UserTagPreference { UserProfileId = user.Id, Tag = "ai", Weight = 0 });
+        await _context.SaveChangesAsync();
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _service.DemoteTagAsync(email, "ai"));
+        Assert.Contains("banned", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task DemoteTagAsync_Throws_WhenTagWeightIs1()
+    {
+        var email = $"user_weight1_{Guid.NewGuid()}@example.com";
+        var user = await CreateUserAsync(email);
+        _context.UserTagPreferences.Add(new UserTagPreference { UserProfileId = user.Id, Tag = "ai", Weight = 1 });
+        await _context.SaveChangesAsync();
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _service.DemoteTagAsync(email, "ai"));
+        Assert.Contains("below weight 1", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task DemoteTagAsync_DecrementsWeight()
+    {
+        var email = $"user_demote_{Guid.NewGuid()}@example.com";
+        var user = await CreateUserAsync(email);
+        _context.UserTagPreferences.Add(new UserTagPreference { UserProfileId = user.Id, Tag = "ai", Weight = 3 });
+        await _context.SaveChangesAsync();
+
+        var resp = await _service.DemoteTagAsync(email, "ai");
+        Assert.Equal(2, resp.Weight);
+        var stored = await _context.UserTagPreferences.SingleAsync(p => p.UserProfileId == user.Id && p.Tag == "ai");
+        Assert.Equal(2, stored.Weight);
     }
 
     [Fact]

@@ -80,8 +80,8 @@ public static class TagPreferenceEndpoints
             }
         });
 
-        // Bump tag priority (move to next weight group)
-        group.MapPost("/{tag}/bump", async (
+        // Promote tag priority (move to next weight group)
+        group.MapPost("/{tag}/promote", async (
             string tag,
             ITagPreferenceService tagPreferenceService,
             HttpContext httpContext) =>
@@ -96,7 +96,32 @@ public static class TagPreferenceEndpoints
 
             try
             {
-                var result = await tagPreferenceService.BumpTagPriorityAsync(email, tag);
+                var result = await tagPreferenceService.PromoteTagAsync(email, tag);
+                return Results.Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.BadRequest(ex.Message);
+            }
+        });
+
+        // Demote tag priority (move to previous weight group)
+        group.MapPost("/{tag}/demote", async (
+            string tag,
+            ITagPreferenceService tagPreferenceService,
+            HttpContext httpContext) =>
+        {
+            var email = httpContext.User.FindFirst(ClaimTypes.Email)?.Value;
+            if (string.IsNullOrEmpty(email)) return Results.Unauthorized();
+
+            if (string.IsNullOrWhiteSpace(tag))
+            {
+                return Results.BadRequest("Tag is required");
+            }
+
+            try
+            {
+                var result = await tagPreferenceService.DemoteTagAsync(email, tag);
                 return Results.Ok(result);
             }
             catch (InvalidOperationException ex)
