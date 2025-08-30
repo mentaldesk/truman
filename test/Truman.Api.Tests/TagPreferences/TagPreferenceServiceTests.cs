@@ -292,16 +292,23 @@ public class TagPreferenceServiceTests
         // Arrange
         var email = $"user_demote_{Guid.NewGuid()}@example.com";
         var user = await CreateUserAsync(email);
-        _context.UserTagPreferences.Add(new UserTagPreference { UserProfileId = user.Id, Tag = "ai", Weight = 3 });
+        // Non-contiguous groups: 1,3,5. Demoting from 5 should jump to 3 (previous existing group)
+        const string tagToDemote = "demoteMe";
+        _context.UserTagPreferences.AddRange(
+            new UserTagPreference { UserProfileId = user.Id, Tag = "low", Weight = 1 },
+            new UserTagPreference { UserProfileId = user.Id, Tag = "mid", Weight = 3 },
+            new UserTagPreference { UserProfileId = user.Id, Tag = tagToDemote, Weight = 5 },
+            new UserTagPreference { UserProfileId = user.Id, Tag = "high2", Weight = 5 }
+        );
         await _context.SaveChangesAsync(Ct);
 
         // Act
-        var resp = await _service.DemoteTagAsync(email, "ai");
+        var resp = await _service.DemoteTagAsync(email, tagToDemote);
 
         // Assert
-        Assert.Equal(2, resp.Weight);
-        var stored = await _context.UserTagPreferences.SingleAsync(p => p.UserProfileId == user.Id && p.Tag == "ai", Ct);
-        Assert.Equal(2, stored.Weight);
+        Assert.Equal(3, resp.Weight); // Should jump to previous existing weight group (3)
+        var stored = await _context.UserTagPreferences.SingleAsync(p => p.UserProfileId == user.Id && p.Tag == tagToDemote, Ct);
+        Assert.Equal(3, stored.Weight);
     }
 
     [Fact]

@@ -185,8 +185,25 @@ public class TagPreferenceService : ITagPreferenceService
             throw new InvalidOperationException($"Cannot demote tag '{tag}' below weight 1");
         }
 
-        // Demote the tag to the previous priority group
-        preference.Weight--;
+        // Determine previous existing lower weight group (skip gaps). Exclude banned (weight 0)
+        var lowerGroups = userProfile.TagPreferences
+            .Where(tp => tp.Weight < preference.Weight && tp.Weight > 0)
+            .Select(tp => tp.Weight)
+            .Distinct()
+            .OrderByDescending(w => w)
+            .ToList();
+
+        if (lowerGroups.Count > 0)
+        {
+            // Jump to previous existing group (largest lower)
+            preference.Weight = lowerGroups.First();
+        }
+        else
+        {
+            // No lower group (should not really happen if weight >1) – fallback to decrement by 1
+            preference.Weight--;
+        }
+
         await _dbContext.SaveChangesAsync();
 
         return new TagPreferenceResponse
