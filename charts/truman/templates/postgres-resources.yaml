@@ -1,0 +1,93 @@
+{{- if .Values.postgres.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "truman.fullname" . }}-postgres
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    component: postgres
+    {{- include "truman.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.postgres.type }}
+  selector:
+    component: postgres
+    {{- include "truman.selectorLabels" . | nindent 4 }}
+  ports:
+    - port: {{ .Values.service.postgres.port }}
+      targetPort: {{ .Values.postgres.containerPort }}
+      name: tcp
+{{- if and .Values.postgres.persistence.enabled (not .Values.postgres.persistence.existingClaim) .Values.postgres.persistence.hostPath }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ include "truman.fullname" . }}-postgres-pv
+  namespace: {{ .Values.namespace.name }}
+spec:
+  capacity:
+    storage: {{ .Values.postgres.persistence.size }}
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: {{ .Values.postgres.persistence.hostPath }}
+{{- end }}
+{{- if and .Values.postgres.persistence.enabled (not .Values.postgres.persistence.existingClaim) }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "truman.fullname" . }}-postgres-pvc
+  namespace: {{ .Values.namespace.name }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.postgres.persistence.size }}
+{{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "truman.fullname" . }}-postgres
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    component: postgres
+    {{- include "truman.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: postgres
+      {{- include "truman.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        component: postgres
+        {{- include "truman.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: postgres
+          image: {{ .Values.postgres.image }}
+          ports:
+            - containerPort: {{ .Values.postgres.containerPort }}
+          envFrom:
+            - secretRef:
+                name: {{ include "truman.secret.name" . }}
+          {{- if .Values.postgres.persistence.enabled }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          {{- end }}
+          resources:
+            {{- toYaml .Values.postgres.resources | nindent 12 }}
+      {{- if .Values.postgres.persistence.enabled }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ if .Values.postgres.persistence.existingClaim }}{{ .Values.postgres.persistence.existingClaim }}{{ else }}{{ include "truman.fullname" . }}-postgres-pvc{{ end }}
+      {{- end }}
+{{- end }}
+

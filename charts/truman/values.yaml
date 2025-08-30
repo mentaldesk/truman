@@ -1,0 +1,94 @@
+# Default values for truman chart.
+# These are sensible local-dev defaults. Override in values.prod.yaml for production.
+
+namespace:
+  name: truman
+  create: true
+
+secret:
+  existingName: truman-env # Pre-created Secret containing sensitive env vars
+
+config:
+  vite:
+    apiUrl: http://localhost:5001
+    environment: kind
+  postgres:
+    host: postgres.truman.svc.cluster.local
+
+image:
+  pullPolicy: IfNotPresent
+  api:
+    repository: truman-api
+    tag: latest
+  web:
+    repository: truman-web
+    tag: latest
+  jobrunner:
+    repository: truman-jobrunner
+    tag: latest
+
+replicaCount:
+  api: 1
+  web: 1
+
+api:
+  containerPort: 5001
+  extraEnv: [] # list of { name: X, value: Y }
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+web:
+  containerPort: 80
+  extraEnv: []
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+jobrunner:
+  schedule: "*/30 * * * *"
+  extraEnv: []
+  resources: {}
+
+postgres:
+  enabled: true # disable in production if using managed DB
+  image: postgres:16
+  containerPort: 5432
+  resources: {}
+  persistence:
+    enabled: true
+    size: 1Gi
+    hostPath: /var/lib/postgresql/data # used only for kind/local when no dynamic provisioner
+    existingClaim: "" # if set, skip creating PVC
+
+service:
+  api:
+    type: ClusterIP
+    port: 5001
+  web:
+    type: ClusterIP
+    port: 80
+  postgres:
+    type: ClusterIP
+    port: 5432
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: truman.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# Global pod annotations / labels
+podAnnotations: {}
+podLabels: {}
+
+# Common selector labels extension
+selectorLabels: {}
+

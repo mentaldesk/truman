@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "truman.fullname" . }}-api
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    component: api
+    {{- include "truman.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount.api }}
+  selector:
+    matchLabels:
+      component: api
+      {{- include "truman.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        component: api
+        {{- include "truman.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: api
+          image: "{{ .Values.image.api.repository }}:{{ .Values.image.api.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.api.containerPort }}
+          env:
+            - name: POSTGRES_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "truman.configmap.name" . }}
+                  key: POSTGRES_HOST
+          {{- if .Values.api.extraEnv }}
+          {{- toYaml .Values.api.extraEnv | nindent 10 }}
+          {{- end }}
+          envFrom:
+            - secretRef:
+                name: {{ include "truman.secret.name" . }}
+          resources:
+            {{- toYaml .Values.api.resources | nindent 12 }}
+      {{- with .Values.api.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.api.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.api.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
