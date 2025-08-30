@@ -210,16 +210,27 @@ public class TagPreferenceServiceTests
         // Arrange
         var email = $"user_promote_{Guid.NewGuid()}@example.com";
         var user = await CreateUserAsync(email);
-        _context.UserTagPreferences.Add(new UserTagPreference { UserProfileId = user.Id, Tag = "ai", Weight = 2 });
+        // Non-contiguous groups: 1, 2, 4. Promoting weight 2 should jump to 4 (next existing group)
+        const string tagToPromote = "pickMe";
+        _context.UserTagPreferences.AddRange(
+            new UserTagPreference { UserProfileId = user.Id, Tag = "low1", Weight = 1 },
+            new UserTagPreference { UserProfileId = user.Id, Tag = "low2", Weight = 1 },
+            new UserTagPreference { UserProfileId = user.Id, Tag = "mid1", Weight = 2 },
+            new UserTagPreference { UserProfileId = user.Id, Tag = tagToPromote, Weight = 2 },
+            new UserTagPreference { UserProfileId = user.Id, Tag = "mid2", Weight = 2 },
+            new UserTagPreference { UserProfileId = user.Id, Tag = "high1", Weight = 4 },
+            new UserTagPreference { UserProfileId = user.Id, Tag = "high2", Weight = 4 },
+            new UserTagPreference { UserProfileId = user.Id, Tag = "high3", Weight = 5 }
+        );
         await _context.SaveChangesAsync(Ct);
 
         // Act
-        var resp = await _service.PromoteTagAsync(email, "ai");
+        var resp = await _service.PromoteTagAsync(email, tagToPromote);
 
         // Assert
-        Assert.Equal(3, resp.Weight);
-        var stored = await _context.UserTagPreferences.SingleAsync(p => p.UserProfileId == user.Id && p.Tag == "ai", Ct);
-        Assert.Equal(3, stored.Weight);
+        Assert.Equal(4, resp.Weight); // Should jump to next existing weight group (4)
+        var stored = await _context.UserTagPreferences.SingleAsync(p => p.UserProfileId == user.Id && p.Tag == tagToPromote, Ct);
+        Assert.Equal(4, stored.Weight);
     }
 
     [Fact]

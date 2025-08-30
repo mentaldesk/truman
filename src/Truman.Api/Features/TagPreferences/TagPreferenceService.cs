@@ -128,8 +128,25 @@ public class TagPreferenceService : ITagPreferenceService
             throw new InvalidOperationException($"Cannot promote banned tag '{tag}'");
         }
 
-        // Promote the tag to the next priority group
-        preference.Weight++;
+        // Determine next existing higher weight group (skip gaps). Exclude banned (weight 0)
+        var higherGroups = userProfile.TagPreferences
+            .Where(tp => tp.Weight > preference.Weight && tp.Weight > 0)
+            .Select(tp => tp.Weight)
+            .Distinct()
+            .OrderBy(w => w)
+            .ToList();
+
+        if (higherGroups.Count > 0)
+        {
+            // Jump to next existing group
+            preference.Weight = higherGroups.First();
+        }
+        else
+        {
+            // No higher group exists – create a new top group by incrementing
+            preference.Weight++;
+        }
+
         await _dbContext.SaveChangesAsync();
 
         return new TagPreferenceResponse
