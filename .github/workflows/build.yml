@@ -46,8 +46,7 @@ jobs:
             --configuration Release \
             --no-build \
             --logger "trx;LogFileName=test-results.trx" \
-            --coverage --coverage-output-format cobertura \
-            --coverage-output ./TestResults/coverage/coverage.cobertura.xml
+            --collect:"XPlat Code Coverage" 
 
       - name: Upload test results artifact
         if: always()
