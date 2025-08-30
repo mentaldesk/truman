@@ -9,8 +9,14 @@ using Truman.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add dotnet-env configuration source to load from .env file
+#if DEBUG
+// Add a dotnet-env configuration source to bind to the `.env` file when developing locally.
+// NOTE: When running in k8s / production, the .env file won't be present and these values must be
+// read from the environment instead. 
+// 1. The env file gets loaded by the `k8s-create-secret` task as secrets into k8s.
+// 2. Those secrets get added as environment variables via an `envFrom` in the deployment manifest.
 builder.Configuration.AddDotNetEnv(".env", LoadOptions.TraversePath());
+#endif
 
 // Add database context
 var connectionString = builder.Configuration.GetPostgresConnectionString();
