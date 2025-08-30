@@ -40,13 +40,17 @@ jobs:
       - name: Build
         run: dotnet build truman.sln --configuration Release --no-restore
 
+      # Note the extra `--` before the MTP parameters so that dotnet doesn't try to parse these
       - name: Test (with coverage)
         run: |
           dotnet test truman.sln \
             --configuration Release \
             --no-build \
-            --logger "trx;LogFileName=test-results.trx" \
-            --collect:"XPlat Code Coverage" 
+            -- \
+            --report-trx \
+            --report-trx-filename test-results.trx \
+            --coverage --coverage-output-format cobertura \
+            --coverage-output ./TestResults/coverage/coverage.cobertura.xml
 
       - name: Upload test results artifact
         if: always()
@@ -56,7 +60,7 @@ jobs:
           path: |
             **/TestResults/*.trx
             **/TestResults/*.log
-            **/TestResults/*.xml
+            **/TestResults/coverage/*.xml
           if-no-files-found: ignore
 
       - name: Upload coverage reports to Codecov
@@ -64,7 +68,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: mentaldesk/truman
-          files: '**/TestResults/coverage.cobertura.xml'
+          files: '**/TestResults/coverage/coverage.cobertura.xml'
           fail_ci_if_error: true
           verbose: true
 
