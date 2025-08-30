@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Truman.Api.Features.Profile;
 using Truman.Data;
 using Truman.Data.Entities;
+using System.Threading; // added
 
 namespace Truman.Api.Tests.Profile;
 
@@ -11,6 +12,7 @@ public class ProfileServiceTests
 {
     private readonly TrumanDbContext _context;
     private readonly ProfileService _service;
+    private static readonly CancellationToken Ct = CancellationToken.None; // reuse token
 
     public ProfileServiceTests(DatabaseFixture fixture)
     {
@@ -45,17 +47,17 @@ public class ProfileServiceTests
         var email = "user1@example.com";
 
         // Seed data if not already
-        if (!await _context.UserProfiles.AnyAsync(u => u.Email == email))
+        if (!await _context.UserProfiles.AnyAsync(u => u.Email == email, Ct))
         {
             var user = new UserProfile { Email = email, Mood = 7 };
             _context.UserProfiles.Add(user);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(Ct);
 
             _context.UserTagPreferences.AddRange(
                 new UserTagPreference { UserProfileId = user.Id, Tag = "ai", Weight = 3 },
                 new UserTagPreference { UserProfileId = user.Id, Tag = "cloud", Weight = 1 }
             );
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(Ct);
         }
 
         var profile = await _service.GetUserProfileAsync(email);

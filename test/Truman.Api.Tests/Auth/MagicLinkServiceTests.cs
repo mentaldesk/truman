@@ -10,6 +10,7 @@ public class MagicLinkServiceTests
 {
     private readonly TrumanDbContext _context;
     private readonly MagicLinkService _service;
+    private static readonly CancellationToken Ct = CancellationToken.None; // reuse token
 
     public MagicLinkServiceTests(DatabaseFixture fixture)
     {
@@ -25,7 +26,7 @@ public class MagicLinkServiceTests
         var code = await _service.GenerateMagicLinkAsync(email);
         var after = DateTime.UtcNow;
 
-        var record = await _context.MagicLinks.SingleAsync(m => m.Code == code);
+        var record = await _context.MagicLinks.SingleAsync(m => m.Code == code, Ct);
         Assert.Equal(email, record.Email);
         Assert.True(record.ExpiresAt > before.AddMinutes(4.5)); // about 5 minutes
         Assert.True(record.ExpiresAt <= after.AddMinutes(5.5));
@@ -58,7 +59,7 @@ public class MagicLinkServiceTests
         Assert.Equal(email, result.Email);
 
         // Should be deleted from DB
-        var stillExists = await _context.MagicLinks.AnyAsync(m => m.Code == code);
+        var stillExists = await _context.MagicLinks.AnyAsync(m => m.Code == code, Ct);
         Assert.False(stillExists);
     }
 
@@ -86,11 +87,11 @@ public class MagicLinkServiceTests
             CreatedAt = DateTime.UtcNow.AddMinutes(-6)
         };
         _context.MagicLinks.Add(expired);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(Ct);
 
         var result = await _service.ValidateMagicLinkAsync(code);
         Assert.Null(result);
-        Assert.False(await _context.MagicLinks.AnyAsync(m => m.Code == code));
+        Assert.False(await _context.MagicLinks.AnyAsync(m => m.Code == code, Ct));
     }
 
     [Fact]

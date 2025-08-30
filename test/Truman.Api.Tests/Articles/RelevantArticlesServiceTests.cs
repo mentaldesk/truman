@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Truman.Api.Features.Articles;
 using Truman.Data;
 using Truman.Data.Entities;
+using System.Threading; // added
 
 namespace Truman.Api.Tests.Articles;
 
@@ -12,6 +13,7 @@ public class RelevantArticlesServiceTests : IAsyncLifetime
 {
     private readonly DbContextOptions<TrumanDbContext> _dbOptions;
     private readonly TrumanDbContext _ctx;
+    private static readonly CancellationToken Ct = CancellationToken.None; // reuse token
 
     public RelevantArticlesServiceTests(DatabaseFixture fixture)
     {
@@ -28,7 +30,7 @@ public class RelevantArticlesServiceTests : IAsyncLifetime
         _ctx.UserTagPreferences.RemoveRange(_ctx.UserTagPreferences);
         _ctx.UserProfiles.RemoveRange(_ctx.UserProfiles);
         _ctx.RssItems.RemoveRange(_ctx.RssItems);
-        return new ValueTask(_ctx.SaveChangesAsync());
+        return new ValueTask(_ctx.SaveChangesAsync(Ct));
     }
     
     public ValueTask DisposeAsync()
@@ -132,7 +134,7 @@ public class RelevantArticlesServiceTests : IAsyncLifetime
         });
 
         _ctx.Articles.AddRange(a1,a2,a3,a4);
-        await _ctx.SaveChangesAsync();
+        await _ctx.SaveChangesAsync(Ct);
 
         var resp = await service.GetRelevantArticlesAsync(new RelevantArticlesRequest{ Presenter = "Default"}, user);
         Assert.Single(resp.Articles);
@@ -156,7 +158,7 @@ public class RelevantArticlesServiceTests : IAsyncLifetime
         a2.ArticlePresenters.Add(new ArticlePresenter{ Presenter = basePresenter, Title="A2", Tldr="A2", Content="A2"});
 
         _ctx.Articles.AddRange(a1,a2);
-        await _ctx.SaveChangesAsync();
+        await _ctx.SaveChangesAsync(Ct);
 
         var resp = await service.GetRelevantArticlesAsync(new RelevantArticlesRequest{ Presenter = "Default"}, user);
         Assert.Equal(2, resp.Articles.Count);
@@ -180,7 +182,7 @@ public class RelevantArticlesServiceTests : IAsyncLifetime
         art.ArticlePresenters.Add(new ArticlePresenter{ Presenter = pDefault, Title="Default Title", Tldr="Default TLDR", Content="Default Content"});
         art.ArticlePresenters.Add(new ArticlePresenter{ Presenter = pBrief, Title="Brief Title", Tldr="Brief TLDR", Content="Brief Content"});
         _ctx.Articles.Add(art);
-        await _ctx.SaveChangesAsync();
+        await _ctx.SaveChangesAsync(Ct);
 
         var respBrief = await service.GetRelevantArticlesAsync(new RelevantArticlesRequest{ Presenter = "Brief"}, user);
         Assert.Single(respBrief.Articles);
