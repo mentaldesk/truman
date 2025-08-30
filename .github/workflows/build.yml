@@ -55,7 +55,8 @@ jobs:
           name: test-results
           path: |
             **/TestResults/*.trx
-            **/TestResults/coverage/*.xml
+            **/TestResults/*.log
+            **/TestResults/*.xml
           if-no-files-found: ignore
 
       - name: Upload coverage reports to Codecov
@@ -63,7 +64,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: mentaldesk/truman
-          files: '**/coverage.cobertura.xml,**/TestResults/coverage/coverage.cobertura.xml,**/TestResults/coverage/*.xml'
+          files: '**/TestResults/coverage.cobertura.xml'
           fail_ci_if_error: true
           verbose: true
 
