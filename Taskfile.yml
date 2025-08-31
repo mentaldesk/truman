@@ -69,15 +69,15 @@ tasks:
   helm-template-dev:
     desc: Render Helm manifests (dev) to /tmp/truman.rendered.yaml for inspection
     cmds:
-      - "helm template truman charts/truman -f charts/truman/values.yaml -f charts/truman/values.dev.yaml > /tmp/truman.rendered.yaml && echo 'Rendered: /tmp/truman.rendered.yaml'"
+      - "helm template truman k8s/charts/truman -f k8s/charts/truman/values.yaml -f k8s/charts/truman/values.dev.yaml > /tmp/truman.rendered.yaml && echo 'Rendered: /tmp/truman.rendered.yaml'"
 
   helm-dev-deploy:
     desc: Build+load images, ensure secret, install/upgrade release (forces restart via timestamp)
     deps: [build-and-load-images, helm-create-secret, helm-ensure-namespace]
     cmds:
-      - TS=$(date +%s) && helm upgrade --install truman ./charts/truman \
+      - TS=$(date +%s) && helm upgrade --install truman k8s/charts/truman \
           -n truman --create-namespace \
-          -f charts/truman/values.yaml -f charts/truman/values.dev.yaml \
+          -f k8s/charts/truman/values.yaml -f k8s/charts/truman/values.dev.yaml \
           --set image.api.repository=truman-api,image.api.tag=latest \
           --set image.web.repository=truman-web,image.web.tag=latest \
           --set image.jobrunner.repository=truman-jobrunner,image.jobrunner.tag=latest \
