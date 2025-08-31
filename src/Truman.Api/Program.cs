@@ -12,7 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 #if DEBUG
 // Add a dotnet-env configuration source to bind to the `.env` file when developing locally.
 // NOTE: When running in k8s / production, the .env file won't be present and these values must be
-// read from the environment instead. 
+// read from the environment instead.
 // 1. The env file gets loaded by the `k8s-create-secret` task as secrets into k8s.
 // 2. Those secrets get added as environment variables via an `envFrom` in the deployment manifest.
 builder.Configuration.AddDotNetEnv(".env", LoadOptions.TraversePath());
@@ -25,9 +25,9 @@ builder.Services.AddDbContext<TrumanDbContext>(options => options.UseNpgsql(conn
 // Add Sentry for diagnostics
 builder.WebHost.UseSentry(options =>
 {
-#if DEBUG    
+#if DEBUG
     options.Debug = true;
-#endif    
+#endif
     options.Dsn = builder.Configuration["Sentry:Dsn"];
     options.Environment = builder.Environment.EnvironmentName;
     options.TracesSampleRate = 1.0; // Adjust as needed
@@ -65,6 +65,8 @@ builder.Services.AddCors(options =>
     options.AddDefaultPolicy(policy =>
     {
         var frontendConfig = builder.Configuration.GetSection("Frontend").Get<FrontendConfiguration>();
+        // For debug purposes
+        Console.WriteLine("Frontend.BaseUrl = {0}", frontendConfig?.BaseUrl);
         var frontendUrl = frontendConfig?.BaseUrl ?? "http://localhost:3000";
         policy.WithOrigins(frontendUrl)
               .AllowAnyMethod()

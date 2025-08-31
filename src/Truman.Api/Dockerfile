@@ -8,6 +8,7 @@ ARG SENTRY_AUTH_TOKEN
 ENV SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN
 WORKDIR /src
 COPY ["Truman.Api/Truman.Api.csproj", "Truman.Api/"]
+COPY ["Truman.Data/Truman.Data.csproj", "Truman.Data/"]
 COPY Directory.Packages.props ./
 COPY Directory.Build.props ./
 RUN dotnet restore "Truman.Api/Truman.Api.csproj"

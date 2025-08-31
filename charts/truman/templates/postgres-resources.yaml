@@ -24,6 +24,9 @@ kind: PersistentVolume
 metadata:
   name: {{ include "truman.fullname" . }}-postgres-pv
   namespace: {{ .Values.namespace.name }}
+  labels:
+    component: postgres
+    {{- include "truman.labels" . | nindent 4 }}
 spec:
   capacity:
     storage: {{ .Values.postgres.persistence.size }}
@@ -40,6 +43,9 @@ kind: PersistentVolumeClaim
 metadata:
   name: {{ include "truman.fullname" . }}-postgres-pvc
   namespace: {{ .Values.namespace.name }}
+  labels:
+    component: postgres
+    {{- include "truman.labels" . | nindent 4 }}
 spec:
   accessModes:
     - ReadWriteOnce
@@ -90,4 +96,3 @@ spec:
             claimName: {{ if .Values.postgres.persistence.existingClaim }}{{ .Values.postgres.persistence.existingClaim }}{{ else }}{{ include "truman.fullname" . }}-postgres-pvc{{ end }}
       {{- end }}
 {{- end }}
-

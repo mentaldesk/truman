@@ -74,6 +74,9 @@ service:
     type: ClusterIP
     port: 5432
 
+migrations:
+  enabled: true
+
 ingress:
   enabled: false
   className: ""
@@ -91,4 +94,3 @@ podLabels: {}
 
 # Common selector labels extension
 selectorLabels: {}
-

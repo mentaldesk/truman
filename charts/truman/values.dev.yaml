@@ -1,0 +1,41 @@
+# Development overrides for the truman chart (kind/local)
+# Merge order: values.yaml (base) <- values.dev.yaml (this file) <- any --set flags
+
+namespace:
+  name: truman
+  create: false  # namespace managed outside Helm in dev to avoid adoption errors
+
+config:
+  vite:
+    apiUrl: "http://localhost:5001"  # Browser hits port-forward on host, not cluster DNS
+    environment: dev
+  postgres:
+    host: "truman-postgres.truman.svc.cluster.local"
+
+image:
+  pullPolicy: IfNotPresent
+  api:
+    repository: truman-api
+    tag: latest
+  web:
+    repository: truman-web
+    tag: latest
+  jobrunner:
+    repository: truman-jobrunner
+    tag: latest
+
+replicaCount:
+  api: 1
+  web: 1
+
+postgres:
+  enabled: true
+  persistence:
+    enabled: true
+    size: 1Gi
+    hostPath: /var/lib/postgresql/data
+
+ingress:
+  enabled: false
+
+# Keep default service types (ClusterIP) for local dev

@@ -24,20 +24,25 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.api.containerPort }}
+          envFrom:
+            - secretRef:
+                name: {{ include "truman.secret.name" . }}
           env:
             - name: POSTGRES_HOST
               valueFrom:
                 configMapKeyRef:
                   name: {{ include "truman.configmap.name" . }}
                   key: POSTGRES_HOST
-          {{- if .Values.api.extraEnv }}
-          {{- toYaml .Values.api.extraEnv | nindent 10 }}
-          {{- end }}
-          envFrom:
-            - secretRef:
-                name: {{ include "truman.secret.name" . }}
+            {{- if .Values.api.extraEnv }}
+            {{- range .Values.api.extraEnv }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
+            {{- end }}
+          {{- with .Values.api.resources }}
           resources:
-            {{- toYaml .Values.api.resources | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
       {{- with .Values.api.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -50,4 +55,3 @@ spec:
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-

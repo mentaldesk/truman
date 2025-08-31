@@ -27,7 +27,6 @@ try
         })
         .ConfigureLogging((context, logging) =>
         {
-            
             logging.ClearProviders();
             logging.AddSentry(options =>
             {
@@ -65,6 +64,7 @@ try
                     sp.GetRequiredService<IConfiguration>()
                 )
             );
+            services.AddSingleton<DbMigrator>();
 
             services
                 .AddHttpClient("GeminiClient")
@@ -104,7 +104,13 @@ try
         })
         .Build();
 
-    if (args.Contains("--fetch"))
+    if (args.Contains("--run-migrations"))
+    {
+        var migrator = host.Services.GetRequiredService<DbMigrator>();
+        await migrator.RunAsync();
+        return; // success
+    }
+    else if (args.Contains("--fetch"))
     {
         var fetcher = host.Services.GetRequiredService<RssFetcher>();
         await fetcher.RunAsync();
