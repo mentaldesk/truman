@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "truman.fullname" . }}-web
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    component: web
+    {{- include "truman.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount.web }}
+  selector:
+    matchLabels:
+      component: web
+      {{- include "truman.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        component: web
+        {{- include "truman.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: web
+          image: "{{ .Values.image.web.repository }}:{{ .Values.image.web.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.web.containerPort }}
+          envFrom:
+            - secretRef:
+                name: {{ include "truman.secret.name" . }}
+          env:
+            - name: VITE_API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "truman.configmap.name" . }}
+                  key: VITE_API_URL
+            {{- if .Values.web.extraEnv }}
+            {{- range .Values.web.extraEnv }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
+            {{- end }}
+          {{- with .Values.web.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.web.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.web.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.web.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

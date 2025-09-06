@@ -17,6 +17,9 @@ public class RssFetcher(
 
         var feeds = new[]
         {
+            "https://www.newscientist.com/feed/home/",
+            "http://rss.sciam.com/basic-science",
+            "https://devblogs.microsoft.com/dotnet/feed/",
             "https://www.rnz.co.nz/rss/business.xml",
             "https://www.rnz.co.nz/rss/media-technology.xml",
             "https://www.rnz.co.nz/rss/world.xml",

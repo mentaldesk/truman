@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "truman.configmap.name" . }}
+  {{- if .Values.namespace.name }}
+  namespace: {{ .Values.namespace.name }}
+  {{- end }}
+  labels:
+    {{- include "truman.labels" . | nindent 4 }}
+data:
+  VITE_API_URL: {{ .Values.config.vite.apiUrl | quote }}
+  VITE_ENVIRONMENT: {{ .Values.config.vite.environment | quote }}
+  POSTGRES_HOST: {{ .Values.config.postgres.host | quote }}
+

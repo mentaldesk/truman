@@ -6,6 +6,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.gitignore = .gitignore
 		CONTRIBUTING.md = CONTRIBUTING.md
 		README.md = README.md
+		Taskfile.yml = Taskfile.yml
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Truman.Data", "src\Truman.Data\Truman.Data.csproj", "{4B431125-D3BD-45F1-BBC5-0A8FFB5DF8CA}"

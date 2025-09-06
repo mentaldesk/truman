@@ -1,0 +1,38 @@
+{{- if .Values.postgres.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "truman.fullname" . }}-migrations
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    component: migrations
+    {{- include "truman.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,pre-upgrade
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        component: migrations
+        {{- include "truman.selectorLabels" . | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: "{{ .Values.image.jobrunner.repository }}:{{ .Values.image.jobrunner.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - "--run-migrations"
+          envFrom:
+            - secretRef:
+                name: {{ include "truman.secret.name" . }}
+          env:
+            - name: POSTGRES_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "truman.configmap.name" . }}
+                  key: POSTGRES_HOST
+{{- end }}
