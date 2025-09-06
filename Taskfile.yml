@@ -75,14 +75,15 @@ tasks:
     desc: Build+load images, ensure secret, install/upgrade release (forces restart via timestamp)
     deps: [build-and-load-images, helm-create-secret, helm-ensure-namespace]
     cmds:
-      - TS=$(date +%s) && helm upgrade --install truman k8s/charts/truman \
-          -n truman --create-namespace \
-          -f k8s/charts/truman/values.yaml -f k8s/charts/truman/values.dev.yaml \
-          --set image.api.repository=truman-api,image.api.tag=latest \
-          --set image.web.repository=truman-web,image.web.tag=latest \
-          --set image.jobrunner.repository=truman-jobrunner,image.jobrunner.tag=latest \
-          --set api.extraEnv[0].name=FORCE_REDEPLOY --set api.extraEnv[0].value=$TS \
-          --set web.extraEnv[0].name=FORCE_REDEPLOY --set web.extraEnv[0].value=$TS \
+      - >-
+          TS=$(date +%s) && helm upgrade --install truman k8s/charts/truman
+          -n truman --create-namespace
+          -f k8s/charts/truman/values.yaml -f k8s/charts/truman/values.dev.yaml
+          --set image.api.repository=truman-api,image.api.tag=latest
+          --set image.web.repository=truman-web,image.web.tag=latest
+          --set image.jobrunner.repository=truman-jobrunner,image.jobrunner.tag=latest
+          --set api.extraEnv[0].name=FORCE_REDEPLOY --set api.extraEnv[0].value=$TS
+          --set web.extraEnv[0].name=FORCE_REDEPLOY --set web.extraEnv[0].value=$TS
           --wait --timeout 180s
 
   helm-dev-uninstall:
