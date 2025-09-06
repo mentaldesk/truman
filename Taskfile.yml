@@ -105,9 +105,9 @@ tasks:
   helm-port-forward:
     desc: Port-forward API (5001) & Web (3000) & Postgres (5432) to localhost
     cmds:
-      - bash -c 'kubectl port-forward -n truman svc/truman-truman-api 5001:5001 >/dev/null 2>&1 &' 
-      - bash -c 'kubectl port-forward -n truman svc/truman-truman-web 3000:80 >/dev/null 2>&1 &' 
-      - bash -c 'kubectl port-forward -n truman svc/truman-truman-postgres 5432:5432 >/dev/null 2>&1 || true' 
-      - echo "DB exposted on port 5423"
-      - echo "Web exposted on port 3000"
-      - echo "API exposted on port 5001"
+      - bash -c 'if [ -f /tmp/pf-truman-api.pid ] && kill -0 $(cat /tmp/pf-truman-api.pid) 2>/dev/null; then kill "$(cat /tmp/pf-truman-api.pid)" || true; fi; nohup kubectl port-forward -n truman svc/truman-api 5001:5001 --address 127.0.0.1 >/tmp/pf-truman-api.log 2>&1 & echo $! > /tmp/pf-truman-api.pid'
+      - bash -c 'if [ -f /tmp/pf-truman-web.pid ] && kill -0 $(cat /tmp/pf-truman-web.pid) 2>/dev/null; then kill "$(cat /tmp/pf-truman-web.pid)" || true; fi; nohup kubectl port-forward -n truman svc/truman-web 3000:80 --address 127.0.0.1 >/tmp/pf-truman-web.log 2>&1 & echo $! > /tmp/pf-truman-web.pid'
+      - bash -c 'if [ -f /tmp/pf-truman-postgres.pid ] && kill -0 $(cat /tmp/pf-truman-postgres.pid) 2>/dev/null; then kill "$(cat /tmp/pf-truman-postgres.pid)" || true; fi; nohup kubectl port-forward -n truman svc/truman-postgres 5432:5432 --address 127.0.0.1 >/tmp/pf-truman-postgres.log 2>&1 & echo $! > /tmp/pf-truman-postgres.pid'
+      - echo "DB exposed on port 5432"
+      - echo "Web exposed on port 3000"
+      - echo "API exposed on port 5001"
