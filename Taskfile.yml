@@ -91,7 +91,7 @@ tasks:
       - helm uninstall truman -n truman || true
 
   helm-dev-reset:
-    desc: Uninstall release and remove leftover postgres & PVC artifacts (DANGEROUS: data loss)
+    desc: Uninstall release and remove leftover postgres & PVC artifacts (DANGER)
     cmds:
       - helm uninstall truman -n truman || true
       - kubectl delete deployment truman-postgres -n truman --ignore-not-found
@@ -107,4 +107,6 @@ tasks:
       - bash -c 'kubectl port-forward -n truman svc/truman-truman-api 5001:5001 >/dev/null 2>&1 &' 
       - bash -c 'kubectl port-forward -n truman svc/truman-truman-web 3000:80 >/dev/null 2>&1 &' 
       - bash -c 'kubectl port-forward -n truman svc/truman-truman-postgres 5432:5432 >/dev/null 2>&1 || true' 
-      - echo "Port-forwards active: API:5001 Web:3000 Postgres:5432"
+      - echo "DB exposted on port 5423"
+      - echo "Web exposted on port 3000"
+      - echo "API exposted on port 5001"
