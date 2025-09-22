@@ -1,9 +1,7 @@
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Truman.Api.Features.Profile;
 using Truman.Data;
 using Truman.Data.Entities;
-using System.Threading; // added
 
 namespace Truman.Api.Tests.Profile;
 
@@ -12,8 +10,9 @@ public class ProfileServiceTests
 {
     private readonly TrumanDbContext _context;
     private readonly ProfileService _service;
-    private static readonly CancellationToken Ct = CancellationToken.None; // reuse token
 
+    private static readonly CancellationToken Ct = CancellationToken.None; // reuse token
+    
     public ProfileServiceTests(DatabaseFixture fixture)
     {
         _context = new TrumanDbContext(fixture.DbOptions);
@@ -44,9 +43,8 @@ public class ProfileServiceTests
     [Fact]
     public async Task GetUserProfileAsync_ReturnsProfile_WithTagPreferences()
     {
-        var email = "user1@example.com";
-
-        // Seed data if not already
+        // Arrange
+        const string email = "user1@example.com";
         if (!await _context.UserProfiles.AnyAsync(u => u.Email == email, Ct))
         {
             var user = new UserProfile { Email = email, Mood = 7 };
@@ -60,7 +58,10 @@ public class ProfileServiceTests
             await _context.SaveChangesAsync(Ct);
         }
 
+        // Act
         var profile = await _service.GetUserProfileAsync(email);
+        
+        // Assert
         Assert.NotNull(profile);
         Assert.Equal(email, profile!.Email);
         Assert.NotNull(profile.TagPreferences);
