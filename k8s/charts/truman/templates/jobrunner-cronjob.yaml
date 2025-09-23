@@ -21,18 +21,12 @@ spec:
             - name: jobrunner
               image: "{{ .Values.image.jobrunner.repository }}:{{ .Values.image.jobrunner.tag }}"
               imagePullPolicy: {{ .Values.image.pullPolicy }}
-              env:
-                - name: POSTGRES_HOST
-                  valueFrom:
-                    configMapKeyRef:
-                      name: {{ include "truman.configmap.name" . }}
-                      key: POSTGRES_HOST
               {{- if .Values.jobrunner.extraEnv }}
-              {{- toYaml .Values.jobrunner.extraEnv | nindent 14 }}
+              env:
+                {{- toYaml .Values.jobrunner.extraEnv | nindent 16 }}
               {{- end }}
               envFrom:
                 - secretRef:
                     name: {{ include "truman.secret.name" . }}
               resources:
                 {{- toYaml .Values.jobrunner.resources | nindent 16 }}
-

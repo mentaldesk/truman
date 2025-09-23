@@ -1,0 +1,44 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "truman.fullname" . }}
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "truman.labels" . | nindent 4 }}
+  {{- if .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml .Values.ingress.annotations | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
+  rules:
+    {{- range .Values.ingress.hosts }}
+    - host: {{ .host }}
+      http:
+        paths:
+          # API endpoints
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "truman.fullname" $ }}-api
+                port:
+                  number: {{ $.Values.service.api.port }}
+          # Web frontend - catch-all last
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "truman.fullname" $ }}-web
+                port:
+                  number: {{ $.Values.service.web.port }}
+    {{- end }}
+  {{- if .Values.ingress.tls }}
+  tls:
+    {{- toYaml .Values.ingress.tls | nindent 4 }}
+  {{- end }}
+{{- end }}
+

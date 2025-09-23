@@ -9,8 +9,6 @@ config:
   vite:
     apiUrl: "http://localhost:5001"  # Browser hits port-forward on host, not cluster DNS
     environment: dev
-  postgres:
-    host: "truman-postgres.truman.svc.cluster.local"
 
 image:
   pullPolicy: IfNotPresent

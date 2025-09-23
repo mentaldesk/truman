@@ -10,5 +10,4 @@ metadata:
 data:
   VITE_API_URL: {{ .Values.config.vite.apiUrl | quote }}
   VITE_ENVIRONMENT: {{ .Values.config.vite.environment | quote }}
-  POSTGRES_HOST: {{ .Values.config.postgres.host | quote }}
-
+  # Note: POSTGRES_HOST is intentionally not set here. It should come from the Secret.

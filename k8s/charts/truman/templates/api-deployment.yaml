@@ -27,18 +27,13 @@ spec:
           envFrom:
             - secretRef:
                 name: {{ include "truman.secret.name" . }}
+          {{- if .Values.api.extraEnv }}
           env:
-            - name: POSTGRES_HOST
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "truman.configmap.name" . }}
-                  key: POSTGRES_HOST
-            {{- if .Values.api.extraEnv }}
             {{- range .Values.api.extraEnv }}
             - name: {{ .name }}
               value: {{ .value | quote }}
             {{- end }}
-            {{- end }}
+          {{- end }}
           {{- with .Values.api.resources }}
           resources:
             {{- toYaml . | nindent 12 }}

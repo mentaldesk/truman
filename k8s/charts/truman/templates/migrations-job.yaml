@@ -1,4 +1,4 @@
-{{- if .Values.postgres.enabled }}
+{{- if .Values.migrations.enabled }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -29,10 +29,4 @@ spec:
           envFrom:
             - secretRef:
                 name: {{ include "truman.secret.name" . }}
-          env:
-            - name: POSTGRES_HOST
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "truman.configmap.name" . }}
-                  key: POSTGRES_HOST
 {{- end }}

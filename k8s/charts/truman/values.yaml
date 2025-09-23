@@ -12,8 +12,7 @@ config:
   vite:
     apiUrl: http://localhost:5001
     environment: kind
-  postgres:
-    host: postgres.truman.svc.cluster.local
+  # Note: POSTGRES_HOST is intentionally not configured here; supply via Secret.
 
 image:
   pullPolicy: IfNotPresent

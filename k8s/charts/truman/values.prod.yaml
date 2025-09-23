@@ -1,0 +1,99 @@
+# Production overrides for the truman chart (Civo + Supabase)
+# Merge order: values.yaml (base) <- values.prod.yaml (this file) <- any --set flags
+
+namespace:
+  name: truman
+  create: true
+
+secret:
+  # Pre-created Secret with app credentials and sensitive env vars (see below for keys)
+  existingName: truman-env
+
+config:
+  vite:
+    # Public origin the browser should call. DO NOT include trailing slash or /api
+    apiUrl: "https://truman.news"
+    environment: prod
+
+image:
+  pullPolicy: IfNotPresent
+  api:
+    repository: ghcr.io/your-org/truman-api
+    tag: v1.0.0
+  web:
+    repository: ghcr.io/your-org/truman-web
+    tag: v1.0.0
+  jobrunner:
+    repository: ghcr.io/your-org/truman-jobrunner
+    tag: v1.0.0
+
+replicaCount:
+  api: 2
+  web: 2
+
+api:
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+  # Non-sensitive DB connection toggles for Supabase (credentials live in Secret)
+  extraEnv:
+    - name: POSTGRES_SSL_MODE
+      value: "Require"
+    - name: POSTGRES_TRUST_SERVER_CERT
+      value: "true"
+
+web:
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "128Mi"
+    limits:
+      cpu: "200m"
+      memory: "256Mi"
+
+jobrunner:
+  # Update cadence for fetching/analyzing content
+  schedule: "*/30 * * * *"
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "128Mi"
+    limits:
+      cpu: "200m"
+      memory: "256Mi"
+  extraEnv:
+    - name: POSTGRES_SSL_MODE
+      value: "Require"
+    - name: POSTGRES_TRUST_SERVER_CERT
+      value: "true"
+
+postgres:
+  # Disable in production since we use Supabase
+  enabled: false
+
+migrations:
+  # Run migrations against external Supabase database
+  enabled: true
+
+ingress:
+  enabled: true
+  className: traefik
+  annotations:
+    # If you use cert-manager on Civo, uncomment the next line and set your ClusterIssuer
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: truman.news
+  tls:
+    - secretName: truman-tls
+      hosts:
+        - truman.news
+
+# Keep default service types (ClusterIP)
+# Optionally add node selectors / tolerations if you use dedicated node pools
+# podAnnotations: {}
+# podLabels: {}
+# selectorLabels: {}

@@ -33,6 +33,11 @@ spec:
                 configMapKeyRef:
                   name: {{ include "truman.configmap.name" . }}
                   key: VITE_API_URL
+            - name: VITE_ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "truman.configmap.name" . }}
+                  key: VITE_ENVIRONMENT
             {{- if .Values.web.extraEnv }}
             {{- range .Values.web.extraEnv }}
             - name: {{ .name }}

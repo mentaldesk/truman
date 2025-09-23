@@ -42,6 +42,14 @@ tasks:
       - kubectl delete secret truman-env -n truman --ignore-not-found
       - kubectl create secret generic truman-env --from-env-file=.env -n truman
 
+  # Production secret from .env.production
+  helm-create-secret-prod:
+    desc: Create/update secret from .env.production for Helm-managed release
+    dotenv: ['.env.production']
+    cmds:
+      - kubectl delete secret truman-env -n truman --ignore-not-found
+      - kubectl create secret generic truman-env --from-env-file=.env.production -n truman
+
   build-images:
     desc: Build Docker images (api, jobrunner, web)
     dotenv: ['.env']
@@ -111,3 +119,21 @@ tasks:
       - echo "DB exposed on port 5432"
       - echo "Web exposed on port 3000"
       - echo "API exposed on port 5001"
+
+  # -----------------------------
+  # Production Helm workflows (Civo)
+  # -----------------------------
+  helm-template-prod:
+    desc: Render Helm manifests (prod) to /tmp/truman.prod.yaml for inspection
+    cmds:
+      - "helm template truman k8s/charts/truman -f k8s/charts/truman/values.yaml -f k8s/charts/truman/values.prod.yaml > /tmp/truman.prod.yaml && echo 'Rendered: /tmp/truman.prod.yaml'"
+
+  helm-prod-deploy:
+    desc: Ensure namespace, create Secret from .env.production, and install/upgrade production release
+    deps: [helm-ensure-namespace, helm-create-secret-prod]
+    cmds:
+      - >-
+          helm upgrade --install truman k8s/charts/truman
+          -n truman --create-namespace
+          -f k8s/charts/truman/values.yaml -f k8s/charts/truman/values.prod.yaml
+          --wait --timeout 300s
