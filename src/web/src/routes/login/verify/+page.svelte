@@ -19,7 +19,7 @@
         }
 
         try {
-            const response = await fetch(`${API_URL}/auth/validate/magic?code=${encodeURIComponent(code)}`, {
+            const response = await fetch(`${API_URL}/api/auth/validate/magic?code=${encodeURIComponent(code)}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -80,4 +80,4 @@
             </div>
         {/if}
     </div>
-</div> 
+</div>

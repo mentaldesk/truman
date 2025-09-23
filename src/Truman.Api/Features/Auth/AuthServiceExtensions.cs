@@ -57,7 +57,7 @@ public static class AuthServiceExtensions
             options.AppSecret = fbSettings?.AppSecret ?? throw new InvalidOperationException("Facebook AppSecret is not configured");
             options.SignInScheme = "Cookies";
             options.SaveTokens = true;
-            options.CallbackPath = "/signin-facebook";
+            options.CallbackPath = "/api/signin-facebook";
             
             options.Events = new OAuthEvents
             {
@@ -78,7 +78,7 @@ public static class AuthServiceExtensions
             options.ClientSecret = googleSettings?.ClientSecret ?? throw new InvalidOperationException("Google ClientSecret is not configured");
             options.SignInScheme = "Cookies";
             options.SaveTokens = true;
-            options.CallbackPath = "/signin-google";
+            options.CallbackPath = "/api/signin-google";
             
             options.Events = new OAuthEvents
             {
@@ -117,4 +117,4 @@ public static class AuthServiceExtensions
             context.Response.Redirect($"{returnUrl}?token={token}");
         }
     }
-} 
+}

@@ -5,7 +5,7 @@ public static class AuthEndpoints
 {
     public static void MapAuthEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/auth/{provider}/login", (string provider, HttpContext context) =>
+        app.MapGet("/api/auth/{provider}/login", (string provider, HttpContext context) =>
         {
             var scheme = provider.ToLowerInvariant() switch
             {
@@ -36,7 +36,7 @@ public static class AuthEndpoints
             return Results.Challenge(properties, [scheme]);
         });
 
-        app.MapGet("/auth/start/magic", async (
+        app.MapGet("/api/auth/start/magic", async (
             string email,
             IMagicLinkService magicLinkService,
             IEmailService emailService,
@@ -65,7 +65,7 @@ public static class AuthEndpoints
             }
         });
 
-        app.MapGet("/auth/validate/magic", async (
+        app.MapGet("/api/auth/validate/magic", async (
             string code,
             IMagicLinkService magicLinkService,
             ITokenService tokenService,
@@ -84,4 +84,4 @@ public static class AuthEndpoints
             return Results.Text(token);
         });
     }
-} 
+}

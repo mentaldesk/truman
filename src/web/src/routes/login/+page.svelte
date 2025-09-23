@@ -34,7 +34,7 @@
         // Store the current URL as the return URL, but specifically to the login page
         const returnUrl = `${$page.url.origin}/login`;
         // Redirect to the API's login endpoint
-        window.location.href = `${API_URL}/auth/${provider}/login?returnUrl=${encodeURIComponent(returnUrl)}`;
+        window.location.href = `${API_URL}/api/auth/${provider}/login?returnUrl=${encodeURIComponent(returnUrl)}`;
     }
 
     async function handleMagicLink() {
@@ -51,7 +51,7 @@
         error = null;
         
         try {
-            const response = await fetch(`${API_URL}/auth/start/magic?email=${encodeURIComponent(email)}`, {
+            const response = await fetch(`${API_URL}/api/auth/start/magic?email=${encodeURIComponent(email)}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -244,4 +244,4 @@
                 </form>
             </div>
         </div>
-    {/if} 
+    {/if}
