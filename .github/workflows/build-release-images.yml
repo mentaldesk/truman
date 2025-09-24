@@ -35,17 +35,27 @@ jobs:
 
       - name: Compute tags
         id: vars
+        shell: bash
         run: |
+          set -euo pipefail
           TAG='${{ github.ref_name }}'
           SHORT_SHA=$(git rev-parse --short=12 HEAD)
-          MONTH=$(echo "$TAG" | sed -E 's/^v([0-9]{4}\.[0-9]{2})\.[0-9]+$/\1/')
-          if [ -z "$MONTH" ]; then
+          # Expect TAG like vYYYY.MM.N
+          if [[ ! "$TAG" =~ ^v([0-9]{4})\.([0-9]{2})\.([0-9]+)$ ]]; then
             echo "Tag format not recognized: $TAG (expected vYYYY.MM.N)" >&2
             exit 1
           fi
+          Y=${BASH_REMATCH[1]}
+          M_RAW=${BASH_REMATCH[2]}
+          P=${BASH_REMATCH[3]}
+          # Remove leading zero from month to make it SemVer-friendly
+          M=$((10#$M_RAW))
+          APP_VERSION="$Y.$M.$P"
+          MONTH="$Y.$M_RAW" # keep leading zero for monthly alias tag consistency
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "month=$MONTH" >> $GITHUB_OUTPUT
           echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+          echo "app_version=$APP_VERSION" >> $GITHUB_OUTPUT
           echo "image_owner=${GITHUB_REPOSITORY_OWNER:-${{ github.repository_owner }}}" >> $GITHUB_OUTPUT
 
       - name: Build and push API (release)
@@ -59,7 +69,7 @@ jobs:
             ghcr.io/${{ steps.vars.outputs.image_owner }}/truman-api:v${{ steps.vars.outputs.month }}
             ghcr.io/${{ steps.vars.outputs.image_owner }}/truman-api:sha-${{ steps.vars.outputs.short_sha }}
           build-args: |
-            APP_VERSION=${{ steps.vars.outputs.tag }}
+            APP_VERSION=${{ steps.vars.outputs.app_version }}
             GIT_SHA=${{ github.sha }}
             SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
           cache-from: type=gha
@@ -76,7 +86,7 @@ jobs:
             ghcr.io/${{ steps.vars.outputs.image_owner }}/truman-jobrunner:v${{ steps.vars.outputs.month }}
             ghcr.io/${{ steps.vars.outputs.image_owner }}/truman-jobrunner:sha-${{ steps.vars.outputs.short_sha }}
           build-args: |
-            APP_VERSION=${{ steps.vars.outputs.tag }}
+            APP_VERSION=${{ steps.vars.outputs.app_version }}
             GIT_SHA=${{ github.sha }}
             SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
           cache-from: type=gha
@@ -93,11 +103,11 @@ jobs:
             ghcr.io/${{ steps.vars.outputs.image_owner }}/truman-web:v${{ steps.vars.outputs.month }}
             ghcr.io/${{ steps.vars.outputs.image_owner }}/truman-web:sha-${{ steps.vars.outputs.short_sha }}
           build-args: |
-            APP_VERSION=${{ steps.vars.outputs.tag }}
+            APP_VERSION=${{ steps.vars.outputs.app_version }}
             GIT_SHA=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Summary
         run: |
-          echo "Built and pushed images for ${{ steps.vars.outputs.tag }} from commit $(git rev-parse --short=12 HEAD)"
+          echo "Built and pushed images for ${{ steps.vars.outputs.tag }} with MSBuild Version=${{ steps.vars.outputs.app_version }} from commit $(git rev-parse --short=12 HEAD)"
