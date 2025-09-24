@@ -1,0 +1,82 @@
+name: Request Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: "Branch to tag (defaults to main)"
+        required: false
+        default: "main"
+      dry_run:
+        description: "Compute next version but do not create a tag"
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: request-release
+  cancel-in-progress: false
+
+jobs:
+  create-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.inputs.target_branch || 'main' }}
+
+      - name: Verify we are at remote HEAD of target branch
+        run: |
+          set -e
+          TARGET_BRANCH='${{ github.event.inputs.target_branch || 'main' }}'
+          git fetch origin "$TARGET_BRANCH" --quiet
+          HEAD_LOCAL=$(git rev-parse HEAD)
+          HEAD_REMOTE=$(git rev-parse "origin/$TARGET_BRANCH")
+          echo "Local:  $HEAD_LOCAL"
+          echo "Remote: $HEAD_REMOTE"
+          if [ "$HEAD_LOCAL" != "$HEAD_REMOTE" ]; then
+            echo "Local checkout is not at origin/$TARGET_BRANCH HEAD. Aborting to avoid tagging stale commit." >&2
+            exit 1
+          fi
+
+      - name: Compute next CalVer
+        id: ver
+        run: |
+          PREFIX=$(date -u +"%Y.%m")
+          git fetch --tags --quiet
+          LAST=$(git tag -l "v${PREFIX}.*" | sed -E "s/^v${PREFIX}\.([0-9]+)$/\1/" | sort -n | tail -1)
+          if [ -z "$LAST" ]; then
+            NEXT=0
+          else
+            NEXT=$((LAST+1))
+          fi
+          VERSION="v${PREFIX}.${NEXT}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Computed version: $VERSION"
+
+      - name: Create annotated tag (atomic)
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          set -e
+          if git rev-parse "$VERSION" >/dev/null 2>&1; then
+            echo "Tag $VERSION already exists. Aborting." >&2
+            exit 1
+          fi
+          git tag -a "$VERSION" -m "Release $VERSION"
+          git push origin "$VERSION"
+          echo "Created tag: $VERSION"
+
+      - name: Summary
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            echo "Dry run: computed next version ${{ steps.ver.outputs.version }} for branch ${{ github.event.inputs.target_branch || 'main' }} (no tag created)."
+          else
+            echo "Tag ${{ steps.ver.outputs.version }} created on ${{ github.event.inputs.target_branch || 'main' }}. The Build Release Images workflow will publish images for this tag."
+          fi

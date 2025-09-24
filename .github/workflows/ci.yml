@@ -1,0 +1,81 @@
+name: CI (edge images)
+
+on:
+  push:
+    branches: [ "**" ]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute vars
+        id: vars
+        run: |
+          SHORT_SHA=$(git rev-parse --short=12 HEAD)
+          echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+          echo "image_owner=${GITHUB_REPOSITORY_OWNER:-${{ github.repository_owner }}}" >> $GITHUB_OUTPUT
+
+      - name: Build and push API (edge)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./src
+          file: ./src/Truman.Api/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ steps.vars.outputs.image_owner }}/truman-api:edge
+            ghcr.io/${{ steps.vars.outputs.image_owner }}/truman-api:sha-${{ steps.vars.outputs.short_sha }}
+          build-args: |
+            APP_VERSION=edge-${{ steps.vars.outputs.short_sha }}
+            GIT_SHA=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push JobRunner (edge)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./src
+          file: ./src/Truman.JobRunner/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ steps.vars.outputs.image_owner }}/truman-jobrunner:edge
+            ghcr.io/${{ steps.vars.outputs.image_owner }}/truman-jobrunner:sha-${{ steps.vars.outputs.short_sha }}
+          build-args: |
+            APP_VERSION=edge-${{ steps.vars.outputs.short_sha }}
+            GIT_SHA=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push Web (edge)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./src/web
+          file: ./src/web/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ steps.vars.outputs.image_owner }}/truman-web:edge
+            ghcr.io/${{ steps.vars.outputs.image_owner }}/truman-web:sha-${{ steps.vars.outputs.short_sha }}
+          build-args: |
+            APP_VERSION=edge-${{ steps.vars.outputs.short_sha }}
+            GIT_SHA=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

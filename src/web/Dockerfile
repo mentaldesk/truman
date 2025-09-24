@@ -15,8 +15,19 @@ RUN yarn build
 # Production stage
 FROM nginx:alpine
 
+ARG APP_VERSION=dev
+ARG GIT_SHA=unknown
+LABEL org.opencontainers.image.title="truman-web" \
+      org.opencontainers.image.version="$APP_VERSION" \
+      org.opencontainers.image.revision="$GIT_SHA" \
+      org.opencontainers.image.source="https://github.com/${GITHUB_REPOSITORY:-your/repo}" \
+      org.opencontainers.image.vendor="truman"
+
 # Copy the built assets from build stage
 COPY --from=build /app/build /usr/share/nginx/html
+
+# Write version for runtime exposure
+RUN echo "$APP_VERSION" > /usr/share/nginx/html/version.txt
 
 # Copy default config.js for local dev (will be overwritten in container)
 COPY static/config.js /usr/share/nginx/html/config.js
@@ -30,4 +41,4 @@ RUN chmod +x /entrypoint.sh
 
 EXPOSE 80
 
-ENTRYPOINT ["/entrypoint.sh"] 
+ENTRYPOINT ["/entrypoint.sh"]
