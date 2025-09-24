@@ -61,6 +61,7 @@ jobs:
           build-args: |
             APP_VERSION=${{ steps.vars.outputs.tag }}
             GIT_SHA=${{ github.sha }}
+            SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -77,6 +78,7 @@ jobs:
           build-args: |
             APP_VERSION=${{ steps.vars.outputs.tag }}
             GIT_SHA=${{ github.sha }}
+            SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

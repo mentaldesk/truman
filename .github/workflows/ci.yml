@@ -47,6 +47,7 @@ jobs:
           build-args: |
             APP_VERSION=edge-${{ steps.vars.outputs.short_sha }}
             GIT_SHA=${{ github.sha }}
+            SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -62,6 +63,7 @@ jobs:
           build-args: |
             APP_VERSION=edge-${{ steps.vars.outputs.short_sha }}
             GIT_SHA=${{ github.sha }}
+            SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

@@ -17,10 +17,11 @@ FROM nginx:alpine
 
 ARG APP_VERSION=dev
 ARG GIT_SHA=unknown
+ARG REPO_URL="https://github.com/mentaldesk/truman"
 LABEL org.opencontainers.image.title="truman-web" \
       org.opencontainers.image.version="$APP_VERSION" \
       org.opencontainers.image.revision="$GIT_SHA" \
-      org.opencontainers.image.source="https://github.com/${GITHUB_REPOSITORY:-your/repo}" \
+      org.opencontainers.image.source="$REPO_URL" \
       org.opencontainers.image.vendor="truman"
 
 # Copy the built assets from build stage
