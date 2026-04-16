@@ -89,8 +89,14 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
-var webBuildPath = Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, "..", "web", "build"));
-var hasWebBuild = Directory.Exists(webBuildPath);
+var candidateWebBuildPaths = new[]
+{
+    Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, "..", "web", "build")),
+    Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, "web", "build"))
+};
+
+var webBuildPath = candidateWebBuildPaths.FirstOrDefault(Directory.Exists);
+var hasWebBuild = webBuildPath is not null;
 
 if (hasWebBuild)
 {
