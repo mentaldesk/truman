@@ -1,6 +1,9 @@
-﻿FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
-WORKDIR /app
-EXPOSE 5001
+FROM node:22-alpine AS web-build
+WORKDIR /src/web
+COPY web/package.json web/package-lock.json ./
+RUN npm ci
+COPY web/ ./
+RUN npm run build
 
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
@@ -13,13 +16,11 @@ COPY Directory.Packages.props ./
 COPY Directory.Build.props ./
 RUN dotnet restore "Truman.Api/Truman.Api.csproj"
 COPY . .
-RUN dotnet build "Truman.Api/Truman.Api.csproj" -c $BUILD_CONFIGURATION -o /app/build
-
-FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
 RUN dotnet publish "Truman.Api/Truman.Api.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
-FROM base AS final
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
 WORKDIR /app
-COPY --from=publish /app/publish .
+EXPOSE 5001
+COPY --from=build /app/publish .
+COPY --from=web-build /src/web/build /app/web/build
 ENTRYPOINT ["dotnet", "Truman.Api.dll"]
