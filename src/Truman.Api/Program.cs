@@ -149,11 +149,9 @@ if (hasWebBuild)
     }).ExcludeFromDescription();
 }
 
-var target = Environment.GetEnvironmentVariable("TARGET") ?? "World";
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5001";
 var url = $"http://0.0.0.0:{port}";
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" })).ExcludeFromDescription();
-app.MapGet("/", () => hasWebBuild ? Results.Redirect("/", false) : Results.Text($"Hello {target}!"));
 
 app.Run(url);
