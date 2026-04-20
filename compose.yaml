@@ -1,0 +1,39 @@
+services:
+  app:
+    build:
+      context: ./src
+      dockerfile: Truman.Api/Dockerfile
+      args:
+        SENTRY_AUTH_TOKEN: ${SENTRY_AUTH_TOKEN_TRUMAN:-}
+    image: truman-app:local
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: postgres
+      Frontend__BaseUrl: ${Frontend__BaseUrl:-http://localhost:5001}
+      PORT: 5001
+    ports:
+      - "5001:5001"
+
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - truman-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  truman-postgres-data:
