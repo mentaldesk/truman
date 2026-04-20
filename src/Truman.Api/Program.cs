@@ -6,6 +6,8 @@ using Truman.Api.Features.Articles;
 using Truman.Api.Features.Profile;
 using Truman.Api.Features.TagPreferences;
 using Truman.Data;
+using System.Text.Json;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -87,6 +89,45 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
+var candidateWebBuildPaths = new[]
+{
+    Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, "..", "web", "build")),
+    Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, "web", "build"))
+};
+
+var webBuildPath = candidateWebBuildPaths.FirstOrDefault(Directory.Exists);
+var hasWebBuild = webBuildPath is not null;
+
+if (hasWebBuild)
+{
+    var webBuildFileProvider = new PhysicalFileProvider(webBuildPath);
+
+    app.UseDefaultFiles(new DefaultFilesOptions
+    {
+        FileProvider = webBuildFileProvider
+    });
+
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = webBuildFileProvider
+    });
+
+    app.MapGet("/config.js", (IOptions<FrontendConfiguration> frontendOptions, IConfiguration configuration) =>
+    {
+        var frontendConfig = frontendOptions.Value;
+        var apiUrl = frontendConfig.BaseUrl?.TrimEnd('/') ?? string.Empty;
+        var sentryDsn = configuration["Sentry:Dsn"] ?? string.Empty;
+        var environment = app.Environment.EnvironmentName;
+
+        var js = string.Join("\n",
+            "window.__API_URL__ = " + JsonSerializer.Serialize(apiUrl) + ";",
+            "window.__ENVIRONMENT__ = " + JsonSerializer.Serialize(environment) + ";",
+            "window.__SENTRY_DSN__ = " + JsonSerializer.Serialize(sentryDsn) + ";");
+
+        return Results.Text(js, "application/javascript");
+    }).ExcludeFromDescription();
+}
+
 // Map endpoints
 app.MapAuthEndpoints();
 app.MapArticleEndpoints();
@@ -94,10 +135,29 @@ app.MapProfileEndpoints();
 app.MapTagPreferenceEndpoints();
 app.UseSentryTunneling();
 
-var target = Environment.GetEnvironmentVariable("TARGET") ?? "World";
+if (hasWebBuild)
+{
+    app.MapFallback(async context =>
+    {
+        if (context.Request.Path.StartsWithSegments("/api") ||
+            context.Request.Path.StartsWithSegments("/auth") ||
+            context.Request.Path.StartsWithSegments("/openapi") ||
+            context.Request.Path.StartsWithSegments("/swagger") ||
+            context.Request.Path.StartsWithSegments("/config.js") ||
+            context.Request.Path.StartsWithSegments("/sentry-tunnel"))
+        {
+            context.Response.StatusCode = StatusCodes.Status404NotFound;
+            return;
+        }
+
+        context.Response.ContentType = "text/html; charset=utf-8";
+        await context.Response.SendFileAsync(Path.Combine(webBuildPath, "index.html"));
+    }).ExcludeFromDescription();
+}
+
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5001";
 var url = $"http://0.0.0.0:{port}";
 
-app.MapGet("/", () => $"Hello {target}!");
+app.MapGet("/health", () => Results.Ok(new { status = "ok" })).ExcludeFromDescription();
 
 app.Run(url);
