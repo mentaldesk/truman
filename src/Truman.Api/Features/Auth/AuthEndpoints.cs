@@ -13,26 +13,17 @@ public static class AuthEndpoints
                 "google" => "Google",
                 _ => throw new ArgumentException("Invalid provider", nameof(provider))
             };
-            
-            // Get the frontend configuration
-            var frontendConfig = context.RequestServices.GetRequiredService<IOptions<FrontendConfiguration>>().Value;
-            
-            // Store the frontend return URL for after authentication
-            var returnUrl = context.Request.Query["returnUrl"].ToString();
-            if (string.IsNullOrEmpty(returnUrl) || 
-                (!returnUrl.StartsWith(frontendConfig.BaseUrl)))
-            {
-                returnUrl = frontendConfig.BaseUrl;
-            }
-            
+
+            var returnUrl = context.Request.GetValidatedReturnUrl(context.Request.Query["returnUrl"].ToString());
+
             var properties = new AuthenticationProperties
             {
                 Items =
                 {
-                    { "returnUrl", returnUrl } // This is where we'll redirect after processing the callback
+                    { "returnUrl", returnUrl }
                 }
             };
-            
+
             return Results.Challenge(properties, [scheme]);
         });
 
@@ -44,18 +35,12 @@ public static class AuthEndpoints
         {
             try
             {
-                // Generate a new magic link code
                 var code = await magicLinkService.GenerateMagicLinkAsync(email);
-                
-                // Get the frontend configuration
-                var frontendConfig = context.RequestServices.GetRequiredService<IOptions<FrontendConfiguration>>().Value;
-                
-                // Create the magic link URL that points to the frontend verification page
-                var magicLinkUrl = $"{frontendConfig.BaseUrl}/login/verify?code={code}";
-                
-                // Send the magic link email
+                var baseUrl = context.Request.GetBaseUrl();
+                var magicLinkUrl = $"{baseUrl}/login/verify?code={code}";
+
                 await emailService.SendMagicLinkEmailAsync(email, magicLinkUrl);
-                
+
                 return Results.Ok(new { message = "Magic link sent successfully" });
             }
             catch (Exception ex)
@@ -72,16 +57,15 @@ public static class AuthEndpoints
             HttpContext context) =>
         {
             var record = await magicLinkService.ValidateMagicLinkAsync(code);
-            
+
             if (record == null)
             {
                 return Results.BadRequest(new { error = "Invalid or expired magic link" });
             }
-            
-            // Generate JWT token
+
             var token = tokenService.GenerateToken(record.Email);
-            
+
             return Results.Text(token);
         });
     }
-} 
+}
