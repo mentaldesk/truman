@@ -1,5 +1,6 @@
 using DotNetEnv;
 using DotNetEnv.Configuration;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Truman.Api.Features.Email;
 using Truman.Api.Features.Articles;
@@ -12,19 +13,12 @@ using Microsoft.Extensions.FileProviders;
 var builder = WebApplication.CreateBuilder(args);
 
 #if DEBUG
-// Add a dotnet-env configuration source to bind to the `.env` file when developing locally.
-// NOTE: When running in k8s / production, the .env file won't be present and these values must be
-// read from the environment instead.
-// 1. The env file gets loaded by the `k8s-create-secret` task as secrets into k8s.
-// 2. Those secrets get added as environment variables via an `envFrom` in the deployment manifest.
 builder.Configuration.AddDotNetEnv(".env", LoadOptions.TraversePath());
 #endif
 
-// Add database context
 var connectionString = builder.Configuration.GetPostgresConnectionString();
 builder.Services.AddDbContext<TrumanDbContext>(options => options.UseNpgsql(connectionString));
 
-// Add Sentry for diagnostics
 builder.WebHost.UseSentry(options =>
 {
 #if DEBUG
@@ -32,7 +26,7 @@ builder.WebHost.UseSentry(options =>
 #endif
     options.Dsn = builder.Configuration["Sentry:Dsn"];
     options.Environment = builder.Environment.EnvironmentName;
-    options.TracesSampleRate = 1.0; // Adjust as needed
+    options.TracesSampleRate = 1.0;
     options.CaptureBlockingCalls = true;
     options.CaptureFailedRequests = true;
     options.SendDefaultPii = true;
@@ -40,14 +34,19 @@ builder.WebHost.UseSentry(options =>
 });
 builder.Services.AddSentryTunneling();
 
-// Add services
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 builder.Services.AddAuthServices(builder.Configuration);
 builder.Services.Configure<EmailConfiguration>(builder.Configuration.GetSection("Email"));
 builder.Services.Configure<FrontendConfiguration>(builder.Configuration.GetSection("Frontend"));
-// Configure Brevo transactional email API client with isolated configuration instance
 builder.Services.AddSingleton<brevo_csharp.Api.ITransactionalEmailsApi>(sp => {
     var opts = sp.GetRequiredService<IOptions<EmailConfiguration>>();
-    var cfg = new brevo_csharp.Client.Configuration(); // fresh instance, avoids static global state
+    var cfg = new brevo_csharp.Client.Configuration();
     var apiKey = opts.Value.Brevo.ApiKey;
     if (!string.IsNullOrWhiteSpace(apiKey))
     {
@@ -67,7 +66,6 @@ builder.Services.AddCors(options =>
     options.AddDefaultPolicy(policy =>
     {
         var frontendConfig = builder.Configuration.GetSection("Frontend").Get<FrontendConfiguration>();
-        // For debug purposes
         Console.WriteLine("Frontend.BaseUrl = {0}", frontendConfig?.BaseUrl);
         var frontendUrl = frontendConfig?.BaseUrl ?? "http://localhost:3000";
         policy.WithOrigins(frontendUrl)
@@ -78,6 +76,8 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+app.UseForwardedHeaders();
 
 app.MapOpenApi();
 app.UseSwaggerUI(options =>
@@ -112,10 +112,9 @@ if (hasWebBuild)
         FileProvider = webBuildFileProvider
     });
 
-    app.MapGet("/config.js", (IOptions<FrontendConfiguration> frontendOptions, IConfiguration configuration) =>
+    app.MapGet("/config.js", (HttpContext context, IConfiguration configuration) =>
     {
-        var frontendConfig = frontendOptions.Value;
-        var apiUrl = frontendConfig.BaseUrl?.TrimEnd('/') ?? string.Empty;
+        var apiUrl = context.Request.GetBaseUrl();
         var sentryDsn = configuration["Sentry:Dsn"] ?? string.Empty;
         var environment = app.Environment.EnvironmentName;
 
@@ -128,7 +127,6 @@ if (hasWebBuild)
     }).ExcludeFromDescription();
 }
 
-// Map endpoints
 app.MapAuthEndpoints();
 app.MapArticleEndpoints();
 app.MapProfileEndpoints();
