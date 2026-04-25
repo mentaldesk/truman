@@ -10,14 +10,14 @@ public static class AuthServiceExtensions
         services.AddScoped<TokenService>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IMagicLinkService, MagicLinkService>();
-        
+
         services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultSignInScheme = "Cookies";
             })
-            .AddCookie("Cookies", options => 
+            .AddCookie("Cookies", options =>
             {
                 options.ExpireTimeSpan = TimeSpan.FromMinutes(5);
                 options.Cookie.Name = "TrumanAuth";
@@ -47,7 +47,7 @@ public static class AuthServiceExtensions
         services.AddAuthorization();
         return services;
     }
-    
+
     private static Action<FacebookOptions> ConfigureFacebookOptions(IConfiguration configuration)
     {
         return options =>
@@ -58,7 +58,7 @@ public static class AuthServiceExtensions
             options.SignInScheme = "Cookies";
             options.SaveTokens = true;
             options.CallbackPath = "/signin-facebook";
-            
+
             options.Events = new OAuthEvents
             {
                 OnTicketReceived = async context =>
@@ -68,7 +68,7 @@ public static class AuthServiceExtensions
             };
         };
     }
-    
+
     private static Action<GoogleOptions> ConfigureGoogleOptions(IConfiguration configuration)
     {
         return options =>
@@ -79,7 +79,7 @@ public static class AuthServiceExtensions
             options.SignInScheme = "Cookies";
             options.SaveTokens = true;
             options.CallbackPath = "/signin-google";
-            
+
             options.Events = new OAuthEvents
             {
                 OnTicketReceived = async context =>
@@ -89,32 +89,24 @@ public static class AuthServiceExtensions
             };
         };
     }
-    
+
     private static async Task HandleOAuthTicket(TicketReceivedContext context, string provider)
     {
-        // Get the frontend configuration
-        var frontendConfig = context.HttpContext.RequestServices.GetRequiredService<IOptions<FrontendConfiguration>>().Value;
-        
-        // Get the return URL from the auth properties
         var returnUrl = context.Properties?.Items.TryGetValue("returnUrl", out var url) == true
-            ? url
-            : frontendConfig.BaseUrl;
+            ? context.HttpContext.Request.GetValidatedReturnUrl(url)
+            : context.HttpContext.Request.GetBaseUrl();
 
-        // Generate JWT token
         var tokenService = context.HttpContext.RequestServices.GetRequiredService<TokenService>();
         if (context.Principal != null)
         {
             var claims = context.Principal.Claims.ToList();
-            // Add the authentication method claim
             claims.Add(new Claim("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/authenticationmethod", provider));
             var token = tokenService.GenerateToken(claims);
 
-            // Sign-out of cookie auth
             await context.HttpContext.SignOutAsync("Cookies");
 
-            // Redirect to frontend with token
             context.HandleResponse();
             context.Response.Redirect($"{returnUrl}?token={token}");
         }
     }
-} 
+}
