@@ -16,7 +16,7 @@ Supporting pieces:
 
 ## Current direction
 
-The repo has moved from Kubernetes/Helm/kind to a simple Docker Compose + Dokploy deployment on a VPS. When making changes, prefer moves that:
+The repo has moved from Kubernetes/Helm/kind to a simple Docker Compose-based deployment. When making changes, prefer moves that:
 
 - reduce deployment complexity
 - preserve clear service boundaries in code even if runtime topology gets simpler
@@ -68,7 +68,6 @@ The repo has moved from Kubernetes/Helm/kind to a simple Docker Compose + Dokplo
 
 - `compose.yaml` at the repo root is the local dev entrypoint — runs API, JobRunner, web, and Postgres.
 - `.github/workflows` contains a build/test workflow and two GHCR image publishing workflows.
-- Production runs on a VPS via Dokploy, exposed via Cloudflare Tunnel at https://truman.news.
 
 ## Useful commands
 
@@ -138,4 +137,4 @@ If infra/deployment was touched, also verify the new path actually starts cleanl
 
 ## Notes for future agents
 
-Production runs on a VPS via Dokploy with a Cloudflare Tunnel on https://truman.news. If you learn more about the real feed sources, user-facing product goals, or deployment constraints, update this file.
+If you learn more about the feed sources, user-facing product goals, or deployment constraints, update this file.
