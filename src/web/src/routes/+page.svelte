@@ -62,9 +62,9 @@
         loading = true;
         error = null;
         let presenter: string = '';
-        
-        const unsubscribePresenter = selectedPresenter.subscribe((value: string) => { presenter = value === 'Default' ? '' : value; });
-        
+
+        const unsubscribePresenter = selectedPresenter.subscribe((value: string) => { presenter = value; });
+
         unsubscribePresenter();
         
         try {

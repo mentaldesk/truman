@@ -44,7 +44,11 @@ public static class AuthServiceExtensions
             .AddFacebook(ConfigureFacebookOptions(configuration))
             .AddGoogle(ConfigureGoogleOptions(configuration));
 
-        services.AddAuthorization();
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy("RequireAdmin", policy =>
+                policy.RequireAuthenticatedUser().RequireRole("admin"));
+        });
         return services;
     }
 

@@ -15,35 +15,35 @@ public class RssFetcher(
     {
         logger.LogInformation("Starting RSS fetch job...");
 
-        var feeds = new[]
-        {
-            "https://www.newscientist.com/feed/home/",
-            "http://rss.sciam.com/basic-science",
-            "https://devblogs.microsoft.com/dotnet/feed/",
-            "https://www.rnz.co.nz/rss/business.xml",
-            "https://www.rnz.co.nz/rss/media-technology.xml",
-            "https://www.rnz.co.nz/rss/world.xml",
-            // "https://another.com/feed",
-        };
-
         var client = httpClientFactory.CreateClient();
 
         // Create a new context for this operation
         await using var dbContext = await contextFactory.CreateDbContextAsync();
+
+        var feeds = await dbContext.Feeds
+            .Where(f => f.IsEnabled)
+            .ToListAsync();
+
+        if (feeds.Count == 0)
+        {
+            logger.LogWarning("No enabled feeds found - exiting cleanly");
+            return;
+        }
+
         var existingArticleCount = await dbContext.RssItems.CountAsync();
         var newArticleCount = 0;
-        
-        foreach (var feedUrl in feeds)
+
+        foreach (var feedSource in feeds)
         {
             try
             {
-                var response = await client.GetStringAsync(feedUrl);
+                var response = await client.GetStringAsync(feedSource.Url);
                 var feed = FeedReader.ReadFromString(response);
 
                 foreach (var item in feed.Items)
                 {
                     var link = item.Link;
-                    
+
                     // Check if we already have this article
                     var exists = await dbContext.RssItems.AnyAsync(a => a.Link == link);
                     if (exists)
@@ -70,18 +70,18 @@ public class RssFetcher(
                     dbContext.RssItems.Add(rssItem);
                     await dbContext.SaveChangesAsync();
 
-                    logger.LogInformation("New article found: {Title} ({Link})", item.Title, link);
+                    logger.LogInformation("New article found from {Feed}: {Title} ({Link})", feedSource.Name, item.Title, link);
                     newArticleCount++;
                 }
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to fetch or parse feed: {Url}", feedUrl);
+                logger.LogError(ex, "Failed to fetch or parse feed {Feed} ({Url})", feedSource.Name, feedSource.Url);
             }
         }
 
         logger.LogInformation(
-            "RSS fetch job completed with {NewCount} new articles and {ExistingCount} existing articles", 
+            "RSS fetch job completed with {NewCount} new articles and {ExistingCount} existing articles",
             newArticleCount,
             existingArticleCount);
     }

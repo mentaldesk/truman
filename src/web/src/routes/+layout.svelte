@@ -1,10 +1,16 @@
 <script lang="ts">
 	import '../app.css';
+	import { onMount } from 'svelte';
 	import { auth } from '$lib/stores/auth';
 	import { page } from '$app/stores';
 	import ErrorBoundary from '$lib/components/ErrorBoundary.svelte';
-	
+	import { loadPresenterOptions } from '$lib/stores/presenter';
+
 	let { children } = $props();
+
+	onMount(() => {
+		loadPresenterOptions();
+	});
 </script>
 
 <style>

@@ -7,7 +7,6 @@ namespace Truman.Api.Features.Articles;
 
 public class RelevantArticlesService : IRelevantArticlesService
 {
-    private const string DefaultPresenter = "Default";
     private readonly TrumanDbContext _dbContext;
     private readonly ILogger<RelevantArticlesService> _logger;
     
@@ -285,24 +284,18 @@ public class RelevantArticlesService : IRelevantArticlesService
         };
     }
 
-    private string GetPresenterContent(ICollection<ArticlePresenter> articlePresenters, string requestedPresenter)
+    private static ArticlePresenter? PickForArticle(ICollection<ArticlePresenter> articlePresenters, string requestedPresenter)
     {
-        return articlePresenters.ByLabel(requestedPresenter)?.Content 
-               ?? articlePresenters.ByLabel(DefaultPresenter)?.Content
-               ?? string.Empty;
+        return articlePresenters.ByLabel(requestedPresenter)
+               ?? articlePresenters.OrderBy(ap => ap.Id).FirstOrDefault();
     }
+
+    private string GetPresenterContent(ICollection<ArticlePresenter> articlePresenters, string requestedPresenter)
+        => PickForArticle(articlePresenters, requestedPresenter)?.Content ?? string.Empty;
 
     private string GetPresenterTitle(ICollection<ArticlePresenter> articlePresenters, string requestedPresenter)
-    {
-        return articlePresenters.ByLabel(requestedPresenter)?.Title 
-               ?? articlePresenters.ByLabel(DefaultPresenter)?.Title 
-               ?? string.Empty;
-    }
+        => PickForArticle(articlePresenters, requestedPresenter)?.Title ?? string.Empty;
 
     private string GetPresenterTldr(ICollection<ArticlePresenter> articlePresenters, string requestedPresenter)
-    {
-        return articlePresenters.ByLabel(requestedPresenter)?.Tldr 
-               ?? articlePresenters.ByLabel(DefaultPresenter)?.Tldr 
-               ?? string.Empty;
-    }
+        => PickForArticle(articlePresenters, requestedPresenter)?.Tldr ?? string.Empty;
 }

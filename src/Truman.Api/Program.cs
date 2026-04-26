@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Truman.Api.Features.Email;
 using Truman.Api.Features.Articles;
+using Truman.Api.Features.Feeds;
+using Truman.Api.Features.Presenters;
 using Truman.Api.Features.Profile;
 using Truman.Api.Features.TagPreferences;
 using Truman.Data;
@@ -131,6 +133,8 @@ app.MapAuthEndpoints();
 app.MapArticleEndpoints();
 app.MapProfileEndpoints();
 app.MapTagPreferenceEndpoints();
+app.MapFeedEndpoints();
+app.MapPresenterEndpoints();
 app.UseSentryTunneling();
 
 if (hasWebBuild)
