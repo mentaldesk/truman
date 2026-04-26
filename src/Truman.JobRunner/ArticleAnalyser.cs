@@ -7,7 +7,6 @@ using Microsoft.SemanticKernel.ChatCompletion;
 using Truman.Data.Entities;
 using Microsoft.SemanticKernel.Connectors.Google;
 using System.Text.Json;
-using Microsoft.Extensions.Configuration;
 
 namespace Truman.JobRunner;
 
@@ -22,17 +21,14 @@ public class ArticleAnalyser
     private readonly string _contentInstructions;
     private readonly GeminiPromptExecutionSettings _analyserPromptSettings;
     private readonly GeminiPromptExecutionSettings _contentPromptSettings;
-    private readonly IConfiguration _configuration;
 
     public ArticleAnalyser(ILogger<ArticleAnalyser> logger,
         IDbContextFactory<TrumanDbContext> contextFactory,
-        Kernel kernel,
-        IConfiguration configuration)
+        Kernel kernel)
     {
         _logger = logger;
         _contextFactory = contextFactory;
         _kernel = kernel;
-        _configuration = configuration;
 
         _analysisInstructions = LoadInstructions("AnalyserInstructions.md");
         _contentInstructions = LoadInstructions("ContentInstructions.md");
@@ -142,16 +138,14 @@ public class ArticleAnalyser
     private async Task AnalyzePendingArticles(List<RssItem> pending, TrumanDbContext db)
     {
         var chatService = _kernel.GetRequiredService<IChatCompletionService>();
-        var presenterStyles = _configuration.GetSection("PresenterStyles").Get<Dictionary<string, string>>() ?? new Dictionary<string, string>();
-        
-        // Cache presenters to avoid repeated database calls
-        var presenters = new List<Presenter>();
-        foreach (var (label, presenterStyle) in presenterStyles)
+
+        var presenters = await db.Presenters.OrderBy(p => p.Id).ToListAsync();
+        if (presenters.Count == 0)
         {
-            var presenter = await GetOrCreatePresenter(presenterStyle, label, db);
-            presenters.Add(presenter);
+            _logger.LogWarning("No presenters configured - skipping analysis. Configure presenters via the admin UI.");
+            return;
         }
-        
+
         int count = 0;
         foreach (var rssItem in pending)
         {
@@ -269,24 +263,6 @@ public class ArticleAnalyser
             await transaction.RollbackAsync();
             await RecordFailure(rssItem, $"Database save failed: {ex.Message}", db);
         }
-    }
-
-    private async Task<Presenter> GetOrCreatePresenter(string presenterStyle, string label, TrumanDbContext db)
-    {
-        var presenter = await db.Presenters.FirstOrDefaultAsync(p => p.PresenterStyle == presenterStyle);
-        if (presenter == null)
-        {
-            presenter = new Presenter
-            {
-                PresenterStyle = presenterStyle,
-                Label = label
-            };
-            
-            db.Presenters.Add(presenter);
-            await db.SaveChangesAsync();
-        }
-        
-        return presenter;
     }
 
     private async Task RecordFailure(RssItem rssItem, string reason, TrumanDbContext db)

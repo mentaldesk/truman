@@ -60,8 +60,7 @@ try
                 new ArticleAnalyser(
                     sp.GetRequiredService<ILogger<ArticleAnalyser>>(),
                     sp.GetRequiredService<IDbContextFactory<TrumanDbContext>>(),
-                    sp.GetRequiredService<Kernel>(),
-                    sp.GetRequiredService<IConfiguration>()
+                    sp.GetRequiredService<Kernel>()
                 )
             );
             services.AddSingleton<DbMigrator>();
