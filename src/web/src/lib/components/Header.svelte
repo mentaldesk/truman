@@ -39,6 +39,11 @@
         showProfileMenu = false;
         goto('/tags');
     }
+
+    function handleAdminFeedsClick() {
+        showProfileMenu = false;
+        goto('/admin/feeds');
+    }
     
     function handleClickOutside(event: MouseEvent) {
         if (!profileMenuRef || !profileButtonRef) return;
@@ -149,6 +154,15 @@
                   <img src="/icons/tags.svg" alt="Tags" class="w-5 h-5 mr-2 inline-block" />
                   Tags
                 </button>
+                {#if $auth.user?.isAdmin}
+                  <button
+                    on:click={handleAdminFeedsClick}
+                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    role="menuitem"
+                  >
+                    Admin: Feeds
+                  </button>
+                {/if}
                 <button
                   on:click={handleLogout}
                   class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"

@@ -18,6 +18,7 @@ public class TrumanDbContext : DbContext
     public DbSet<Presenter> Presenters { get; set; } = null!;
     public DbSet<ArticlePresenter> ArticlePresenters { get; set; } = null!;
     public DbSet<UserTagPreference> UserTagPreferences { get; set; } = null!;
+    public DbSet<Feed> Feeds { get; set; } = null!;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -105,12 +106,21 @@ public class TrumanDbContext : DbContext
             entity.HasIndex(e => new { e.UserProfileId, e.Tag }).IsUnique(); // One preference per tag per user
             entity.Property(e => e.Tag).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Weight).IsRequired();
-            
+
             // Configure relationship with UserProfile
             entity.HasOne(e => e.UserProfile)
                   .WithMany(e => e.TagPreferences)
                   .HasForeignKey(e => e.UserProfileId)
                   .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Feed>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Url).IsUnique();
+            entity.Property(e => e.Url).IsRequired();
+            entity.Property(e => e.Name).IsRequired();
+            entity.Property(e => e.IsEnabled).IsRequired();
         });
     }
 } 

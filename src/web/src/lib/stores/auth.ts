@@ -7,6 +7,7 @@ export interface User {
     email: string | null;
     name: string | null;
     provider: 'facebook' | 'google' | 'magic_link';
+    isAdmin: boolean;
 }
 
 interface AuthState {
@@ -28,6 +29,13 @@ interface JwtPayload {
     'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'?: string;
     'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'?: string;
     'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/authenticationmethod': string;
+    'http://schemas.microsoft.com/ws/2008/06/identity/claims/role'?: string | string[];
+}
+
+function extractIsAdmin(decoded: JwtPayload): boolean {
+    const roleClaim = decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+    const roles = Array.isArray(roleClaim) ? roleClaim : roleClaim ? [roleClaim] : [];
+    return roles.includes('admin');
 }
 
 function createAuthStore(): AuthStore {
@@ -49,7 +57,8 @@ function createAuthStore(): AuthStore {
                 id: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'],
                 email: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] ?? null,
                 name: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] ?? null,
-                provider: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/authenticationmethod'].toLowerCase() as User['provider']
+                provider: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/authenticationmethod'].toLowerCase() as User['provider'],
+                isAdmin: extractIsAdmin(decoded)
             };
         } catch (error) {
             console.error('Failed to decode initial token:', error);
@@ -83,7 +92,8 @@ function createAuthStore(): AuthStore {
                         id: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'],
                         email: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] ?? null,
                         name: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] ?? null,
-                        provider: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/authenticationmethod'].toLowerCase() as User['provider']
+                        provider: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/authenticationmethod'].toLowerCase() as User['provider'],
+                        isAdmin: extractIsAdmin(decoded)
                     },
                     isLoading: false
                 }));

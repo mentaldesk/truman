@@ -22,15 +22,23 @@ public class TokenService : ITokenService
     {
         var jwtSettings = _configuration.GetSection("Authentication:Jwt").Get<JwtSettings>();
         var key = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(jwtSettings?.Key ?? 
+            Encoding.UTF8.GetBytes(jwtSettings?.Key ??
                                    throw new InvalidOperationException("JWT Key not configured")));
-        
+
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var claimList = claims.ToList();
+        var email = claimList.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+        if (AdminEmails.IsAdmin(_configuration, email)
+            && !claimList.Any(c => c.Type == ClaimTypes.Role && c.Value == "admin"))
+        {
+            claimList.Add(new Claim(ClaimTypes.Role, "admin"));
+        }
 
         var token = new JwtSecurityToken(
             issuer: jwtSettings.Issuer,
             audience: jwtSettings.Audience,
-            claims: claims,
+            claims: claimList,
             expires: DateTime.UtcNow.AddDays(7), // Token expires in 7 days
             signingCredentials: credentials
         );
