@@ -82,7 +82,7 @@ try
                     });
 
                     // Add timeout per request
-                    pipeline.AddTimeout(TimeSpan.FromSeconds(10));
+                    pipeline.AddTimeout(TimeSpan.FromSeconds(30));
                 });        
         
             // Register Semantic Kernel

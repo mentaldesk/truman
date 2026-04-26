@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Sentry;
 using Truman.Data;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
@@ -154,38 +155,47 @@ public class ArticleAnalyser
         int count = 0;
         foreach (var rssItem in pending)
         {
-            count++;
-
-            var chatHistory = new ChatHistory(_analysisInstructions);
-            chatHistory.AddUserMessage($"The article to be analysed is: {rssItem.Link}");
-            var analyserResponse = await chatService.GetChatMessageContentAsync(chatHistory, _analyserPromptSettings, _kernel);
-            if (await ProcessArticleAnalysis(analyserResponse, rssItem, db) is not { } articleData)
+            try
             {
-                continue;
-            }
+                count++;
 
-            var presenterContents = new Dictionary<int, PresenterContentData>();
-            foreach (var presenter in presenters)
-            {
-                var presenterChatHistory = new ChatHistory(_contentInstructions);
-                presenterChatHistory.AddUserMessage($"Rewrite the article at {rssItem.Link} in the style of {presenter.PresenterStyle}.");
-                var presenterResult = await chatService.GetChatMessageContentAsync(presenterChatHistory,
-                    _contentPromptSettings, _kernel);
-                if (await ProcessArticleContent(presenterResult, rssItem, db) is { } presenterContent)
+                var chatHistory = new ChatHistory(_analysisInstructions);
+                chatHistory.AddUserMessage($"The article to be analysed is: {rssItem.Link}");
+                var analyserResponse = await chatService.GetChatMessageContentAsync(chatHistory, _analyserPromptSettings, _kernel);
+                if (await ProcessArticleAnalysis(analyserResponse, rssItem, db) is not { } articleData)
                 {
-                    presenterContents[presenter.Id] = presenterContent;
+                    continue;
                 }
-            }
 
-            if (!ValidateArticleData(articleData, presenterContents, out var validationErrors))
+                var presenterContents = new Dictionary<int, PresenterContentData>();
+                foreach (var presenter in presenters)
+                {
+                    var presenterChatHistory = new ChatHistory(_contentInstructions);
+                    presenterChatHistory.AddUserMessage($"Rewrite the article at {rssItem.Link} in the style of {presenter.PresenterStyle}.");
+                    var presenterResult = await chatService.GetChatMessageContentAsync(presenterChatHistory,
+                        _contentPromptSettings, _kernel);
+                    if (await ProcessArticleContent(presenterResult, rssItem, db) is { } presenterContent)
+                    {
+                        presenterContents[presenter.Id] = presenterContent;
+                    }
+                }
+
+                if (!ValidateArticleData(articleData, presenterContents, out var validationErrors))
+                {
+                    await RecordFailure(rssItem, $"Validation failed: {string.Join(", ", validationErrors)}", db);
+                    _logger.LogError("ArticleData validation failed for {Link}. Data: {@ArticleData}", rssItem.Link, articleData);
+                    continue;
+                }
+
+                _logger.LogInformation("Successfully deserialized and aggregated ArticleData for {Link}", rssItem.Link);
+                await SaveAnalysisResults(rssItem, articleData, presenterContents, db);
+            }
+            catch (Exception ex)
             {
-                await RecordFailure(rssItem, $"Validation failed: {string.Join(", ", validationErrors)}", db);
-                _logger.LogError("ArticleData validation failed for {Link}. Data: {@ArticleData}", rssItem.Link, articleData);
-                continue;
+                SentrySdk.CaptureException(ex);
+                _logger.LogWarning(ex, "Skipping article {Link} due to unhandled exception", rssItem.Link);
+                await RecordFailure(rssItem, $"Unhandled exception: {ex.Message}", db);
             }
-
-            _logger.LogInformation("Successfully deserialized and aggregated ArticleData for {Link}", rssItem.Link);
-            await SaveAnalysisResults(rssItem, articleData, presenterContents, db);
         }
         _logger.LogInformation("Analysis {Count} articles - job complete", count);
     }
