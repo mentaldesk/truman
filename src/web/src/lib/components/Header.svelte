@@ -83,14 +83,14 @@
             step="1"
             bind:value={$mood}
             on:input={handleMoodChange}
-            class="w-32 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+            class="w-20 sm:w-32 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
             aria-label="News mood filter level"
           />
           <span class="text-xl" aria-hidden="true">😊</span>
         </div>
         <!-- Presenter Dropdown -->
         <div class="flex items-center space-x-2">
-          <label for="presenter-select" class="text-sm font-medium text-gray-700">Presenter:</label>
+          <label for="presenter-select" class="hidden sm:block text-sm font-medium text-gray-700">Presenter:</label>
           <select
             id="presenter-select"
             bind:value={$selectedPresenter}
