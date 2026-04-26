@@ -11,21 +11,17 @@ Truman is a personalised news/relevance app with three main parts:
 Supporting pieces:
 
 - `src/Truman.Data` — EF Core data layer and migrations
-- `k8s/charts/truman` + `Taskfile.yml` — current local/dev deployment flow via kind + Helm
-- `.github/workflows` — CI and an older Cloud Run deployment workflow
+- `compose.yaml` — local dev setup (API, JobRunner, web, Postgres)
+- `.github/workflows` — CI (build + test) and GHCR image publishing workflows
 
 ## Current direction
 
-The repo reflects a Kubernetes learning phase. Treat that stack as implementation history, not sacred architecture.
-
-Jim's stated goal is to simplify this so it can run comfortably on another VPS, ideally with a much smaller operational footprint and possibly as a single container. When making changes, prefer moves that:
+The repo has moved from Kubernetes/Helm/kind to a simple Docker Compose-based deployment. When making changes, prefer moves that:
 
 - reduce deployment complexity
 - preserve clear service boundaries in code even if runtime topology gets simpler
-- make local development easier without requiring a cluster
+- make local development easier
 - keep secrets/config externalised
-
-Do not expand the Kubernetes surface area unless there is a very good reason.
 
 ## Working rules
 
@@ -38,7 +34,6 @@ Do not expand the Kubernetes surface area unless there is a very good reason.
   - frontend API base URL handling
   - database migrations/persistence
 - Never commit real secrets. Use `.env` / secret injection patterns only.
-- Be careful with destructive database or cluster reset commands.
 
 ## Repo map
 
@@ -67,15 +62,12 @@ Do not expand the Kubernetes surface area unless there is a very good reason.
 ### Frontend
 
 - `src/web` is a Svelte app built with Vite.
-- The checked-in `src/web/README.md` is generic template boilerplate, so do not treat it as authoritative project documentation.
-- Frontend config depends on `Frontend__BaseUrl` and the chart values for API URL wiring.
+- Frontend config depends on `Frontend__BaseUrl` and the API URL wiring.
 
 ### Infra
 
-- `Taskfile.yml` is the main operational entrypoint for current local k8s workflows.
-- `k8s/charts/truman` contains the Helm chart.
-- There is currently no repo-root Docker Compose setup.
-- There is a Cloud Run workflow in `.github/workflows/cloudrun-docker.yml`, but treat it as historical unless verified.
+- `compose.yaml` at the repo root is the local dev entrypoint — runs API, JobRunner, web, and Postgres.
+- `.github/workflows` contains a build/test workflow and two GHCR image publishing workflows.
 
 ## Useful commands
 
@@ -94,19 +86,11 @@ Run these from the repo root unless there is a better documented path.
 - `cd src/web && npm run build`
 - `cd src/web && npm run test`
 
-### Local config
+### Local dev
 
 - `cp env.example .env`
-- Fill in required OAuth, email, AI, DB, and Sentry values before expecting full app behaviour.
-
-### Current k8s/dev flow
-
-- `task kind-generate-config`
-- `task kind-create`
-- `task helm-dev-deploy`
-- `task helm-port-forward`
-
-Use `task helm-dev-reset` only with care; it tears down Postgres-related artefacts.
+- Fill in required OAuth, email, AI, DB, and Sentry values.
+- `docker compose up --build`
 
 ## Change guidance
 
@@ -120,8 +104,7 @@ Start by separating concerns conceptually:
 
 Good simplification targets usually include:
 
-- replacing kind+Helm local workflows with Docker Compose or a small set of plain container definitions
-- making JobRunner runnable by cron/systemd/host scheduler instead of Kubernetes CronJob
+- making JobRunner runnable by cron/systemd/host scheduler
 - serving the built frontend from the API container or a simple web container
 - documenting the minimum environment needed for a single-VPS deployment
 
@@ -154,4 +137,4 @@ If infra/deployment was touched, also verify the new path actually starts cleanl
 
 ## Notes for future agents
 
-If you learn the real intended production topology, deployment constraints, feed sources, or user-facing product goals, update this file. Right now the main architectural fact worth preserving is simple: the codebase has useful application pieces, but the operational model is more complicated than it needs to be.
+If you learn more about the feed sources, user-facing product goals, or deployment constraints, update this file.
