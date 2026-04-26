@@ -1,50 +1,48 @@
 # Contributing
 
-The following dependencies will be required to work with this project locally.
+## Prerequisites
 
-## Dependencies
+- [Docker Engine](https://docs.docker.com/engine/install/) with the Docker Compose plugin
+- That's it for running the app. For running tests locally (outside Docker), you'll also need:
+  - [.NET SDK](https://dotnet.microsoft.com/download) (version matching `global.json`)
+  - [Node.js](https://nodejs.org/) (LTS)
 
-### Docker Desktop
+## Setup
 
-Please install Docker Desktop via their instructions (Install Docker Desktop on [Mac](https://docs.docker.com/desktop/install/mac-install/), [Windows](https://docs.docker.com/desktop/install/windows-install/), or [Linux](https://docs.docker.com/desktop/install/linux-install/).)
-
-### Devbox
-
-All other software dependencies to work locally with the solution are defined in the `devbox.json` and `devbox.lock` files in the root directory.
-
-Please install Devbox according to their instructions: https://www.jetify.com/devbox/docs/installing_devbox/
-
-Once installed you can run:
-
-```
-devbox shell
-```
-
-from anywhere in the repo and devbox will use Nix package manager to install a copy of all of the required software in an isolated environment.
-
-## Configuration
-
-Most application configuration is stored and read from `.env` files.
-
-### Setting up your environment
-
-1. Copy `env.example` to `.env` in the root directory:
+1. Copy the example env file and fill in values:
    ```bash
    cp env.example .env
    ```
+   Update `.env` with your credentials — OAuth providers, Brevo API key, Google AI API key, and database connection string.
 
-2. Update the `.env` file with your actual credentials:
-   - **OAuth Providers**: Get Google and Facebook OAuth credentials from their respective developer consoles
-   - **Email**: Get your Brevo API key from the Brevo dashboard
-   - **AI**: Get your Google AI API key from Google AI Studio
-   - **Database**: Update the connection string if using different database credentials
+2. Start the app:
+   ```bash
+   docker compose up --build
+   ```
 
-### Configuration Structure
+## Configuration structure
 
-The `.env` file uses hierarchical configuration keys with double underscores (`__`) to map to ASP.NET Core's configuration sections:
+`.env` uses ASP.NET Core's double-underscore convention to represent nested config keys:
 
-- `Authentication__Google__ClientId` maps to `Authentication:Google:ClientId`
-- `Email__Brevo__ApiKey` maps to `Email:Brevo:ApiKey`
-- `AI__ApiKey` maps to `AI:ApiKey`
+- `Authentication__Google__ClientId` → `Authentication:Google:ClientId`
+- `Email__Brevo__ApiKey` → `Email:Brevo:ApiKey`
+- `AI__ApiKey` → `AI:ApiKey`
 
-This approach ensures that sensitive configuration is kept out of source control and can be easily overridden in different environments (local development, Docker, production).
+This keeps secrets out of source control and works consistently across local Docker and production environments.
+
+## Running tests
+
+```bash
+dotnet restore truman.sln
+dotnet build truman.sln
+dotnet test truman.sln
+```
+
+Frontend:
+
+```bash
+cd src/web
+npm install
+npm run test
+npm run build
+```
