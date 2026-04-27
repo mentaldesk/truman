@@ -17,10 +17,11 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    env_file:
-      - .env
     environment:
       ConnectionStrings__DefaultConnection: "Host=postgres;Database=truman;Username=${POSTGRES_USER:-truman};Password=${POSTGRES_PASSWORD}"
+      AI__ApiKey: ${AI__ApiKey}
+      AI__Model: ${AI__Model}
+      Sentry__Dsn: ${Sentry__Dsn:-}
     command: ["--run-migrations"]
     restart: no
 
@@ -29,10 +30,11 @@ services:
     depends_on:
       jobrunner-migrate:
         condition: service_completed_successfully
-    env_file:
-      - .env
     environment:
       ConnectionStrings__DefaultConnection: "Host=postgres;Database=truman;Username=${POSTGRES_USER:-truman};Password=${POSTGRES_PASSWORD}"
+      AI__ApiKey: ${AI__ApiKey}
+      AI__Model: ${AI__Model}
+      Sentry__Dsn: ${Sentry__Dsn:-}
     command: ["--fetch", "--analyse", "--limit", "10"]
     restart: no
 
@@ -45,8 +47,13 @@ services:
         condition: service_completed_successfully
     ports:
       - "3000:8080"
-    env_file:
-      - .env
     environment:
       ConnectionStrings__DefaultConnection: "Host=postgres;Database=truman;Username=${POSTGRES_USER:-truman};Password=${POSTGRES_PASSWORD}"
       Authentication__Social__Enabled: "false"
+      Authentication__Jwt__Key: ${Authentication__Jwt__Key}
+      Authentication__Jwt__Issuer: ${Authentication__Jwt__Issuer:-truman-api}
+      Authentication__Jwt__Audience: ${Authentication__Jwt__Audience:-truman-web}
+      Email__Brevo__ApiKey: ${Email__Brevo__ApiKey}
+      Email__Brevo__MagicLinkTemplateId: ${Email__Brevo__MagicLinkTemplateId:-1}
+      Sentry__Dsn: ${Sentry__Dsn:-}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
