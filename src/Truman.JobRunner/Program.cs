@@ -103,6 +103,13 @@ try
         })
         .Build();
 
+    int? limit = null;
+    var limitIndex = Array.IndexOf(args, "--limit");
+    if (limitIndex >= 0 && limitIndex + 1 < args.Length && int.TryParse(args[limitIndex + 1], out var parsedLimit))
+    {
+        limit = parsedLimit;
+    }
+
     if (args.Contains("--run-migrations"))
     {
         var migrator = host.Services.GetRequiredService<DbMigrator>();
@@ -117,7 +124,7 @@ try
     else if (args.Contains("--analyse"))
     {
         var analyser = host.Services.GetRequiredService<ArticleAnalyser>();
-        await analyser.RunAsync();
+        await analyser.RunAsync(limit);
     }
     else
     {
@@ -129,7 +136,7 @@ try
             await fetcher.RunAsync();
 
             var analyser = host.Services.GetRequiredService<ArticleAnalyser>();
-            await analyser.RunAsync();
+            await analyser.RunAsync(limit);
             
             SentrySdk.CaptureCheckIn("update-articles", CheckInStatus.Ok, checkInId);
         }

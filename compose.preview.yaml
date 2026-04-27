@@ -1,0 +1,55 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: truman
+      POSTGRES_USER: ${POSTGRES_USER:-truman}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-truman}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # No volumes — ephemeral DB, dies with the container
+
+  jobrunner-migrate:
+    image: ghcr.io/mentaldesk/truman-jobrunner:latest
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment: &jobrunner-env
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=truman;Username=${POSTGRES_USER:-truman};Password=${POSTGRES_PASSWORD}"
+      AI__ApiKey: ${AI__ApiKey}
+      AI__Model: ${AI__Model}
+      Sentry__Dsn: ${Sentry__Dsn:-}
+    command: ["--run-migrations"]
+    restart: no
+
+  jobrunner-seed:
+    image: ghcr.io/mentaldesk/truman-jobrunner:latest
+    depends_on:
+      jobrunner-migrate:
+        condition: service_completed_successfully
+    environment: *jobrunner-env
+    command: ["--fetch", "--analyse", "--limit", "10"]
+    restart: no
+
+  app:
+    image: ghcr.io/mentaldesk/truman:latest
+    depends_on:
+      postgres:
+        condition: service_healthy
+      jobrunner-seed:
+        condition: service_completed_successfully
+    ports:
+      - "3000:8080"
+    environment:
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=truman;Username=${POSTGRES_USER:-truman};Password=${POSTGRES_PASSWORD}"
+      Authentication__Google__ClientId: ${Authentication__Google__ClientId:-}
+      Authentication__Google__ClientSecret: ${Authentication__Google__ClientSecret:-}
+      Authentication__Google__Enabled: "false"
+      Authentication__Jwt__Key: ${Authentication__Jwt__Key}
+      Authentication__Jwt__Issuer: ${Authentication__Jwt__Issuer:-https://truman.news}
+      Email__Brevo__ApiKey: ${Email__Brevo__ApiKey}
+      Sentry__Dsn: ${Sentry__Dsn:-}
+      Frontend__BaseUrl: ${DOKPLOY_DEPLOY_URL:-http://localhost:3000}
