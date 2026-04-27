@@ -18,7 +18,10 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      ConnectionStrings__DefaultConnection: "Host=postgres;Database=truman;Username=${POSTGRES_USER:-truman};Password=${POSTGRES_PASSWORD}"
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: truman
+      POSTGRES_USER: ${POSTGRES_USER:-truman}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       AI__ApiKey: ${AI__ApiKey}
       AI__Model: ${AI__Model}
       Sentry__Dsn: ${Sentry__Dsn:-}
@@ -31,7 +34,10 @@ services:
       jobrunner-migrate:
         condition: service_completed_successfully
     environment:
-      ConnectionStrings__DefaultConnection: "Host=postgres;Database=truman;Username=${POSTGRES_USER:-truman};Password=${POSTGRES_PASSWORD}"
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: truman
+      POSTGRES_USER: ${POSTGRES_USER:-truman}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       AI__ApiKey: ${AI__ApiKey}
       AI__Model: ${AI__Model}
       Sentry__Dsn: ${Sentry__Dsn:-}
@@ -48,7 +54,10 @@ services:
     ports:
       - "3000:8080"
     environment:
-      ConnectionStrings__DefaultConnection: "Host=postgres;Database=truman;Username=${POSTGRES_USER:-truman};Password=${POSTGRES_PASSWORD}"
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: truman
+      POSTGRES_USER: ${POSTGRES_USER:-truman}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       Authentication__Social__Enabled: "false"
       Authentication__Jwt__Key: ${Authentication__Jwt__Key}
       Authentication__Jwt__Issuer: ${Authentication__Jwt__Issuer:-truman-api}
