@@ -49,5 +49,5 @@ services:
       - .env
     environment:
       ConnectionStrings__DefaultConnection: "Host=postgres;Database=truman;Username=${POSTGRES_USER:-truman};Password=${POSTGRES_PASSWORD}"
-      Authentication__Google__Enabled: "false"
+      Authentication__Social__Enabled: "false"
       Frontend__BaseUrl: ${DOKPLOY_DEPLOY_URL:-http://localhost:3000}
