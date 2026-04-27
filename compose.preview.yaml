@@ -52,12 +52,13 @@ services:
       jobrunner-seed:
         condition: service_completed_successfully
     ports:
-      - "3000:8080"
+      - "8080:5001"
     environment:
       POSTGRES_HOST: postgres
       POSTGRES_DB: truman
       POSTGRES_USER: ${POSTGRES_USER:-truman}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PORT: 5001
       Authentication__Social__Enabled: "false"
       Authentication__Jwt__Key: ${Authentication__Jwt__Key}
       Authentication__Jwt__Issuer: ${Authentication__Jwt__Issuer:-truman-api}
