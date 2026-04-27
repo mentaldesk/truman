@@ -119,11 +119,13 @@ if (hasWebBuild)
         var apiUrl = context.Request.GetBaseUrl();
         var sentryDsn = configuration["Sentry:Dsn"] ?? string.Empty;
         var environment = app.Environment.EnvironmentName;
+        var socialEnabled = configuration.GetValue("Authentication:Social:Enabled", defaultValue: true);
 
         var js = string.Join("\n",
             "window.__API_URL__ = " + JsonSerializer.Serialize(apiUrl) + ";",
             "window.__ENVIRONMENT__ = " + JsonSerializer.Serialize(environment) + ";",
-            "window.__SENTRY_DSN__ = " + JsonSerializer.Serialize(sentryDsn) + ";");
+            "window.__SENTRY_DSN__ = " + JsonSerializer.Serialize(sentryDsn) + ";",
+            "window.__SOCIAL_AUTH_ENABLED__ = " + JsonSerializer.Serialize(socialEnabled) + ";");
 
         return Results.Text(js, "application/javascript");
     }).ExcludeFromDescription();

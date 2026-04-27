@@ -41,8 +41,7 @@ public static class AuthServiceExtensions
                     )
                 };
             })
-            .AddFacebook(ConfigureFacebookOptions(configuration))
-            .AddGoogle(ConfigureGoogleOptions(configuration));
+            .AddConditionalSocialAuth(configuration);
 
         services.AddAuthorization(options =>
         {
@@ -50,6 +49,16 @@ public static class AuthServiceExtensions
                 policy.RequireAuthenticatedUser().RequireRole("admin"));
         });
         return services;
+    }
+
+    private static AuthenticationBuilder AddConditionalSocialAuth(this AuthenticationBuilder builder, IConfiguration configuration)
+    {
+        var socialEnabled = configuration.GetValue("Authentication:Social:Enabled", defaultValue: true);
+        if (!socialEnabled) return builder;
+
+        return builder
+            .AddFacebook(ConfigureFacebookOptions(configuration))
+            .AddGoogle(ConfigureGoogleOptions(configuration));
     }
 
     private static Action<FacebookOptions> ConfigureFacebookOptions(IConfiguration configuration)
