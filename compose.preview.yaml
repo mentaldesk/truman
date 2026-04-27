@@ -1,0 +1,69 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: truman
+      POSTGRES_USER: ${POSTGRES_USER:-truman}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-truman}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # No volumes — ephemeral DB, dies with the container
+
+  jobrunner-migrate:
+    image: ghcr.io/mentaldesk/truman-jobrunner:${IMAGE_TAG:-latest}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: truman
+      POSTGRES_USER: ${POSTGRES_USER:-truman}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      AI__ApiKey: ${AI__ApiKey}
+      AI__Model: ${AI__Model}
+      Sentry__Dsn: ${Sentry__Dsn:-}
+    command: ["--run-migrations"]
+    restart: no
+
+  jobrunner-seed:
+    image: ghcr.io/mentaldesk/truman-jobrunner:${IMAGE_TAG:-latest}
+    depends_on:
+      jobrunner-migrate:
+        condition: service_completed_successfully
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: truman
+      POSTGRES_USER: ${POSTGRES_USER:-truman}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      AI__ApiKey: ${AI__ApiKey}
+      AI__Model: ${AI__Model}
+      Sentry__Dsn: ${Sentry__Dsn:-}
+    command: ["--fetch", "--analyse", "--limit", "10"]
+    restart: no
+
+  app:
+    image: ghcr.io/mentaldesk/truman:${IMAGE_TAG:-latest}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      jobrunner-seed:
+        condition: service_completed_successfully
+    ports:
+      - "8080:5001"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: truman
+      POSTGRES_USER: ${POSTGRES_USER:-truman}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PORT: 5001
+      Authentication__Social__Enabled: "false"
+      Authentication__Jwt__Key: ${Authentication__Jwt__Key}
+      Authentication__Jwt__Issuer: ${Authentication__Jwt__Issuer:-truman-api}
+      Authentication__Jwt__Audience: ${Authentication__Jwt__Audience:-truman-web}
+      Email__Brevo__ApiKey: ${Email__Brevo__ApiKey}
+      Email__Brevo__MagicLinkTemplateId: ${Email__Brevo__MagicLinkTemplateId:-1}
+      Sentry__Dsn: ${Sentry__Dsn:-}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}

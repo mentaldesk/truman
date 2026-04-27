@@ -57,7 +57,7 @@ public class ArticleAnalyser
 
     const int MaxTokens = 10_000;
 
-    public async Task RunAsync()
+    public async Task RunAsync(int? limit = null)
     {
         await using var db = await _contextFactory.CreateDbContextAsync();
         var pending = await db.RssItems
@@ -67,6 +67,11 @@ public class ArticleAnalyser
         if (pending.Count == 0)
         {
             return;
+        }
+        if (limit.HasValue)
+        {
+            _logger.LogInformation("Limiting analysis to {Limit} articles", limit.Value);
+            pending = pending.Take(limit.Value).ToList();
         }
         await AnalyzePendingArticles(pending, db);
     }
