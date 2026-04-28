@@ -49,7 +49,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      jobrunner-seed:
+      jobrunner-migrate:
         condition: service_completed_successfully
     ports:
       - "8080:5001"
