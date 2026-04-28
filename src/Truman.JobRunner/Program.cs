@@ -110,23 +110,29 @@ try
         limit = parsedLimit;
     }
 
-    if (args.Contains("--run-migrations"))
+    var runMigrations = args.Contains("--run-migrations");
+    var runFetch = args.Contains("--fetch");
+    var runAnalyse = args.Contains("--analyse");
+
+    if (runMigrations)
     {
         var migrator = host.Services.GetRequiredService<DbMigrator>();
         await migrator.RunAsync();
-        return; // success
     }
-    else if (args.Contains("--fetch"))
+
+    if (runFetch)
     {
         var fetcher = host.Services.GetRequiredService<RssFetcher>();
         await fetcher.RunAsync();
     }
-    else if (args.Contains("--analyse"))
+
+    if (runAnalyse)
     {
         var analyser = host.Services.GetRequiredService<ArticleAnalyser>();
         await analyser.RunAsync(limit);
     }
-    else
+
+    if (!runMigrations && !runFetch && !runAnalyse)
     {
         var checkInId = SentrySdk.CaptureCheckIn("update-articles", CheckInStatus.InProgress);
         try
