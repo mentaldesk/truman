@@ -276,7 +276,6 @@ public class ArticleAnalyser
 
         SentrySdk.ConfigureScope(scope =>
         {
-            scope.Level = SentryLevel.Error;
             scope.SetTag("analysis.link", rssItem.Link);
             scope.SetTag("analysis.stage", stage ?? "unknown");
             scope.SetExtra("analysis.reason", reason);
