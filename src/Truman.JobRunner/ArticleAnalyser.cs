@@ -80,12 +80,12 @@ public class ArticleAnalyser
     {
         if (result.Metadata!.ReadValue<GeminiFinishReason>("FinishReason") is { } finishReason && finishReason.Label != "STOP")
         {
-            await RecordFailure(rssItem, $"GeminiFinishReason == {finishReason}", db);
+            await RecordFailure(rssItem, $"GeminiFinishReason == {finishReason}", db, stage: "article-analysis");
             return null;
         }
         if (result.Content is not { } responseContent)
         {
-            await RecordFailure(rssItem, "No content returned", db);
+            await RecordFailure(rssItem, "No content returned", db, stage: "article-analysis");
             return null;
         }
         _logger.LogInformation("Analysis results for {Link}:", rssItem.Link);
@@ -95,7 +95,7 @@ public class ArticleAnalyser
             var articleData = JsonSerializer.Deserialize<ArticleData>(result.Content);
             if (articleData == null)
             {
-                await RecordFailure(rssItem, "Deserialization returned null", db);
+                await RecordFailure(rssItem, "Deserialization returned null", db, stage: "article-analysis");
                 return null;
             }
 
@@ -103,7 +103,7 @@ public class ArticleAnalyser
         }
         catch (JsonException ex)
         {
-            await RecordFailure(rssItem, $"JSON deserialization failed: {ex.Message}", db);
+            await RecordFailure(rssItem, $"JSON deserialization failed: {ex.Message}", db, stage: "article-analysis", ex, responseContent);
             _logger.LogError(ex, "JSON deserialization exception for {Link}. JSON: {JsonResponse}", rssItem.Link, responseContent);
             return null;
         }
@@ -113,12 +113,12 @@ public class ArticleAnalyser
     {
         if (result.Metadata!.ReadValue<GeminiFinishReason>("FinishReason") is { } finishReason && finishReason.Label != "STOP")
         {
-            await RecordFailure(rssItem, $"GeminiFinishReason == {finishReason}", db);
+            await RecordFailure(rssItem, $"GeminiFinishReason == {finishReason}", db, stage: "presenter-content");
             return null;
         }
         if (result.Content is not { } responseContent)
         {
-            await RecordFailure(rssItem, "No content returned", db);
+            await RecordFailure(rssItem, "No content returned", db, stage: "presenter-content");
             return null;
         }
         try
@@ -126,7 +126,7 @@ public class ArticleAnalyser
             var presenterContent = JsonSerializer.Deserialize<PresenterContentData>(responseContent);
             if (presenterContent == null)
             {
-                await RecordFailure(rssItem, "Deserialization returned null", db);
+                await RecordFailure(rssItem, "Deserialization returned null", db, stage: "presenter-content");
                 return null;
             }
 
@@ -134,7 +134,7 @@ public class ArticleAnalyser
         }
         catch (JsonException ex)
         {
-            await RecordFailure(rssItem, $"JSON deserialization failed: {ex.Message}", db);
+            await RecordFailure(rssItem, $"JSON deserialization failed: {ex.Message}", db, stage: "presenter-content", ex, responseContent);
             _logger.LogError(ex, "JSON deserialization exception for {Link}. JSON: {JsonResponse}", rssItem.Link, responseContent);
             return null;
         }                
@@ -181,7 +181,7 @@ public class ArticleAnalyser
 
                 if (!ValidateArticleData(articleData, presenterContents, out var validationErrors))
                 {
-                    await RecordFailure(rssItem, $"Validation failed: {string.Join(", ", validationErrors)}", db);
+                    await RecordFailure(rssItem, $"Validation failed: {string.Join(", ", validationErrors)}", db, stage: "validation");
                     _logger.LogError("ArticleData validation failed for {Link}. Data: {@ArticleData}", rssItem.Link, articleData);
                     continue;
                 }
@@ -193,7 +193,7 @@ public class ArticleAnalyser
             {
                 SentrySdk.CaptureException(ex);
                 _logger.LogWarning(ex, "Skipping article {Link} due to unhandled exception", rssItem.Link);
-                await RecordFailure(rssItem, $"Unhandled exception: {ex.Message}", db);
+                await RecordFailure(rssItem, $"Unhandled exception: {ex.Message}", db, stage: "analysis-loop", exception: ex);
             }
         }
         _logger.LogInformation("Analysis {Count} articles - job complete", count);
@@ -266,13 +266,34 @@ public class ArticleAnalyser
         catch (Exception ex)
         {
             await transaction.RollbackAsync();
-            await RecordFailure(rssItem, $"Database save failed: {ex.Message}", db);
+            await RecordFailure(rssItem, $"Database save failed: {ex.Message}", db, stage: "save-results", exception: ex);
         }
     }
 
-    private async Task RecordFailure(RssItem rssItem, string reason, TrumanDbContext db)
+    private async Task RecordFailure(RssItem rssItem, string reason, TrumanDbContext db, string? stage = null, Exception? exception = null, string? responseContent = null)
     {
         _logger.LogError("Article analysis failed for {Link}: {Reason}", rssItem.Link, reason);
+
+        SentrySdk.ConfigureScope(scope =>
+        {
+            scope.Level = SentryLevel.Error;
+            scope.SetTag("analysis.link", rssItem.Link);
+            scope.SetTag("analysis.stage", stage ?? "unknown");
+            scope.SetExtra("analysis.reason", reason);
+            if (responseContent is not null)
+            {
+                scope.SetExtra("analysis.response_content", responseContent);
+            }
+        });
+
+        if (exception is not null)
+        {
+            SentrySdk.CaptureException(exception);
+        }
+        else
+        {
+            SentrySdk.CaptureMessage($"Article analysis failed at {stage ?? "unknown"}: {reason}", SentryLevel.Error);
+        }
         
         // Mark the RssItem as analysed to prevent infinite retry loops
         rssItem.TimeAnalysed = DateTimeOffset.UtcNow;
