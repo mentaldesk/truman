@@ -120,22 +120,30 @@ try
         await migrator.RunAsync();
     }
 
-    if (runFetch)
+    var shouldRunDefaultFlow = !runMigrations && !runFetch && !runAnalyse;
+    var shouldCreateCheckIn = runFetch || runAnalyse || shouldRunDefaultFlow;
+
+    SentryId? checkInId = null;
+    if (shouldCreateCheckIn)
     {
-        var fetcher = host.Services.GetRequiredService<RssFetcher>();
-        await fetcher.RunAsync();
+        checkInId = SentrySdk.CaptureCheckIn("update-articles", CheckInStatus.InProgress);
     }
 
-    if (runAnalyse)
+    try
     {
-        var analyser = host.Services.GetRequiredService<ArticleAnalyser>();
-        await analyser.RunAsync(limit);
-    }
+        if (runFetch)
+        {
+            var fetcher = host.Services.GetRequiredService<RssFetcher>();
+            await fetcher.RunAsync();
+        }
 
-    if (!runMigrations && !runFetch && !runAnalyse)
-    {
-        var checkInId = SentrySdk.CaptureCheckIn("update-articles", CheckInStatus.InProgress);
-        try
+        if (runAnalyse)
+        {
+            var analyser = host.Services.GetRequiredService<ArticleAnalyser>();
+            await analyser.RunAsync(limit);
+        }
+
+        if (shouldRunDefaultFlow)
         {
             // By default, we fetch and analyse
             var fetcher = host.Services.GetRequiredService<RssFetcher>();
@@ -143,15 +151,20 @@ try
 
             var analyser = host.Services.GetRequiredService<ArticleAnalyser>();
             await analyser.RunAsync(limit);
-            
-            SentrySdk.CaptureCheckIn("update-articles", CheckInStatus.Ok, checkInId);
         }
-        catch
+
+        if (checkInId.HasValue)
         {
-            SentrySdk.CaptureCheckIn("update-articles", CheckInStatus.Error, checkInId);            
-            throw;
+            SentrySdk.CaptureCheckIn("update-articles", CheckInStatus.Ok, checkInId.Value);
         }
-        
+    }
+    catch
+    {
+        if (checkInId.HasValue)
+        {
+            SentrySdk.CaptureCheckIn("update-articles", CheckInStatus.Error, checkInId.Value);
+        }
+        throw;
     }
 }
 catch (Exception e)
