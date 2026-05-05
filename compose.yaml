@@ -3,8 +3,7 @@ services:
     build:
       context: ./src
       dockerfile: Truman.Api/Dockerfile
-      args:
-        SENTRY_AUTH_TOKEN: ${SENTRY_AUTH_TOKEN_TRUMAN:-}
+
     image: truman-app:local
     depends_on:
       postgres:
