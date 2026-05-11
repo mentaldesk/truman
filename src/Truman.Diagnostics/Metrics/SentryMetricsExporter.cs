@@ -27,14 +27,7 @@ public sealed class SentryMetricsExporter : IDisposable
     {
         _listener.InstrumentPublished = static (instrument, listener) =>
         {
-            if (instrument.Meter.Name.Equals("System.Runtime", StringComparison.Ordinal) ||
-                instrument.Meter.Name.StartsWith("System.Net.", StringComparison.Ordinal) ||
-                instrument.Meter.Name.StartsWith("Microsoft.Extensions.", StringComparison.Ordinal) ||
-                instrument.Meter.Name.StartsWith("Microsoft.AspNetCore.", StringComparison.Ordinal) ||
-                instrument.Meter.Name.Equals("Microsoft.EntityFrameworkCore", StringComparison.Ordinal))
-            {
-                listener.EnableMeasurementEvents(instrument);
-            }
+            listener.EnableMeasurementEvents(instrument);
         };
 
         _listener.SetMeasurementEventCallback<byte>(OnMeasurementRecorded);
