@@ -10,7 +10,7 @@ public sealed class SentryMetricsExporter : IDisposable
     public static IDisposable Start(IServiceProvider services)
     {
         var exporter = new SentryMetricsExporter(services);
-        _ = exporter.StartAsync();
+        exporter.Start();
         return exporter;
     }
 
@@ -23,7 +23,7 @@ public sealed class SentryMetricsExporter : IDisposable
         _logger = services.GetRequiredService<ILogger<SentryMetricsExporter>>();
     }
 
-    internal async Task StartAsync(CancellationToken cancellationToken = default)
+    internal void Start()
     {
         _listener.InstrumentPublished = static (instrument, listener) =>
         {
@@ -46,12 +46,6 @@ public sealed class SentryMetricsExporter : IDisposable
         _listener.SetMeasurementEventCallback<decimal>(OnUnsupportedMeasurementRecorded);
 
         _listener.Start();
-
-        using PeriodicTimer timer = new(TimeSpan.FromSeconds(60));
-        while (await timer.WaitForNextTickAsync(cancellationToken))
-        {
-            _listener.RecordObservableInstruments();
-        }
     }
     
     private void OnMeasurementRecorded<T>(Instrument instrument, T measurement, ReadOnlySpan<KeyValuePair<string, object?>> tags, object? state) where T : struct
@@ -91,11 +85,11 @@ public sealed class SentryMetricsExporter : IDisposable
             }
         }
 
-        if (instrument is Counter<T> or ObservableCounter<T> or UpDownCounter<T> or ObservableUpDownCounter<T>)
+        if (instrument is Counter<T> or UpDownCounter<T>)
         {
             SentrySdk.Metrics.EmitCounter(instrument.Name, measurement, attributes);
         }
-        else if (instrument is Gauge<T> or ObservableGauge<T>)
+        else if (instrument is Gauge<T>)
         {
             var unit = MeasurementUnitFactory.From(instrument.Unit, _logger);
             SentrySdk.Metrics.EmitGauge(instrument.Name, measurement, unit, attributes);
@@ -132,7 +126,7 @@ file static class MeasurementUnitFactory
     /// <seealso href="https://ucum.org/ucum"/>
     /// <seealso href="https://learn.microsoft.com/dotnet/core/diagnostics/built-in-metrics"/>
     /// <seealso href="https://develop.sentry.dev/sdk/foundations/state-management/scopes/attributes/#units"/>
-    public static MeasurementUnit From(string? unit, ILogger logger)
+    internal static MeasurementUnit From(string? unit, ILogger logger)
     {
         return unit switch
         {

@@ -2,7 +2,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace Truman.Diagnostics.Metrics;
 
-internal sealed class SentryMetricsExporterHostedService : BackgroundService
+internal sealed class SentryMetricsExporterHostedService : IHostedService
 {
     private readonly SentryMetricsExporter _exporter;
 
@@ -11,13 +11,15 @@ internal sealed class SentryMetricsExporterHostedService : BackgroundService
         _exporter = new SentryMetricsExporter(services);
     }
 
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    public Task StartAsync(CancellationToken cancellationToken)
     {
-        return _exporter.StartAsync(stoppingToken);
+        _exporter.Start();
+        return Task.CompletedTask;
     }
 
-    public override void Dispose()
+    public Task StopAsync(CancellationToken cancellationToken)
     {
         _exporter.Stop();
+        return Task.CompletedTask;
     }
 }
