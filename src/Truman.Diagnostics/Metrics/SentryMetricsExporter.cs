@@ -15,11 +15,13 @@ public sealed class SentryMetricsExporter : IDisposable
     }
 
     private readonly MeterListener _listener;
+    private readonly MeasurementUnitConverter _converter;
     private readonly ILogger<SentryMetricsExporter> _logger;
 
     internal SentryMetricsExporter(IServiceProvider services)
     {
         _listener = new MeterListener();
+        _converter = new MeasurementUnitConverter();
         _logger = services.GetRequiredService<ILogger<SentryMetricsExporter>>();
     }
 
@@ -83,12 +85,12 @@ public sealed class SentryMetricsExporter : IDisposable
         }
         else if (instrument is Gauge<T>)
         {
-            var unit = MeasurementUnitFactory.From(instrument.Unit, _logger);
+            var unit = _converter.Convert(instrument.Unit, _logger);
             SentrySdk.Metrics.EmitGauge(instrument.Name, measurement, unit, attributes);
         }
         else if (instrument is Histogram<T>)
         {
-            var unit = MeasurementUnitFactory.From(instrument.Unit, _logger);
+            var unit = _converter.Convert(instrument.Unit, _logger);
             SentrySdk.Metrics.EmitDistribution(instrument.Name, measurement, unit, attributes);
         }
         else
@@ -105,28 +107,5 @@ public sealed class SentryMetricsExporter : IDisposable
     public void Dispose()
     {
         _listener.Dispose();
-    }
-}
-
-file static class MeasurementUnitFactory
-{
-    /// <seealso href="https://ucum.org/ucum"/>
-    /// <seealso href="https://learn.microsoft.com/dotnet/core/diagnostics/built-in-metrics"/>
-    /// <seealso href="https://develop.sentry.dev/sdk/foundations/state-management/scopes/attributes/#units"/>
-    internal static MeasurementUnit From(string? unit, ILogger logger)
-    {
-        return unit switch
-        {
-            "s" => MeasurementUnit.Duration.Second,
-            "By" => MeasurementUnit.Information.Byte,
-            null => default,
-            _ => Default(unit, logger),
-        };
-
-        static MeasurementUnit Default(string unit, ILogger logger)
-        {
-            logger.LogError("Instrument unit {Unit} not supported", unit);
-            return default;
-        }
     }
 }
