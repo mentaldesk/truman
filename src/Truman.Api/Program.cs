@@ -35,6 +35,7 @@ builder.WebHost.UseSentry(options =>
     options.StackTraceMode = StackTraceMode.Enhanced;
 });
 builder.Services.AddSentryTunneling();
+builder.Host.AddSentryMetricsExporter();
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {

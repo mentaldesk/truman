@@ -7,10 +7,10 @@ using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Polly;
 using Truman.Data;
+using Truman.Diagnostics.Metrics;
 using Truman.JobRunner;
 using DotNetEnv;
 using DotNetEnv.Configuration;
-using Microsoft.Extensions.Configuration;
 
 #if DEBUG
 Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", "Development");
@@ -102,6 +102,8 @@ try
             });
         })
         .Build();
+
+    using var exporter = SentryMetricsExporter.Start(host.Services);
 
     int? limit = null;
     var limitIndex = Array.IndexOf(args, "--limit");
