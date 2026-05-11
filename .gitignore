@@ -5,6 +5,7 @@ riderModule.iml
 /_ReSharper.Caches/
 .idea
 *.user
+.DS_Store
 
 # Environment files
 .env
