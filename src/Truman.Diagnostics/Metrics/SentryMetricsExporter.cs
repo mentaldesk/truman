@@ -36,11 +36,10 @@ public sealed class SentryMetricsExporter : IDisposable
         _listener.SetMeasurementEventCallback<long>(OnMeasurementRecorded);
         _listener.SetMeasurementEventCallback<float>(OnMeasurementRecorded);
         _listener.SetMeasurementEventCallback<double>(OnMeasurementRecorded);
-        _listener.SetMeasurementEventCallback<decimal>(OnUnsupportedMeasurementRecorded);
 
         _listener.Start();
     }
-    
+
     private void OnMeasurementRecorded<T>(Instrument instrument, T measurement, ReadOnlySpan<KeyValuePair<string, object?>> tags, object? state) where T : struct
     {
         TagList attributes = [];
@@ -96,11 +95,6 @@ public sealed class SentryMetricsExporter : IDisposable
         {
             _logger.LogError("Instrument type {Instrument} not supported", instrument.GetType());
         }
-    }
-
-    private void OnUnsupportedMeasurementRecorded<T>(Instrument instrument, T measurement, ReadOnlySpan<KeyValuePair<string, object?>> tags, object? state) where T : struct
-    {
-        _logger.LogError("Measurement type {Measurement} not supported", typeof(T));
     }
 
     internal void Stop()
