@@ -1,7 +1,7 @@
 name: Build and Publish JobRunner Container
 
 on:
-  pull_request:
+  pull_request_target:
   push:
     branches:
       - main
@@ -20,6 +20,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
