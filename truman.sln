@@ -30,6 +30,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Truman.Api.Tests", "test\Tr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Truman.Diagnostics", "src\Truman.Diagnostics\Truman.Diagnostics.csproj", "{1211BF81-F06F-40FE-AE39-63902841F10A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Truman.Diagnostics.Tests", "test\Truman.Diagnostics.Tests\Truman.Diagnostics.Tests.csproj", "{6048B204-F988-42AC-9208-6A5A5E27E11F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -56,6 +58,10 @@ Global
 		{1211BF81-F06F-40FE-AE39-63902841F10A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1211BF81-F06F-40FE-AE39-63902841F10A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1211BF81-F06F-40FE-AE39-63902841F10A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6048B204-F988-42AC-9208-6A5A5E27E11F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6048B204-F988-42AC-9208-6A5A5E27E11F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6048B204-F988-42AC-9208-6A5A5E27E11F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6048B204-F988-42AC-9208-6A5A5E27E11F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{7C8EDADD-5456-434B-9BC0-EA779B1C7817} = {612008FE-8DBC-468F-84AD-07D77CD9C1D3}
@@ -63,5 +69,6 @@ Global
 		{0E1904F1-4D5C-4F83-9B5A-B3F360AD85D5} = {612008FE-8DBC-468F-84AD-07D77CD9C1D3}
 		{CF42AD46-AB66-4E00-A1F4-2BA85AB13C48} = {F85E4EED-12C6-4971-B44F-1321687821C5}
 		{1211BF81-F06F-40FE-AE39-63902841F10A} = {612008FE-8DBC-468F-84AD-07D77CD9C1D3}
+		{6048B204-F988-42AC-9208-6A5A5E27E11F} = {F85E4EED-12C6-4971-B44F-1321687821C5}
 	EndGlobalSection
 EndGlobal
