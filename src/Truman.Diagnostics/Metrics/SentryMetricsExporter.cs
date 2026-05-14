@@ -1,0 +1,111 @@
+using System.Diagnostics;
+using System.Diagnostics.Metrics;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+namespace Truman.Diagnostics.Metrics;
+
+public sealed class SentryMetricsExporter : IDisposable
+{
+    public static IDisposable Start(IServiceProvider services)
+    {
+        var exporter = new SentryMetricsExporter(services);
+        exporter.Start();
+        return exporter;
+    }
+
+    private readonly MeterListener _listener;
+    private readonly MeasurementUnitConverter _converter;
+    private readonly ILogger<SentryMetricsExporter> _logger;
+
+    internal SentryMetricsExporter(IServiceProvider services)
+    {
+        _listener = new MeterListener();
+        _converter = new MeasurementUnitConverter();
+        _logger = services.GetRequiredService<ILogger<SentryMetricsExporter>>();
+    }
+
+    internal void Start()
+    {
+        _listener.InstrumentPublished = static (instrument, listener) =>
+        {
+            listener.EnableMeasurementEvents(instrument);
+        };
+
+        _listener.SetMeasurementEventCallback<byte>(OnMeasurementRecorded);
+        _listener.SetMeasurementEventCallback<short>(OnMeasurementRecorded);
+        _listener.SetMeasurementEventCallback<int>(OnMeasurementRecorded);
+        _listener.SetMeasurementEventCallback<long>(OnMeasurementRecorded);
+        _listener.SetMeasurementEventCallback<float>(OnMeasurementRecorded);
+        _listener.SetMeasurementEventCallback<double>(OnMeasurementRecorded);
+
+        _listener.Start();
+    }
+
+    private void OnMeasurementRecorded<T>(Instrument instrument, T measurement, ReadOnlySpan<KeyValuePair<string, object?>> tags, object? state) where T : struct
+    {
+        TagList attributes = [];
+
+        if (instrument.Meter.Tags is not null)
+        {
+            foreach (var tag in instrument.Meter.Tags)
+            {
+                if (tag.Value is not null)
+                {
+                    attributes.Add(tag);
+                }
+            }
+        }
+
+        if (instrument.Tags is not null)
+        {
+            foreach (var tag in instrument.Tags)
+            {
+                if (tag.Value is not null)
+                {
+                    attributes.Add(tag);
+                }
+            }
+        }
+
+        if (!tags.IsEmpty)
+        {
+            foreach (var tag in tags)
+            {
+                if (tag.Value is not null)
+                {
+                    attributes.Add(tag);
+                }
+            }
+        }
+
+        if (instrument is Counter<T> or UpDownCounter<T>)
+        {
+            SentrySdk.Metrics.EmitCounter(instrument.Name, measurement, attributes);
+        }
+        else if (instrument is Gauge<T>)
+        {
+            var unit = _converter.Convert(instrument.Unit, _logger);
+            SentrySdk.Metrics.EmitGauge(instrument.Name, measurement, unit, attributes);
+        }
+        else if (instrument is Histogram<T>)
+        {
+            var unit = _converter.Convert(instrument.Unit, _logger);
+            SentrySdk.Metrics.EmitDistribution(instrument.Name, measurement, unit, attributes);
+        }
+        else
+        {
+            _logger.LogError("Instrument type {Instrument} not supported", instrument.GetType());
+        }
+    }
+
+    internal void Stop()
+    {
+        Dispose();
+    }
+
+    public void Dispose()
+    {
+        _listener.Dispose();
+    }
+}
