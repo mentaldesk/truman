@@ -14,6 +14,7 @@ public sealed class MeasurementUnitConverter
         return unit switch
         {
             "s" => MeasurementUnit.Duration.Second,
+            "ms" => MeasurementUnit.Duration.Millisecond,
             "By" => MeasurementUnit.Information.Byte,
             null => default,
             _ => Unknown(unit, logger),
