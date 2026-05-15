@@ -8,6 +8,7 @@ using Truman.Api.Features.Feeds;
 using Truman.Api.Features.Presenters;
 using Truman.Api.Features.Profile;
 using Truman.Api.Features.TagPreferences;
+using Truman.Api.Features.Health;
 using Truman.Data;
 using System.Text.Json;
 using Microsoft.Extensions.FileProviders;
@@ -132,6 +133,7 @@ if (hasWebBuild)
     }).ExcludeFromDescription();
 }
 
+app.MapHealthEndpoints();
 app.MapAuthEndpoints();
 app.MapArticleEndpoints();
 app.MapProfileEndpoints();
@@ -162,7 +164,5 @@ if (hasWebBuild)
 
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5001";
 var url = $"http://0.0.0.0:{port}";
-
-app.MapGet("/health", () => Results.Ok(new { status = "ok" })).ExcludeFromDescription();
 
 app.Run(url);
