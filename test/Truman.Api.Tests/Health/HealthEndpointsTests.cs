@@ -48,7 +48,7 @@ public class HealthEndpointsTests
             "Production",
             new HealthEndpoints.DependencyChecks("fail"));
 
-        var json = JsonSerializer.Serialize(response);
+        var json = JsonSerializer.Serialize(response, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
 
         Assert.Contains("\"status\":\"degraded\"", json);
         Assert.Contains("\"environment\":\"Production\"", json);
