@@ -29,5 +29,5 @@ The app should then be available at:
 - The app container builds the frontend and serves it from the API.
 - Postgres runs as a separate container with a named volume.
 - Compose injects `POSTGRES_HOST=postgres` for the app container.
-- If `SENTRY_AUTH_TOKEN_TRUMAN` is present in your shell or `.env`, the image build can use it for Sentry artifact upload; otherwise the build skips that step.
+- Sentry artifact upload is handled at build time via a BuildKit secret. In GitHub Actions, the `SENTRY_AUTH_TOKEN_TRUMAN` repository secret is passed automatically. Local `docker compose` builds skip Sentry upload by default (the build falls back to `/p:UseSentryCLI=false` when the secret is absent).
 - This Compose path is intended to replace kind/Helm for simple local/VPS deployment work.

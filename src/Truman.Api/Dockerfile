@@ -14,9 +14,10 @@ COPY Directory.Packages.props ./
 COPY Directory.Build.props ./
 RUN dotnet restore "Truman.Api/Truman.Api.csproj"
 COPY . .
-ARG SENTRY_AUTH_TOKEN
-ENV SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN
-RUN if [ -n "$SENTRY_AUTH_TOKEN" ]; then \
+RUN --mount=type=secret,id=sentry_auth_token \
+    SENTRY_AUTH_TOKEN=$(cat /run/secrets/sentry_auth_token 2>/dev/null || true) && \
+    if [ -n "$SENTRY_AUTH_TOKEN" ]; then \
+      export SENTRY_AUTH_TOKEN && \
       dotnet publish "Truman.Api/Truman.Api.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false; \
     else \
       dotnet publish "Truman.Api/Truman.Api.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false /p:UseSentryCLI=false; \
