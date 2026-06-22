@@ -2,15 +2,15 @@
 FROM node:20-alpine as build
 
 WORKDIR /app
-COPY package.json yarn.lock ./
-RUN yarn install --frozen-lockfile
+COPY package.json package-lock.json ./
+RUN npm ci
 
 COPY . .
 
 # Clear cache to ensure fresh build
 RUN rm -rf .svelte-kit node_modules/.vite
 
-RUN yarn build
+RUN npm run build
 
 # Production stage
 FROM nginx:alpine
