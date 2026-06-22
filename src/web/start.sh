@@ -20,15 +20,14 @@ echo "============================================"
 echo "🧹 Cleaning cache and node modules..."
 rm -rf .svelte-kit node_modules/.vite
 
-# Ensure yarn is installed
-if ! command -v yarn >/dev/null 2>&1; then
-    echo "🚫 yarn is not installed. Please install it and try again."
-    echo "💡 You can install yarn via: npm install -g yarn"
+# Ensure npm is installed
+if ! command -v npm >/dev/null 2>&1; then
+    echo "🚫 npm is not installed. Please install Node.js (which ships with npm) and try again."
     exit 1
 fi
 
 echo "📦 Installing dependencies..."
-yarn install
+npm install
 
 echo "🚀 Starting dev server..."
-yarn dev
+npm run dev
