@@ -1,7 +1,6 @@
-import { writable } from 'svelte/store';
-import { get } from 'svelte/store';
+import { writable, get } from 'svelte/store';
 import { auth } from './auth';
-import { API_URL } from '../config';
+import { apiFetch } from '../api';
 
 export interface TagPreference {
     tag: string;
@@ -34,12 +33,7 @@ function createTagPreferencesStore() {
                     return;
                 }
 
-                const response = await fetch(`${API_URL}/api/tag-preferences/`, {
-                    headers: {
-                        'Authorization': `Bearer ${authStore.token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
+                const response = await apiFetch('/api/tag-preferences/');
 
                 if (!response.ok) {
                     throw new Error(`Failed to load tag preferences: ${response.statusText}`);
@@ -64,12 +58,8 @@ function createTagPreferencesStore() {
                     throw new Error('User not authenticated');
                 }
 
-                const response = await fetch(`${API_URL}/api/tag-preferences/`, {
+                const response = await apiFetch('/api/tag-preferences/', {
                     method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${authStore.token}`,
-                        'Content-Type': 'application/json'
-                    },
                     body: JSON.stringify({ tag, weight })
                 });
 
@@ -112,12 +102,8 @@ function createTagPreferencesStore() {
                     throw new Error('User not authenticated');
                 }
 
-                const response = await fetch(`${API_URL}/api/tag-preferences/${encodeURIComponent(tag)}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Authorization': `Bearer ${authStore.token}`,
-                        'Content-Type': 'application/json'
-                    }
+                const response = await apiFetch(`/api/tag-preferences/${encodeURIComponent(tag)}`, {
+                    method: 'DELETE'
                 });
 
                 if (!response.ok) {
@@ -154,12 +140,8 @@ function createTagPreferencesStore() {
                     throw new Error('User not authenticated');
                 }
 
-                const response = await fetch(`${API_URL}/api/tag-preferences/${encodeURIComponent(tag)}/promote`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${authStore.token}`,
-                        'Content-Type': 'application/json'
-                    }
+                const response = await apiFetch(`/api/tag-preferences/${encodeURIComponent(tag)}/promote`, {
+                    method: 'POST'
                 });
 
                 if (!response.ok) {
@@ -195,12 +177,8 @@ function createTagPreferencesStore() {
                     throw new Error('User not authenticated');
                 }
 
-                const response = await fetch(`${API_URL}/api/tag-preferences/${encodeURIComponent(tag)}/demote`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${authStore.token}`,
-                        'Content-Type': 'application/json'
-                    }
+                const response = await apiFetch(`/api/tag-preferences/${encodeURIComponent(tag)}/demote`, {
+                    method: 'POST'
                 });
 
                 if (!response.ok) {

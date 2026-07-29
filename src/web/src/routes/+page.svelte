@@ -3,11 +3,9 @@
     import ArticleDetailsPopup from '$lib/components/ArticleDetailsPopup.svelte';
     import { mood } from '$lib/stores/mood';
     import { onMount, onDestroy } from 'svelte';
-    import { API_URL } from '$lib/config';
+    import { apiFetch, SessionExpiredError } from '$lib/api';
     import { valuesStore } from '$lib/stores/values';
     import { selectedPresenter } from '$lib/stores/presenter';
-    import { get } from 'svelte/store';
-    import { auth } from '$lib/stores/auth';
     import { profileStore } from '$lib/stores/profile';
     import { tagPreferences } from '$lib/stores/tagPreferences';
 
@@ -68,28 +66,22 @@
         unsubscribePresenter();
         
         try {
-            // Get the current auth token directly from the store
-            const authState = get(auth);
-            const authToken = authState.token;
-            
-            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-            if (authToken) {
-                headers['Authorization'] = `Bearer ${authToken}`;
-            }
-            
-            const res = await fetch(`${API_URL}/api/articles/relevant`, {
+            const res = await apiFetch('/api/articles/relevant', {
                 method: 'POST',
-                headers,
                 body: JSON.stringify({ presenter })
             });
-            if (!res.ok) throw new Error('Failed to fetch articles');
+            if (!res.ok) throw new Error(`Failed to fetch articles (${res.status})`);
             const data = await res.json();
             articles = data.articles || [];
         } catch (e) {
+            if (e instanceof SessionExpiredError) {
+                // apiFetch is redirecting to /login. Stay in the loading state so we
+                // don't flash "no articles" on the way out.
+                return;
+            }
             error = e instanceof Error ? e.message : String(e);
-        } finally {
-            loading = false;
         }
+        loading = false;
     }
 
     function debounceFetchArticles() {

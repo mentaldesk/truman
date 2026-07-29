@@ -1,7 +1,5 @@
 import { writable } from 'svelte/store';
-import { get } from 'svelte/store';
-import { auth } from './auth';
-import { API_URL } from '../config';
+import { apiFetch } from '../api';
 
 export interface Feed {
     id: number;
@@ -14,14 +12,6 @@ interface FeedsState {
     feeds: Feed[];
     loading: boolean;
     error: string | null;
-}
-
-function authHeaders(): HeadersInit {
-    const authStore = get(auth);
-    return {
-        'Authorization': `Bearer ${authStore.token}`,
-        'Content-Type': 'application/json'
-    };
 }
 
 function createFeedsStore() {
@@ -37,9 +27,7 @@ function createFeedsStore() {
         async loadFeeds() {
             update(state => ({ ...state, loading: true, error: null }));
             try {
-                const response = await fetch(`${API_URL}/api/admin/feeds/`, {
-                    headers: authHeaders()
-                });
+                const response = await apiFetch('/api/admin/feeds/');
                 if (!response.ok) {
                     throw new Error(`Failed to load feeds: ${response.statusText}`);
                 }
@@ -56,9 +44,8 @@ function createFeedsStore() {
         },
 
         async createFeed(url: string, name: string, isEnabled = true) {
-            const response = await fetch(`${API_URL}/api/admin/feeds/`, {
+            const response = await apiFetch('/api/admin/feeds/', {
                 method: 'POST',
-                headers: authHeaders(),
                 body: JSON.stringify({ url, name, isEnabled })
             });
             if (!response.ok) {
@@ -74,9 +61,8 @@ function createFeedsStore() {
         },
 
         async updateFeed(id: number, patch: { name?: string; isEnabled?: boolean }) {
-            const response = await fetch(`${API_URL}/api/admin/feeds/${id}`, {
+            const response = await apiFetch(`/api/admin/feeds/${id}`, {
                 method: 'PATCH',
-                headers: authHeaders(),
                 body: JSON.stringify(patch)
             });
             if (!response.ok) {
@@ -92,9 +78,8 @@ function createFeedsStore() {
         },
 
         async deleteFeed(id: number) {
-            const response = await fetch(`${API_URL}/api/admin/feeds/${id}`, {
-                method: 'DELETE',
-                headers: authHeaders()
+            const response = await apiFetch(`/api/admin/feeds/${id}`, {
+                method: 'DELETE'
             });
             if (!response.ok) {
                 throw new Error(`Failed to delete feed: ${response.statusText}`);

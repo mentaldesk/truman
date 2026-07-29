@@ -1,7 +1,5 @@
 import { writable } from 'svelte/store';
-import { get } from 'svelte/store';
-import { auth } from './auth';
-import { API_URL } from '../config';
+import { apiFetch } from '../api';
 
 export interface Presenter {
     id: number;
@@ -13,14 +11,6 @@ interface PresentersState {
     presenters: Presenter[];
     loading: boolean;
     error: string | null;
-}
-
-function authHeaders(): HeadersInit {
-    const authStore = get(auth);
-    return {
-        'Authorization': `Bearer ${authStore.token}`,
-        'Content-Type': 'application/json'
-    };
 }
 
 function createPresentersStore() {
@@ -36,9 +26,7 @@ function createPresentersStore() {
         async loadPresenters() {
             update(state => ({ ...state, loading: true, error: null }));
             try {
-                const response = await fetch(`${API_URL}/api/admin/presenters/`, {
-                    headers: authHeaders()
-                });
+                const response = await apiFetch('/api/admin/presenters/');
                 if (!response.ok) {
                     throw new Error(`Failed to load presenters: ${response.statusText}`);
                 }
@@ -55,9 +43,8 @@ function createPresentersStore() {
         },
 
         async createPresenter(label: string, presenterStyle: string) {
-            const response = await fetch(`${API_URL}/api/admin/presenters/`, {
+            const response = await apiFetch('/api/admin/presenters/', {
                 method: 'POST',
-                headers: authHeaders(),
                 body: JSON.stringify({ label, presenterStyle })
             });
             if (!response.ok) {
@@ -73,9 +60,8 @@ function createPresentersStore() {
         },
 
         async updatePresenter(id: number, patch: { label?: string; presenterStyle?: string }) {
-            const response = await fetch(`${API_URL}/api/admin/presenters/${id}`, {
+            const response = await apiFetch(`/api/admin/presenters/${id}`, {
                 method: 'PATCH',
-                headers: authHeaders(),
                 body: JSON.stringify(patch)
             });
             if (!response.ok) {
@@ -91,9 +77,8 @@ function createPresentersStore() {
         },
 
         async deletePresenter(id: number) {
-            const response = await fetch(`${API_URL}/api/admin/presenters/${id}`, {
-                method: 'DELETE',
-                headers: authHeaders()
+            const response = await apiFetch(`/api/admin/presenters/${id}`, {
+                method: 'DELETE'
             });
             if (!response.ok) {
                 throw new Error(`Failed to delete presenter: ${response.statusText}`);
