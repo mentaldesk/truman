@@ -30,6 +30,7 @@ interface JwtPayload {
     'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'?: string;
     'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/authenticationmethod': string;
     'http://schemas.microsoft.com/ws/2008/06/identity/claims/role'?: string | string[];
+    exp?: number;
 }
 
 function extractIsAdmin(decoded: JwtPayload): boolean {
@@ -38,95 +39,105 @@ function extractIsAdmin(decoded: JwtPayload): boolean {
     return roles.includes('admin');
 }
 
-function createAuthStore(): AuthStore {
-    // Initialize from localStorage if we're in the browser
-    const initialToken = browser ? localStorage.getItem('auth_token') : null;
-    const initialState: AuthState = {
-        isAuthenticated: false,
-        user: null,
-        isLoading: false,
-        token: initialToken
-    };
+/**
+ * jwt-decode only base64-decodes the payload — it validates neither the signature nor
+ * the lifetime. The API issues tokens with a 7 day lifetime and rejects expired ones,
+ * so `exp` has to be checked here or a stale token looks like a live session.
+ */
+export function isTokenExpired(decoded: JwtPayload, now: number = Date.now()): boolean {
+    // Every token we issue carries an expiry; one without it isn't a token we can trust.
+    if (typeof decoded.exp !== 'number') return true;
+    return decoded.exp * 1000 <= now;
+}
 
-    if (initialToken) {
-        try {
-            const decoded = jwtDecode<JwtPayload>(initialToken);
-            console.log('Decoded initial token:', decoded);
-            initialState.isAuthenticated = true;
-            initialState.user = {
-                id: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'],
-                email: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] ?? null,
-                name: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] ?? null,
-                provider: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/authenticationmethod'].toLowerCase() as User['provider'],
-                isAdmin: extractIsAdmin(decoded)
-            };
-        } catch (error) {
-            console.error('Failed to decode initial token:', error);
-            if (browser) {
-                localStorage.removeItem('auth_token');
-            }
-        }
+/**
+ * Returns the user a token represents, or null when the token is unusable — either
+ * undecodable or expired. A null result means the caller should treat the user as
+ * logged out and discard the token.
+ */
+export function userFromToken(token: string): User | null {
+    let decoded: JwtPayload;
+    try {
+        decoded = jwtDecode<JwtPayload>(token);
+    } catch (error) {
+        console.error('Failed to decode token:', error);
+        return null;
     }
 
+    if (isTokenExpired(decoded)) {
+        console.info('Auth token has expired');
+        return null;
+    }
+
+    return {
+        id: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'],
+        email: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] ?? null,
+        name: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] ?? null,
+        provider: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/authenticationmethod'].toLowerCase() as User['provider'],
+        isAdmin: extractIsAdmin(decoded)
+    };
+}
+
+function createAuthStore(): AuthStore {
+    // Initialize from localStorage if we're in the browser
+    const storedToken = browser ? localStorage.getItem('auth_token') : null;
+    const initialUser = storedToken ? userFromToken(storedToken) : null;
+
+    // Don't leave an unusable token behind for the next page load to trip over.
+    if (browser && storedToken && !initialUser) {
+        localStorage.removeItem('auth_token');
+    }
+
+    const initialState: AuthState = {
+        isAuthenticated: initialUser !== null,
+        user: initialUser,
+        isLoading: false,
+        token: initialUser ? storedToken : null
+    };
+
     const { subscribe, set, update } = writable<AuthState>(initialState);
+
+    function clear() {
+        if (browser) {
+            localStorage.removeItem('auth_token');
+        }
+        update(state => ({
+            ...state,
+            isAuthenticated: false,
+            token: null,
+            user: null,
+            isLoading: false
+        }));
+    }
 
     return {
         subscribe,
         set,
         update,
         setToken: (token: string) => {
-            try {
-                console.log('Setting new token:', token);
-                const decoded = jwtDecode<JwtPayload>(token);
-                console.log('Decoded new token:', decoded);
-                
-                if (browser) {
-                    localStorage.setItem('auth_token', token);
-                }
+            const user = userFromToken(token);
+            if (!user) {
+                clear();
+                return;
+            }
 
-                update(state => ({
-                    ...state,
-                    isAuthenticated: true,
-                    token,
-                    user: {
-                        id: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'],
-                        email: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] ?? null,
-                        name: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] ?? null,
-                        provider: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/authenticationmethod'].toLowerCase() as User['provider'],
-                        isAdmin: extractIsAdmin(decoded)
-                    },
-                    isLoading: false
-                }));
-            } catch (error) {
-                console.error('Failed to decode token:', error);
-                if (browser) {
-                    localStorage.removeItem('auth_token');
-                }
-                update(state => ({
-                    ...state,
-                    isAuthenticated: false,
-                    token: null,
-                    user: null,
-                    isLoading: false
-                }));
-            }
-        },
-        clearUser: () => {
             if (browser) {
-                localStorage.removeItem('auth_token');
+                localStorage.setItem('auth_token', token);
             }
+
             update(state => ({
                 ...state,
-                isAuthenticated: false,
-                token: null,
-                user: null,
+                isAuthenticated: true,
+                token,
+                user,
                 isLoading: false
             }));
         },
+        clearUser: clear,
         setLoading: (isLoading: boolean) => {
             update(state => ({ ...state, isLoading }));
         }
     };
 }
 
-export const auth = createAuthStore(); 
+export const auth = createAuthStore();
