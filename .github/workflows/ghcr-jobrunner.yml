@@ -1,7 +1,7 @@
 name: Build and Publish JobRunner Container
 
 on:
-  pull_request_target:
+  pull_request:
   push:
     branches:
       - main
@@ -17,16 +17,19 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # Fork PRs build to prove they compile, but never publish and never receive secrets.
+      # See AGENTS.md for how to give a fork PR a real preview deployment.
+      PUBLISH: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to GHCR
+        if: env.PUBLISH == 'true'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -40,7 +43,7 @@ jobs:
           images: ${{ env.IMAGE_NAME }}
           tags: |
             type=sha
-            type=raw,value=pr-${{ github.event.pull_request.number }},enable=${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
+            type=raw,value=pr-${{ github.event.pull_request.number }},enable=${{ github.event_name == 'pull_request' }}
             type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
@@ -49,8 +52,8 @@ jobs:
         with:
           context: ./src
           file: ./src/Truman.JobRunner/Dockerfile
-          push: true
+          push: ${{ env.PUBLISH == 'true' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           secrets: |
-            sentry_auth_token=${{ secrets.SENTRY_AUTH_TOKEN_TRUMAN }}
+            sentry_auth_token=${{ secrets.SENTRY_AUTH_TOKEN }}

@@ -34,6 +34,59 @@ The repo has moved from Kubernetes/Helm/kind to a simple Docker Compose-based de
   - frontend API base URL handling
   - database migrations/persistence
 - Never commit real secrets. Use `.env` / secret injection patterns only.
+- Work on branches in this repo rather than a personal fork. Same-repo branch PRs get
+  secrets under `pull_request`, so image publishing, preview deployments, and Sentry symbol
+  upload all work normally. Fork PRs do not — see below.
+
+## CI, secrets, and fork PRs
+
+CI is split by trust level. That split is deliberate; do not collapse it.
+
+- `build.yml` (build + test) runs on every PR, forks included. It uses no secrets, which is
+  what makes it safe to run against code nobody has reviewed yet.
+- `ghcr.yml` / `ghcr-jobrunner.yml` build the container images. They publish to GHCR and
+  receive the Sentry build secret only when the PR branch lives in this repo; for fork PRs
+  they build without pushing, purely to prove the image still builds.
+
+GitHub withholds secrets from `pull_request` runs whose head branch is in a fork. That
+withholding is the mechanism protecting this repo's credentials.
+
+**Never switch these workflows to `pull_request_target` to "fix" missing secrets on a fork
+PR.** `pull_request_target` runs with the base repo's secrets, so checking out and building
+PR code under it grants arbitrary code execution — and every secret in scope — to anyone who
+opens a PR. A `docker build` executes attacker-controlled code through `npm` lifecycle
+scripts, MSBuild targets, and `RUN` lines, and any BuildKit secret mounted into that build is
+readable by it. This repo shipped exactly that mistake in #56; don't reintroduce it. The
+"approve and run workflows" button is not a meaningful guard, because it looks identical for
+benign and hostile PRs.
+
+### Giving a fork PR a real preview deployment
+
+Read the diff first. You are vouching for code that is about to run with our credentials.
+Then push the contributor's branch to a repo-owned branch:
+
+```bash
+git fetch origin pull/<PR-NUMBER>/head
+git push origin FETCH_HEAD:preview/pr-<PR-NUMBER>
+```
+
+That branch is in this repo, so the ordinary same-repo path applies and the images publish.
+Re-read the diff before re-pushing whenever the contributor updates the PR — a stale
+`preview/*` branch is harmless, a blindly refreshed one is not.
+
+### Testing Sentry instrumentation
+
+Two credentials, two different jobs — don't confuse one for the other:
+
+- **Runtime events** ("does my new instrumentation actually fire?") need `Sentry__Dsn`,
+  injected as an environment variable at run time. `compose.preview.yaml` already passes it.
+  No build-time secret is involved.
+- **Symbolicated stack traces, source context, and releases** need `SENTRY_AUTH_TOKEN` at
+  *build* time, consumed as a BuildKit secret by the Dockerfiles.
+
+When that token is absent the Dockerfiles fall back to `/p:UseSentryCLI=false` and the build
+succeeds silently. So if source context is missing in Sentry, suspect a missing or misnamed
+secret before suspecting the SDK.
 
 ## Repo map
 

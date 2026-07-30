@@ -1,8 +1,12 @@
 name: Build & Test
 
 on:
+  # Every PR is built and tested, including PRs from forks. This workflow needs no
+  # secrets, which is what makes it safe to run against untrusted code.
+  pull_request:
   push:
-    branches: ["**"]
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -15,8 +19,6 @@ env:
 jobs:
   build-test:
     runs-on: ubuntu-latest
-    env:
-      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -37,8 +39,12 @@ jobs:
       - name: Restore
         run: dotnet restore truman.sln
 
+      # Symbol/source upload and Sentry release creation belong to the container
+      # workflows, which build the images we actually deploy. Doing it here too would
+      # create a Sentry release per branch build and would require a secret this
+      # workflow deliberately does not have.
       - name: Build
-        run: dotnet build truman.sln --configuration Release --no-restore
+        run: dotnet build truman.sln --configuration Release --no-restore -p:UseSentryCLI=false
 
       # Note the extra `--` before the MTP parameters so that dotnet doesn't try to parse these
       - name: Test (with coverage)
@@ -69,6 +75,8 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: mentaldesk/truman
           files: '**/TestResults/coverage/coverage.cobertura.xml'
-          fail_ci_if_error: true
+          # Fork PRs get no CODECOV_TOKEN and fall back to tokenless upload, so a
+          # failure there must not fail an otherwise-green build.
+          fail_ci_if_error: ${{ secrets.CODECOV_TOKEN != '' }}
           verbose: true
 
