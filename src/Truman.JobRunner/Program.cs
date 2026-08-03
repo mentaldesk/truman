@@ -34,7 +34,16 @@ try
                 options.Debug = true;
 #endif
                 options.Dsn = context.Configuration["Sentry:Dsn"];
-                options.Environment = context.HostingEnvironment.EnvironmentName; 
+                // Unlike Sentry.AspNetCore, Sentry.Extensions.Logging has no IHostEnvironment
+                // wiring, so a generic-host app has to map DOTNET_ENVIRONMENT itself. Mirror the
+                // casing convention Sentry.AspNetCore applies so the API and the JobRunner report
+                // an identical environment.
+                var hostEnvironment = context.HostingEnvironment;
+                options.Environment =
+                    hostEnvironment.IsProduction() ? "production" :
+                    hostEnvironment.IsStaging() ? "staging" :
+                    hostEnvironment.IsDevelopment() ? "development" :
+                    hostEnvironment.EnvironmentName;
                 options.TracesSampleRate = 1.0; // Adjust as needed
                 options.CaptureFailedRequests = true;
                 options.SendDefaultPii = true;
