@@ -50,6 +50,9 @@ updates:
           - minor
           - patch
 
+  # Actions used by the three workflows. Majors are ungrouped: an action major
+  # can change the runner semantics under a job that holds GHCR and Sentry
+  # secrets, so those are worth reading one at a time.
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -60,9 +63,12 @@ updates:
       prefix: ci
       include: scope
     groups:
-      actions-all:
+      actions-minor-and-patch:
         patterns:
           - "*"
+        update-types:
+          - minor
+          - patch
 
   # Base images for the three Dockerfiles. Majors are ungrouped here on purpose
   # -- a node or aspnet major is a runtime change worth reviewing alone.
