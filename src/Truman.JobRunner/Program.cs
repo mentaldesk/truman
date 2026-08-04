@@ -34,16 +34,25 @@ try
                 options.Debug = true;
 #endif
                 options.Dsn = context.Configuration["Sentry:Dsn"];
-                // Unlike Sentry.AspNetCore, Sentry.Extensions.Logging has no IHostEnvironment
-                // wiring, so a generic-host app has to map DOTNET_ENVIRONMENT itself. Mirror the
-                // casing convention Sentry.AspNetCore applies so the API and the JobRunner report
-                // an identical environment.
+                // Sentry.AspNetCore bridges IWebHostEnvironment to the Sentry environment for us.
+                // Sentry.Extensions.Logging has no equivalent, so a generic-host app resolves it
+                // itself. Mirror the precedence Sentry.AspNetCore applies, so the API and the
+                // JobRunner always report the same environment:
+                //   1. SENTRY_ENVIRONMENT, used verbatim
+                //   2. otherwise DOTNET_ENVIRONMENT, via IHostEnvironment, lower-cased to Sentry's
+                //      convention for the three standard names and passed through for custom ones
+                // There is no third case: .NET already defaults EnvironmentName to Production.
                 var hostEnvironment = context.HostingEnvironment;
-                options.Environment =
-                    hostEnvironment.IsProduction() ? "production" :
-                    hostEnvironment.IsStaging() ? "staging" :
-                    hostEnvironment.IsDevelopment() ? "development" :
-                    hostEnvironment.EnvironmentName;
+                var sentryEnvironment = Environment.GetEnvironmentVariable("SENTRY_ENVIRONMENT");
+                if (string.IsNullOrWhiteSpace(sentryEnvironment))
+                {
+                    sentryEnvironment =
+                        hostEnvironment.IsProduction() ? "production" :
+                        hostEnvironment.IsStaging() ? "staging" :
+                        hostEnvironment.IsDevelopment() ? "development" :
+                        hostEnvironment.EnvironmentName;
+                }
+                options.Environment = sentryEnvironment;
                 options.TracesSampleRate = 1.0; // Adjust as needed
                 options.CaptureFailedRequests = true;
                 options.SendDefaultPii = true;
