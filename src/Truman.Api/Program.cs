@@ -164,14 +164,16 @@ app.UseSentryTunneling();
 
 if (hasWebBuild)
 {
+    // The Sentry tunnel is not listed here. UseSentryTunneling() branches the pipeline at
+    // /tunnel with terminal middleware, so those requests are handled and completed before
+    // the endpoint fallback is ever reached.
     app.MapFallback(async context =>
     {
         if (context.Request.Path.StartsWithSegments("/api") ||
             context.Request.Path.StartsWithSegments("/auth") ||
             context.Request.Path.StartsWithSegments("/openapi") ||
             context.Request.Path.StartsWithSegments("/swagger") ||
-            context.Request.Path.StartsWithSegments("/config.js") ||
-            context.Request.Path.StartsWithSegments("/sentry-tunnel"))
+            context.Request.Path.StartsWithSegments("/config.js"))
         {
             context.Response.StatusCode = StatusCodes.Status404NotFound;
             return;
