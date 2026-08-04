@@ -53,7 +53,10 @@ try
                         hostEnvironment.EnvironmentName;
                 }
                 options.Environment = sentryEnvironment;
-                options.TracesSampleRate = 1.0; // Adjust as needed
+                // Deliberately 1.0, unlike the API. This is a scheduled batch job with bounded
+                // volume — a handful of runs a day, not a request per user — so full sampling
+                // costs almost nothing and a sampled-out run is one we cannot investigate.
+                options.TracesSampleRate = 1.0;
                 options.CaptureFailedRequests = true;
                 options.SendDefaultPii = true;
                 options.StackTraceMode = StackTraceMode.Enhanced;

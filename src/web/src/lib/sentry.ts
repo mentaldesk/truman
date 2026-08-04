@@ -1,4 +1,4 @@
-import { API_URL, SENTRY_DSN, ENVIRONMENT } from '$lib/config';
+import { API_URL, SENTRY_DSN, ENVIRONMENT, SENTRY_TRACES_SAMPLE_RATE } from '$lib/config';
 import * as Sentry from '@sentry/svelte';
 import { browser } from '$app/environment';
 
@@ -9,8 +9,10 @@ if (browser) {
     environment: ENVIRONMENT,
     tunnel: API_URL + '/tunnel',
     
-    // Performance monitoring
-    tracesSampleRate: 1.0, // Adjust as needed for production
+    // Performance monitoring. Supplied by the API via /config.js so the browser and the
+    // backend make the same sampling decision — a trace sampled in at one end and out at
+    // the other is worse than either extreme.
+    tracesSampleRate: SENTRY_TRACES_SAMPLE_RATE,
     
     // Distributed tracing - include your API URL
     tracePropagationTargets: [
