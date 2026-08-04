@@ -22,6 +22,14 @@ builder.Configuration.AddDotNetEnv(".env", LoadOptions.TraversePath());
 var connectionString = builder.Configuration.GetPostgresConnectionString();
 builder.Services.AddDbContext<TrumanDbContext>(options => options.UseNpgsql(connectionString));
 
+// A sample rate of 1.0 records every trace. That is what you want while you are looking for
+// one, and not what you want once you are paying to store them, so it is a development
+// default rather than a universal one. Override per deployment with Sentry:TracesSampleRate.
+// The browser is handed this same value via /config.js so the two ends of a distributed
+// trace cannot drift apart.
+var tracesSampleRate = builder.Configuration.GetValue<double?>("Sentry:TracesSampleRate")
+                       ?? (builder.Environment.IsDevelopment() ? 1.0 : 0.2);
+
 builder.WebHost.UseSentry(options =>
 {
 #if DEBUG
@@ -33,7 +41,7 @@ builder.WebHost.UseSentry(options =>
     // (Production -> "production", Staging -> "staging", Development -> "development") and
     // passing custom names through verbatim. Assigning it here runs *before* that mapping and
     // suppresses it, and also blocks SENTRY_ENVIRONMENT as an override.
-    options.TracesSampleRate = 1.0;
+    options.TracesSampleRate = tracesSampleRate;
     options.CaptureBlockingCalls = true;
     options.CaptureFailedRequests = true;
     options.SendDefaultPii = true;
@@ -138,6 +146,7 @@ if (hasWebBuild)
             "window.__API_URL__ = " + JsonSerializer.Serialize(apiUrl) + ";",
             "window.__ENVIRONMENT__ = " + JsonSerializer.Serialize(environment) + ";",
             "window.__SENTRY_DSN__ = " + JsonSerializer.Serialize(sentryDsn) + ";",
+            "window.__SENTRY_TRACES_SAMPLE_RATE__ = " + JsonSerializer.Serialize(tracesSampleRate) + ";",
             "window.__SOCIAL_AUTH_ENABLED__ = " + JsonSerializer.Serialize(socialEnabled) + ";");
 
         return Results.Text(js, "application/javascript");
