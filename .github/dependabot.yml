@@ -5,9 +5,13 @@
 # is routine *version* updates, plus coverage for the NuGet, Actions and Docker
 # ecosystems so dependencies do not drift between advisories.
 #
-# Minor and patch bumps are grouped into a single PR per ecosystem per week to
-# keep the noise down. Major bumps are deliberately left ungrouped so each one
-# gets its own PR and can be reviewed on its own merits.
+# Every ecosystem gets at most two grouped PRs a week: one for minor+patch, one
+# for majors. Majors stay in their own PR because they are the ones that break
+# things, but they are still grouped -- leaving majors ungrouped produced 19
+# separate PRs on the first run, which is not reviewable.
+#
+# Dependencies whose version is really a property of the target framework are
+# ignored at the major level; see the nuget and docker blocks below.
 version: 2
 updates:
   # SvelteKit front end. Note that everything in src/web/package.json is a
@@ -29,6 +33,11 @@ updates:
         update-types:
           - minor
           - patch
+      web-major:
+        patterns:
+          - "*"
+        update-types:
+          - major
 
   # .NET projects. truman.sln at the repo root drives discovery; the versions
   # themselves live in the central src/Directory.Packages.props and
@@ -49,10 +58,31 @@ updates:
         update-types:
           - minor
           - patch
+      dotnet-major:
+        patterns:
+          - "*"
+        update-types:
+          - major
+    ignore:
+      # These ship in lockstep with the framework, so a 9.x -> 10.x bump is a
+      # TFM migration wearing a dependency bump's clothes. Every project targets
+      # net9.0; move the TFM first, then drop the matching entry here. Minor and
+      # patch updates within 9.x are unaffected, which is how servicing fixes
+      # for the supported framework actually arrive.
+      - dependency-name: "Microsoft.Extensions.*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "Microsoft.AspNetCore.*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "Microsoft.EntityFrameworkCore*"
+        update-types: ["version-update:semver-major"]
+      # Not a Microsoft package, but its major tracks EF Core's -- and both
+      # Directory.Packages.props files deliberately hold EF in lockstep.
+      - dependency-name: "Npgsql.EntityFrameworkCore.PostgreSQL"
+        update-types: ["version-update:semver-major"]
 
-  # Actions used by the three workflows. Majors are ungrouped: an action major
-  # can change the runner semantics under a job that holds GHCR and Sentry
-  # secrets, so those are worth reading one at a time.
+  # Actions used by the three workflows. An action major can change the runner
+  # semantics under a job that holds GHCR and Sentry secrets, so they land in
+  # their own PR -- but as one PR, not five.
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -69,9 +99,16 @@ updates:
         update-types:
           - minor
           - patch
+      actions-major:
+        patterns:
+          - "*"
+        update-types:
+          - major
 
-  # Base images for the three Dockerfiles. Majors are ungrouped here on purpose
-  # -- a node or aspnet major is a runtime change worth reviewing alone.
+  # Base images for the three Dockerfiles. group-by: dependency-name collapses
+  # an image that appears in more than one Dockerfile into a single PR -- e.g.
+  # node, currently pinned to 20-alpine in web and 22-alpine in the other two,
+  # which should move as one decision rather than one PR per file.
   - package-ecosystem: docker
     directories:
       - /src/Truman.Api
@@ -91,3 +128,17 @@ updates:
         update-types:
           - minor
           - patch
+        group-by: dependency-name
+      docker-major:
+        patterns:
+          - "*"
+        update-types:
+          - major
+        group-by: dependency-name
+    ignore:
+      # Same reasoning as the nuget block: the dotnet base image tag tracks the
+      # TFM. Bumping it to 10.0 while the projects target net9.0 breaks the
+      # build. 9.0 tag updates still flow, which is where CVE fixes for these
+      # images land.
+      - dependency-name: "mcr.microsoft.com/dotnet/*"
+        update-types: ["version-update:semver-major"]
