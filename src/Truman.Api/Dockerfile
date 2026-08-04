@@ -23,7 +23,7 @@ RUN --mount=type=secret,id=sentry_auth_token \
       dotnet publish "Truman.Api/Truman.Api.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false /p:UseSentryCLI=false; \
     fi
 
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 EXPOSE 5001
 COPY --from=build /app/publish .
