@@ -21,6 +21,7 @@
     <PackageVersion Include="Microsoft.Extensions.Configuration" Version="9.0.6" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="9.0.6" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="9.0.6" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10" />
     <PackageVersion Include="Microsoft.SemanticKernel" Version="1.59.0" />
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Google" Version="1.59.0-alpha" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />

@@ -19,7 +19,7 @@
     <!-- Mocking -->
     <PackageVersion Include="NSubstitute" Version="5.1.0" />
     <!-- Logging for NullLogger -->
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.6" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10" />
     <!-- Logging for FakeLogger -->
     <PackageVersion Include="Microsoft.Extensions.Diagnostics.Testing" Version="9.0.0" />
   </ItemGroup>
