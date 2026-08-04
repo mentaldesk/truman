@@ -140,5 +140,13 @@ updates:
       # TFM. Bumping it to 10.0 while the projects target net9.0 breaks the
       # build. 9.0 tag updates still flow, which is where CVE fixes for these
       # images land.
+      #
+      # Both spellings are listed on purpose. The Dockerfiles say
+      # mcr.microsoft.com/dotnet/sdk, but Dependabot reports the dependency as
+      # "dotnet/sdk" with the registry host stripped -- see the compatibility
+      # badge on #96. The registry-qualified pattern alone silently matched
+      # nothing.
+      - dependency-name: "dotnet/*"
+        update-types: ["version-update:semver-major"]
       - dependency-name: "mcr.microsoft.com/dotnet/*"
         update-types: ["version-update:semver-major"]
