@@ -1,0 +1,93 @@
+# Dependabot version updates.
+#
+# Security updates (the PRs raised in response to an advisory) are enabled in
+# Settings -> Advanced Security and do not need this file. What this file adds
+# is routine *version* updates, plus coverage for the NuGet, Actions and Docker
+# ecosystems so dependencies do not drift between advisories.
+#
+# Minor and patch bumps are grouped into a single PR per ecosystem per week to
+# keep the noise down. Major bumps are deliberately left ungrouped so each one
+# gets its own PR and can be reviewed on its own merits.
+version: 2
+updates:
+  # SvelteKit front end. Note that everything in src/web/package.json is a
+  # devDependency: the deployed artifact is static files emitted by
+  # adapter-static, so these bumps affect CI and local builds only.
+  - package-ecosystem: npm
+    directory: /src/web
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      web-minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+
+  # .NET projects. truman.sln at the repo root drives discovery; the versions
+  # themselves live in the central src/Directory.Packages.props and
+  # test/Directory.Packages.props.
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      dotnet-minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+
+  # Actions used by the three workflows. Majors are ungrouped: an action major
+  # can change the runner semantics under a job that holds GHCR and Sentry
+  # secrets, so those are worth reading one at a time.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: ci
+      include: scope
+    groups:
+      actions-minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+
+  # Base images for the three Dockerfiles. Majors are ungrouped here on purpose
+  # -- a node or aspnet major is a runtime change worth reviewing alone.
+  - package-ecosystem: docker
+    directories:
+      - /src/Truman.Api
+      - /src/Truman.JobRunner
+      - /src/web
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      docker-minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
