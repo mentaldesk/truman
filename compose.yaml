@@ -12,6 +12,9 @@ services:
       - .env
     environment:
       POSTGRES_HOST: postgres
+      # .NET falls back to "Production" when this is unset, so local containers have to say
+      # Development explicitly. launchSettings.json does not apply to `docker compose up`.
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       Frontend__BaseUrl: ${Frontend__BaseUrl:-http://localhost:5001}
       PORT: 5001
     ports:

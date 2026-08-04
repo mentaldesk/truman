@@ -28,7 +28,11 @@ builder.WebHost.UseSentry(options =>
     options.Debug = true;
 #endif
     options.Dsn = builder.Configuration["Sentry:Dsn"];
-    options.Environment = builder.Environment.EnvironmentName;
+    // Environment is deliberately not set here. Sentry.AspNetCore derives it from
+    // ASPNETCORE_ENVIRONMENT, mapping the standard names onto Sentry's lower-case convention
+    // (Production -> "production", Staging -> "staging", Development -> "development") and
+    // passing custom names through verbatim. Assigning it here runs *before* that mapping and
+    // suppresses it, and also blocks SENTRY_ENVIRONMENT as an override.
     options.TracesSampleRate = 1.0;
     options.CaptureBlockingCalls = true;
     options.CaptureFailedRequests = true;
@@ -116,11 +120,18 @@ if (hasWebBuild)
         FileProvider = webBuildFileProvider
     });
 
-    app.MapGet("/config.js", (HttpContext context, IConfiguration configuration) =>
+    app.MapGet("/config.js", (
+        HttpContext context,
+        IConfiguration configuration,
+        IOptions<SentryAspNetCoreOptions> sentryOptions) =>
     {
         var apiUrl = context.Request.GetBaseUrl();
         var sentryDsn = configuration["Sentry:Dsn"] ?? string.Empty;
-        var environment = app.Environment.EnvironmentName;
+        // Hand the browser the environment the Sentry SDK actually resolved, not the raw
+        // ASP.NET Core name. The two differ in casing ("Staging" vs "staging"), and Sentry
+        // treats those as separate environments — which would split browser events away from
+        // the API events they belong with.
+        var environment = sentryOptions.Value.Environment ?? app.Environment.EnvironmentName;
         var socialEnabled = configuration.GetValue("Authentication:Social:Enabled", defaultValue: true);
 
         var js = string.Join("\n",

@@ -25,6 +25,7 @@ services:
       AI__ApiKey: ${AI__ApiKey}
       AI__Model: ${AI__Model}
       Sentry__Dsn: ${Sentry__Dsn:-}
+      DOTNET_ENVIRONMENT: ${DOTNET_ENVIRONMENT:-Staging}
     command: ["--run-migrations"]
     restart: no
 
@@ -41,6 +42,7 @@ services:
       AI__ApiKey: ${AI__ApiKey}
       AI__Model: ${AI__Model}
       Sentry__Dsn: ${Sentry__Dsn:-}
+      DOTNET_ENVIRONMENT: ${DOTNET_ENVIRONMENT:-Staging}
     command: ["--fetch", "--analyse", "--limit", "10"]
     restart: no
 
@@ -59,6 +61,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-truman}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       PORT: 5001
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Staging}
       Authentication__Social__Enabled: "false"
       Authentication__Jwt__Key: ${Authentication__Jwt__Key}
       Authentication__Jwt__Issuer: ${Authentication__Jwt__Issuer:-truman-api}
