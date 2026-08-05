@@ -38,6 +38,13 @@ updates:
           - "*"
         update-types:
           - major
+    ignore:
+      # svelte-check 4.7.x declares `typescript: ^5.0.0 || ^6.0.0`, so a bump to
+      # TypeScript 7 makes the tree unresolvable and `npm ci` fails in the
+      # Dockerfile. Drop this entry once svelte-check widens that peer range.
+      - dependency-name: typescript
+        versions:
+          - 7.x
 
   # .NET projects. truman.sln at the repo root drives discovery; the versions
   # themselves live in the central src/Directory.Packages.props and
