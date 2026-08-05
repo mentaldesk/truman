@@ -19,10 +19,10 @@
 		"lint": "prettier --check ."
 	},
 	"devDependencies": {
-		"@sveltejs/adapter-auto": "^6.0.0",
+		"@sveltejs/adapter-auto": "^7.0.1",
 		"@sveltejs/adapter-static": "^3.0.10",
 		"@sveltejs/kit": "^2.70.2",
-		"@sveltejs/vite-plugin-svelte": "^5.0.0",
+		"@sveltejs/vite-plugin-svelte": "^7.2.0",
 		"@tailwindcss/forms": "^0.5.11",
 		"@tailwindcss/typography": "^0.5.20",
 		"@tailwindcss/vite": "^4.3.3",
@@ -35,7 +35,7 @@
 		"svelte-check": "^4.7.4",
 		"tailwindcss": "^4.0.0",
 		"typescript": "^6.0.3",
-		"vite": "^6.2.6",
+		"vite": "^8.2.0",
 		"vite-plugin-devtools-json": "^1.1.0",
 		"vitest": "^4.1.9",
 		"vitest-browser-svelte": "^3.0.0"
