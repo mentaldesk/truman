@@ -4,30 +4,30 @@
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="brevo_csharp" Version="1.1.1" />
+    <PackageVersion Include="brevo_csharp" Version="1.1.2" />
     <PackageVersion Include="CodeHollow.FeedReader" Version="1.2.6" />
-    <PackageVersion Include="DotNetEnv" Version="3.1.1" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.Facebook" Version="9.0.6" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.Google" Version="9.0.6" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.6" />
-    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.6" />
+    <PackageVersion Include="DotNetEnv" Version="3.2.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.Facebook" Version="9.0.19" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.Google" Version="9.0.19" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.19" />
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.19" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="9.0.6" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.6" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.6" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="9.0.6" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.6" />
-    <PackageVersion Include="Microsoft.Extensions.Http" Version="9.0.6" />
-    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="9.6.0" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="9.0.6" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="9.0.6" />
-    <PackageVersion Include="Microsoft.Extensions.Logging" Version="9.0.6" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.19" />
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="9.0.19" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="9.10.0" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="9.0.19" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="9.0.19" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="9.0.19" />
     <PackageVersion Include="Microsoft.SemanticKernel" Version="1.59.0" />
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Google" Version="1.59.0-alpha" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
-    <PackageVersion Include="Sentry" Version="6.4.1" />
+    <PackageVersion Include="Sentry" Version="6.9.0" />
     <PackageVersion Include="Sentry.AspNetCore" Version="6.4.1" />
-    <PackageVersion Include="Sentry.Extensions.Logging" Version="6.4.1" />
-    <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerUI" Version="9.0.1" />
+    <PackageVersion Include="Sentry.Extensions.Logging" Version="6.9.0" />
+    <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerUI" Version="9.0.6" />
   </ItemGroup>
   <ItemGroup>
     <!-- Transitively pinned to avoid conflicts -->
