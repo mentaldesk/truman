@@ -22,7 +22,7 @@
 		"@sveltejs/adapter-auto": "^7.0.1",
 		"@sveltejs/adapter-static": "^3.0.10",
 		"@sveltejs/kit": "^2.70.2",
-		"@sveltejs/vite-plugin-svelte": "^7.2.0",
+		"@sveltejs/vite-plugin-svelte": "^7.3.0",
 		"@tailwindcss/forms": "^0.5.11",
 		"@tailwindcss/typography": "^0.5.20",
 		"@tailwindcss/vite": "^4.3.3",
@@ -31,8 +31,8 @@
 		"playwright": "^1.62.1",
 		"prettier": "^3.9.6",
 		"prettier-plugin-svelte": "^4.1.1",
-		"svelte": "^5.56.8",
-		"svelte-check": "^4.7.5",
+		"svelte": "^5.56.9",
+		"svelte-check": "^4.7.6",
 		"tailwindcss": "^4.0.0",
 		"typescript": "^6.0.3",
 		"vite": "^8.2.1",
@@ -41,7 +41,7 @@
 		"vitest-browser-svelte": "^3.0.0"
 	},
 	"dependencies": {
-		"@sentry/svelte": "^10.69.0",
+		"@sentry/svelte": "^10.70.0",
 		"jwt-decode": "^4.0.0"
 	}
 }
