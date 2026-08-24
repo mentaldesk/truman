@@ -14,13 +14,13 @@
     <PackageVersion Include="Testcontainers.PostgreSql" Version="4.14.0" />
     <!-- Align with EF Core used in src (explicit for direct references in tests) -->
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="9.0.19" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.6" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.19" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.19" />
     <!-- Mocking -->
     <PackageVersion Include="NSubstitute" Version="5.3.0" />
     <!-- Logging for NullLogger -->
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.19" />
     <!-- Logging for FakeLogger -->
-    <PackageVersion Include="Microsoft.Extensions.Diagnostics.Testing" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Diagnostics.Testing" Version="9.10.0" />
   </ItemGroup>
 </Project>
