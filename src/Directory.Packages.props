@@ -4,7 +4,7 @@
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="brevo_csharp" Version="1.1.2" />
+    <PackageVersion Include="brevo_csharp" Version="1.1.3" />
     <PackageVersion Include="CodeHollow.FeedReader" Version="1.2.6" />
     <PackageVersion Include="DotNetEnv" Version="3.2.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.Facebook" Version="9.0.19" />
