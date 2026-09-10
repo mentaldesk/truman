@@ -15,7 +15,7 @@ public class RssFetcher(
     {
         logger.LogInformation("Starting RSS fetch job...");
 
-        var client = httpClientFactory.CreateClient();
+        var client = httpClientFactory.CreateClient("RssClient");
 
         // Create a new context for this operation
         await using var dbContext = await contextFactory.CreateDbContextAsync();
