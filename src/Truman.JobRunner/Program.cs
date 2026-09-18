@@ -87,6 +87,11 @@ try
             services.AddSingleton<DbMigrator>();
 
             services
+                .AddHttpClient("RssClient")
+                .ConfigureHttpClient(c =>
+                    c.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (compatible; TrumanBot/1.0)"));
+
+            services
                 .AddHttpClient("GeminiClient")
                 .RedactLoggedHeaders(["Authorization"])
                 .AddResilienceHandler("gemini-pipeline", static pipeline =>
