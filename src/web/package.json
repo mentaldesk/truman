@@ -41,7 +41,7 @@
 		"vitest-browser-svelte": "^3.1.0"
 	},
 	"dependencies": {
-		"@sentry/svelte": "^10.75.0",
+		"@sentry/svelte": "^11.0.0",
 		"jwt-decode": "^4.0.0"
 	}
 }
