@@ -1,24 +1,18 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { Sentry } from '$lib/sentry';
 
   export let fallback: string = 'Something went wrong. Please try again.';
-  
+
   let hasError = false;
   let error: Error | null = null;
 
   onMount(() => {
-    // Set up error handling
+    // This listener drives the fallback UI only. Reporting to Sentry is handled by the SDK's
+    // globalHandlersIntegration, which hooks the same window events — capturing here as well
+    // would report every error twice.
     const handleError = (event: ErrorEvent) => {
       hasError = true;
       error = event.error;
-      
-      // Capture error in Sentry
-      Sentry.captureException(event.error, {
-        tags: {
-          component: 'ErrorBoundary'
-        }
-      });
     };
 
     // Listen for unhandled errors
