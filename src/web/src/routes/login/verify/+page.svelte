@@ -1,16 +1,16 @@
 <script lang="ts">
-    import { page } from '$app/stores';
-    import { auth } from '$lib/stores/auth';
+    import { page } from '$app/state';
+    import { auth } from '#lib/stores/auth.js';
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
-    import { profileStore } from '$lib/stores/profile';
-    import { API_URL } from '$lib/config';
+    import { profileStore } from '#lib/stores/profile.js';
+    import { API_URL } from '#lib/config.js';
     
     let error: string | null = null;
     let isLoading = true;
 
     onMount(async () => {
-        const code = $page.url.searchParams.get('code');
+        const code = page.url.searchParams.get('code');
         
         if (!code) {
             error = 'Invalid magic link. Please request a new one.';

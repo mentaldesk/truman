@@ -4,7 +4,7 @@
 	"version": "0.0.1",
 	"type": "module",
 	"engines": {
-		"node": ">=20"
+		"node": ">=22.17"
 	},
 	"scripts": {
 		"dev": "vite dev --port 3000",
@@ -43,5 +43,9 @@
 	"dependencies": {
 		"@sentry/svelte": "^11.0.0",
 		"jwt-decode": "^4.0.0"
+	},
+	"imports": {
+		"#lib": "./src/lib/index.js",
+		"#lib/*": "./src/lib/*"
 	}
 }

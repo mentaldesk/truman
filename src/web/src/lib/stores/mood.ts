@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store';
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
 // Initialize from localStorage if we're in the browser, default to 5 (neutral)
 const initialMood = browser ? parseInt(localStorage.getItem('mood_value') ?? '5') : 5;

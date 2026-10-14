@@ -1,10 +1,10 @@
 <script lang="ts">
-    import { page } from '$app/stores';
-    import { auth } from '$lib/stores/auth';
+    import { page } from '$app/state';
+    import { auth } from '#lib/stores/auth.js';
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
-    import { profileStore } from '$lib/stores/profile';
-    import { API_URL, SOCIAL_AUTH_ENABLED } from '$lib/config';
+    import { profileStore } from '#lib/stores/profile.js';
+    import { API_URL, SOCIAL_AUTH_ENABLED } from '#lib/config.js';
     
     let error: string | null = null;
     let showEmailModal = false;
@@ -32,7 +32,7 @@
 
     async function handleSocialLogin(provider: 'facebook' | 'google') {
         // Store the current URL as the return URL, but specifically to the login page
-        const returnUrl = `${$page.url.origin}/login`;
+        const returnUrl = `${page.url.origin}/login`;
         // Redirect to the API's login endpoint
         window.location.href = `${API_URL}/auth/${provider}/login?returnUrl=${encodeURIComponent(returnUrl)}`;
     }
@@ -77,10 +77,10 @@
 
     // Handle the token if we're returning from a social login
     onMount(async () => {
-        console.log('Page URL:', $page.url.toString());
-        console.log('Search params:', Object.fromEntries($page.url.searchParams.entries()));
+        console.log('Page URL:', page.url.toString());
+        console.log('Search params:', Object.fromEntries(page.url.searchParams.entries()));
         
-        const token = $page.url.searchParams.get('token');
+        const token = page.url.searchParams.get('token');
         console.log('Token found:', !!token);
         
         if (token) {
@@ -100,7 +100,7 @@
             }
         } else {
             // Check for error parameter
-            const errorParam = $page.url.searchParams.get('error');
+            const errorParam = page.url.searchParams.get('error');
             if (errorParam) {
                 error = errorParam;
             }

@@ -1,7 +1,7 @@
 import { redirect, type LoadEvent } from '@sveltejs/kit';
-import { auth } from '$lib/stores/auth';
+import { auth } from '#lib/stores/auth.js';
 import { get } from 'svelte/store';
-import '$lib/sentry';
+import '#lib/sentry.js';
 
 export const load = (event: LoadEvent) => {
     // Skip auth check for login page

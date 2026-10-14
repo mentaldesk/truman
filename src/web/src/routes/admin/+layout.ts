@@ -1,6 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import { get } from 'svelte/store';
-import { auth } from '$lib/stores/auth';
+import { auth } from '#lib/stores/auth.js';
 
 export const ssr = false;
 

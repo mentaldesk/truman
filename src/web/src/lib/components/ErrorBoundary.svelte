@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { Sentry } from '$lib/sentry';
+  import { Sentry } from '#lib/sentry.js';
 
   export let fallback: string = 'Something went wrong. Please try again.';
   

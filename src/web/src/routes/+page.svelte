@@ -1,13 +1,13 @@
 <script lang="ts">
-    import Header from '$lib/components/Header.svelte';
-    import ArticleDetailsPopup from '$lib/components/ArticleDetailsPopup.svelte';
-    import { mood } from '$lib/stores/mood';
+    import Header from '#lib/components/Header.svelte';
+    import ArticleDetailsPopup from '#lib/components/ArticleDetailsPopup.svelte';
+    import { mood } from '#lib/stores/mood.js';
     import { onMount, onDestroy } from 'svelte';
-    import { apiFetch, SessionExpiredError } from '$lib/api';
-    import { valuesStore } from '$lib/stores/values';
-    import { selectedPresenter } from '$lib/stores/presenter';
-    import { profileStore } from '$lib/stores/profile';
-    import { tagPreferences } from '$lib/stores/tagPreferences';
+    import { apiFetch, SessionExpiredError } from '#lib/api.js';
+    import { valuesStore } from '#lib/stores/values.js';
+    import { selectedPresenter } from '#lib/stores/presenter.js';
+    import { profileStore } from '#lib/stores/profile.js';
+    import { tagPreferences } from '#lib/stores/tagPreferences.js';
 
     type RelevantArticle = {
         id: number;

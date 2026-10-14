@@ -1,6 +1,6 @@
-import { API_URL, SENTRY_DSN, ENVIRONMENT, SENTRY_TRACES_SAMPLE_RATE } from '$lib/config';
+import { API_URL, SENTRY_DSN, ENVIRONMENT, SENTRY_TRACES_SAMPLE_RATE } from '#lib/config.js';
 import * as Sentry from '@sentry/svelte';
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
 // Only initialize Sentry in the browser
 if (browser) {

@@ -1,7 +1,7 @@
 <script lang="ts">
-    import Header from '$lib/components/Header.svelte';
+    import Header from '#lib/components/Header.svelte';
     import { onMount } from 'svelte';
-    import { feeds } from '$lib/stores/feeds';
+    import { feeds } from '#lib/stores/feeds.js';
 
     let newUrl = '';
     let newName = '';
