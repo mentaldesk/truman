@@ -1,10 +1,10 @@
 <script lang="ts">
 	import '../app.css';
 	import { onMount } from 'svelte';
-	import { auth } from '$lib/stores/auth';
-	import { page } from '$app/stores';
-	import ErrorBoundary from '$lib/components/ErrorBoundary.svelte';
-	import { loadPresenterOptions } from '$lib/stores/presenter';
+	import { auth } from '#lib/stores/auth.js';
+	import { page } from '$app/state';
+	import ErrorBoundary from '#lib/components/ErrorBoundary.svelte';
+	import { loadPresenterOptions } from '#lib/stores/presenter.js';
 
 	let { children } = $props();
 
@@ -26,7 +26,7 @@
 	}
 </style>
 
-{#if $auth.isLoading && $page.url.pathname !== '/login'}
+{#if $auth.isLoading && page.url.pathname !== '/login'}
 	<div class="min-h-screen flex items-center justify-center">
 		<div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
 	</div>

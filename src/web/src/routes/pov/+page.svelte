@@ -1,9 +1,9 @@
 <script lang="ts">
-    import Header from '$lib/components/Header.svelte';
-    import ValueCard from '$lib/components/ValueCard.svelte';
-    import { valuesStore } from '$lib/stores/values';
+    import Header from '#lib/components/Header.svelte';
+    import ValueCard from '#lib/components/ValueCard.svelte';
+    import { valuesStore } from '#lib/stores/values.js';
     import { onMount, onDestroy } from 'svelte';
-    import { patchUserValues } from '$lib/profile';
+    import { patchUserValues } from '#lib/profile.js';
     import { derived } from 'svelte/store';
     
     let draggedValue: any = null;

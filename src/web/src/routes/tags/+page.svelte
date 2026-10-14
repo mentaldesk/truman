@@ -1,10 +1,10 @@
 <script lang="ts">
-    import Header from '$lib/components/Header.svelte';
-    import TagStratum from '$lib/components/TagStratum.svelte';
+    import Header from '#lib/components/Header.svelte';
+    import TagStratum from '#lib/components/TagStratum.svelte';
     import { onMount } from 'svelte';
-    import { auth } from '$lib/stores/auth';
+    import { auth } from '#lib/stores/auth.js';
     import { goto } from '$app/navigation';
-    import { tagPreferences } from '$lib/stores/tagPreferences';
+    import { tagPreferences } from '#lib/stores/tagPreferences.js';
     
     onMount(() => {
         // Redirect to login if not authenticated

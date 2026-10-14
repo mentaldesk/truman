@@ -1,8 +1,8 @@
 import { get } from 'svelte/store';
 import { goto } from '$app/navigation';
-import { browser } from '$app/environment';
-import { auth } from '$lib/stores/auth';
-import { API_URL } from '$lib/config';
+import { browser } from '$app/env';
+import { auth } from '#lib/stores/auth.js';
+import { API_URL } from '#lib/config.js';
 
 /**
  * Thrown when the API rejects our credentials. By the time callers see this the auth
