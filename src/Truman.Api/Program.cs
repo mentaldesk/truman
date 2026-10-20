@@ -46,6 +46,7 @@ builder.UseSentry(options =>
     options.CaptureFailedRequests = true;
     options.SendDefaultPii = true;
     options.StackTraceMode = StackTraceMode.Enhanced;
+    options.EnableLogs = true;
 });
 builder.Services.AddSentryTunneling();
 builder.Host.AddSentryMetricsExporter();

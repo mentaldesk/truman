@@ -24,6 +24,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          # MinVer needs tags and set-commits needs the commit range, so not a shallow clone.
+          fetch-depth: 0
+
+      # Computed here rather than in the container build, which has no .git: the build context
+      # is ./src and .git is both outside it and in .dockerignore.
+      - name: Compute version
+        id: version
+        run: |
+          dotnet tool install --global minver-cli --version 6.0.0
+          V=$(minver -t v)
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          # Unlike the .NET SDK, nothing appends the commit for the SPA.
+          echo "release=truman-web@$V+$GITHUB_SHA" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -55,5 +69,22 @@ jobs:
           push: ${{ env.PUBLISH == 'true' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ steps.version.outputs.version }}
+            COMMIT_SHA=${{ github.sha }}
+            SENTRY_RELEASE=${{ steps.version.outputs.release }}
           secrets: |
             sentry_auth_token=${{ secrets.SENTRY_AUTH_TOKEN }}
+
+      # Powers suspect commits. Done here, not via SentrySetCommitOptions=--local, because the
+      # container build has no git history. PUBLISH is false exactly when the token is withheld.
+      - name: Associate commits with the release
+        if: env.PUBLISH == 'true'
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: mental-desk-ltd
+          SENTRY_PROJECT: truman
+          RELEASE: Truman.Api@${{ steps.version.outputs.version }}
+        run: |
+          npx @sentry/cli releases set-commits "$RELEASE" --auto --ignore-missing
+

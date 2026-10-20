@@ -1,3 +1,4 @@
+import { sentrySvelteKit } from '@sentry/sveltekit/vite';
 import adapter from '@sveltejs/adapter-static';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import tailwindcss from '@tailwindcss/vite';
@@ -8,6 +9,17 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
 	plugins: [
+		// Must precede sveltekit(). Uploads the maps built below so stack traces point at our
+		// source; with no SENTRY_AUTH_TOKEN it warns and skips, which keeps fork PRs building.
+		sentrySvelteKit({
+			org: 'mental-desk-ltd',
+			project: 'truman',
+			authToken: process.env.SENTRY_AUTH_TOKEN,
+			telemetry: false,
+			// adapter-static produces no server, so there is nothing to auto-instrument.
+			autoInstrument: false,
+			adapter: 'other'
+		}),
 		tailwindcss(),
 		sveltekit({
 			preprocess: vitePreprocess(),
@@ -26,7 +38,9 @@ export default defineConfig({
 		host: true
 	},
 	build: {
-		sourcemap: true
+		// 'hidden' still emits the maps for the plugin to upload but leaves the
+		// //# sourceMappingURL= comment out of the bundle. Sentry resolves them by debug ID.
+		sourcemap: 'hidden'
 	},
 	optimizeDeps: {
 		force: true

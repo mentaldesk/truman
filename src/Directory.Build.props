@@ -1,15 +1,18 @@
 <Project>
-  <PropertyGroup>   
+  <PropertyGroup>
     <SentryOrg>mental-desk-ltd</SentryOrg>
     <SentryProject>truman</SentryProject>
     <SentryUploadSymbols>true</SentryUploadSymbols>
     <SentryUploadSources>true</SentryUploadSources>
-    <SentryCreateRelease>true</SentryCreateRelease>
-    <SentrySetCommits>true</SentrySetCommits>
-    <SentrySetCommitOptions>--local</SentrySetCommitOptions>
   </PropertyGroup>
-  
-  <PropertyGroup Condition="$(Configuration) == Debug">
+
+  <!-- Derives the version from git tags. The container build has no .git, so CI passes the
+       version it computed through MinVerVersionOverride instead. See the Dockerfiles. -->
+  <ItemGroup>
+    <PackageReference Include="MinVer" PrivateAssets="All" />
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <UseSentryCLI>false</UseSentryCLI>
   </PropertyGroup>
-</Project> 
+</Project>
