@@ -42,6 +42,7 @@ try
             options.CaptureFailedRequests = true;
             options.SendDefaultPii = true;
             options.StackTraceMode = StackTraceMode.Enhanced;
+            options.EnableLogs = true;
         })
         .ConfigureServices((context, services) =>
         {
