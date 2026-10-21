@@ -7,13 +7,6 @@ namespace Truman.Diagnostics.Metrics;
 
 public sealed class SentryMetricsExporter : IDisposable
 {
-    public static IDisposable Start(IServiceProvider services)
-    {
-        var exporter = new SentryMetricsExporter(services);
-        exporter.Start();
-        return exporter;
-    }
-
     private readonly MeterListener _listener;
     private readonly MeasurementUnitConverter _converter;
     private readonly ILogger<SentryMetricsExporter> _logger;
