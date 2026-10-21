@@ -30,7 +30,7 @@ builder.Services.AddDbContext<TrumanDbContext>(options => options.UseNpgsql(conn
 var tracesSampleRate = builder.Configuration.GetValue<double?>("Sentry:TracesSampleRate")
                        ?? (builder.Environment.IsDevelopment() ? 1.0 : 0.2);
 
-builder.WebHost.UseSentry(options =>
+builder.UseSentry(options =>
 {
 #if DEBUG
     options.Debug = true;

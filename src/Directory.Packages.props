@@ -24,9 +24,10 @@
     <PackageVersion Include="Microsoft.SemanticKernel" Version="1.59.0" />
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Google" Version="1.59.0-alpha" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
-    <PackageVersion Include="Sentry" Version="6.12.1" />
-    <PackageVersion Include="Sentry.AspNetCore" Version="6.12.1" />
-    <PackageVersion Include="Sentry.Extensions.Logging" Version="6.12.1" />
+    <PackageVersion Include="Sentry" Version="7.0.0-rc.2" />
+    <PackageVersion Include="Sentry.AspNetCore" Version="7.0.0-rc.2" />
+    <PackageVersion Include="Sentry.Extensions.Hosting" Version="7.0.0-rc.2" />
+    <PackageVersion Include="Sentry.Extensions.Logging" Version="7.0.0-rc.2" />
     <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerUI" Version="9.0.6" />
   </ItemGroup>
   <ItemGroup>
