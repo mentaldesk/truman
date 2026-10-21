@@ -7,7 +7,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Polly;
 using Truman.Data;
-using Truman.Diagnostics.Metrics;
 using Truman.JobRunner;
 using DotNetEnv;
 using DotNetEnv.Configuration;
@@ -44,6 +43,7 @@ try
             options.StackTraceMode = StackTraceMode.Enhanced;
             options.EnableLogs = true;
         })
+        .AddSentryMetricsExporter()
         .ConfigureServices((context, services) =>
         {
             // Add database context factory instead of scoped DbContext
@@ -106,8 +106,6 @@ try
 
     // Runs SentryHostedService, which initialises the SDK and closes it on shutdown.
     await host.StartAsync();
-
-    using var exporter = SentryMetricsExporter.Start(host.Services);
 
     int? limit = null;
     var limitIndex = Array.IndexOf(args, "--limit");

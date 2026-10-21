@@ -16,6 +16,13 @@ export default defineConfig({
 			project: 'truman',
 			authToken: process.env.SENTRY_AUTH_TOKEN,
 			telemetry: false,
+			// Deleted once uploaded, so the maps never reach the image or get served. Sentry
+			// resolves them from its own copy by debug ID.
+			sourcemaps: {
+				// build/ as well as the kit output: adapter-static has already copied the maps
+				// there by the time the plugin deletes them, and build/ is what ships.
+				filesToDeleteAfterUpload: ['./.svelte-kit/output/**/*.map', './build/**/*.map']
+			},
 			// adapter-static produces no server, so there is nothing to auto-instrument.
 			autoInstrument: false,
 			adapter: 'other'
