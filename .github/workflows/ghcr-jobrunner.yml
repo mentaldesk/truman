@@ -23,14 +23,26 @@ jobs:
       PUBLISH: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+        with:
+          # MinVer needs tags and set-commits needs the commit range, so not a shallow clone.
+          fetch-depth: 0
+
+      # Computed here rather than in the container build, which has no .git: the build context
+      # is ./src and .git is both outside it and in .dockerignore.
+      - name: Compute version
+        id: version
+        run: |
+          dotnet tool install --global minver-cli --version 6.0.0
+          V=$(minver -t v)
+          echo "version=$V" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Log in to GHCR
         if: env.PUBLISH == 'true'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -38,7 +50,7 @@ jobs:
 
       - name: Extract image metadata
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.IMAGE_NAME }}
           tags: |
@@ -48,12 +60,28 @@ jobs:
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
       - name: Build and push image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./src
           file: ./src/Truman.JobRunner/Dockerfile
           push: ${{ env.PUBLISH == 'true' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ steps.version.outputs.version }}
+            COMMIT_SHA=${{ github.sha }}
           secrets: |
             sentry_auth_token=${{ secrets.SENTRY_AUTH_TOKEN }}
+
+      # Powers suspect commits. Done here, not via SentrySetCommitOptions=--local, because the
+      # container build has no git history. PUBLISH is false exactly when the token is withheld.
+      - name: Associate commits with the release
+        if: env.PUBLISH == 'true'
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: mental-desk-ltd
+          SENTRY_PROJECT: truman
+          RELEASE: Truman.JobRunner@${{ steps.version.outputs.version }}
+        run: |
+          npx @sentry/cli releases set-commits "$RELEASE" --auto --ignore-missing
+

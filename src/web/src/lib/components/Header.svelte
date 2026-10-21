@@ -1,10 +1,10 @@
 <script lang="ts">
     import { createEventDispatcher, onMount } from 'svelte';
-    import { mood } from '$lib/stores/mood';
-    import { auth } from '$lib/stores/auth';
-    import { selectedPresenter, presenterOptions } from '$lib/stores/presenter';
+    import { mood } from '#lib/stores/mood.js';
+    import { auth } from '#lib/stores/auth.js';
+    import { selectedPresenter, presenterOptions } from '#lib/stores/presenter.js';
     import { goto } from '$app/navigation';
-    import { patchUserMood } from '$lib/profile';
+    import { patchUserMood } from '#lib/profile.js';
     
     const dispatch = createEventDispatcher<{
         profileClick: void;

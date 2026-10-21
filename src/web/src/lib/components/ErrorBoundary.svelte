@@ -1,34 +1,28 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { Sentry } from '$lib/sentry';
 
   export let fallback: string = 'Something went wrong. Please try again.';
-  
+
+  // Opening the dialog is the layout's job, because the same dialog is reachable from the
+  // footer when nothing has broken at all.
+  export let onFeedback: () => void = () => {};
+
   let hasError = false;
-  let error: Error | null = null;
 
   onMount(() => {
-    // Set up error handling
-    const handleError = (event: ErrorEvent) => {
+    // Sentry's globalHandlersIntegration hooks these same events, so capturing here as well
+    // would report every error twice. This listener drives the fallback UI only.
+    const handleError = () => {
       hasError = true;
-      error = event.error;
-      
-      // Capture error in Sentry
-      Sentry.captureException(event.error, {
-        tags: {
-          component: 'ErrorBoundary'
-        }
-      });
+      onFeedback();
     };
 
-    // Listen for unhandled errors
     window.addEventListener('error', handleError);
-    window.addEventListener('unhandledrejection', (event) => {
-      handleError(new ErrorEvent('error', { error: event.reason }));
-    });
+    window.addEventListener('unhandledrejection', handleError);
 
     return () => {
       window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleError);
     };
   });
 </script>
@@ -38,19 +32,14 @@
     <div class="error-content">
       <h2>Oops! Something went wrong</h2>
       <p>{fallback}</p>
-      {#if error}
-        <details class="error-details">
-          <summary>Error Details</summary>
-          <pre>{error.message}</pre>
-          <pre>{error.stack}</pre>
-        </details>
-      {/if}
-      <button 
-        class="retry-button"
-        on:click={() => window.location.reload()}
-      >
-        Reload Page
-      </button>
+      <div class="error-actions">
+        <button class="retry-button" on:click={() => window.location.reload()}>
+          Reload Page
+        </button>
+        <button class="feedback-button" on:click={onFeedback}>
+          Tell us what happened
+        </button>
+      </div>
     </div>
   </div>
 {:else}
@@ -71,17 +60,12 @@
     max-width: 500px;
   }
 
-  .error-details {
-    margin: 1rem 0;
-    text-align: left;
-  }
-
-  .error-details pre {
-    background: #f5f5f5;
-    padding: 0.5rem;
-    border-radius: 4px;
-    font-size: 0.875rem;
-    overflow-x: auto;
+  .error-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 1rem;
   }
 
   .retry-button {
@@ -91,10 +75,18 @@
     padding: 0.5rem 1rem;
     border-radius: 4px;
     cursor: pointer;
-    margin-top: 1rem;
   }
 
   .retry-button:hover {
     background: #2563eb;
   }
-</style> 
+
+  .feedback-button {
+    background: transparent;
+    border: 1px solid currentColor;
+    border-radius: 0.375rem;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    font: inherit;
+  }
+</style>

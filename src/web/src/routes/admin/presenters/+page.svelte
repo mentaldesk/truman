@@ -1,7 +1,7 @@
 <script lang="ts">
-    import Header from '$lib/components/Header.svelte';
+    import Header from '#lib/components/Header.svelte';
     import { onMount } from 'svelte';
-    import { presenters } from '$lib/stores/presenters';
+    import { presenters } from '#lib/stores/presenters.js';
 
     let newLabel = '';
     let newStyle = '';

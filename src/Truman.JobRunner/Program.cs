@@ -7,7 +7,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Polly;
 using Truman.Data;
-using Truman.Diagnostics.Metrics;
 using Truman.JobRunner;
 using DotNetEnv;
 using DotNetEnv.Configuration;
@@ -25,45 +24,26 @@ try
             // Add dotnet-env configuration source to load from .env file
             config.AddDotNetEnv(".env", LoadOptions.TraversePath());
         })
-        .ConfigureLogging((context, logging) =>
+        .ConfigureLogging(logging =>
         {
             logging.ClearProviders();
-            logging.AddSentry(options =>
-            {
-#if DEBUG                
-                options.Debug = true;
-#endif
-                options.Dsn = context.Configuration["Sentry:Dsn"];
-                // Sentry.AspNetCore bridges IWebHostEnvironment to the Sentry environment for us.
-                // Sentry.Extensions.Logging has no equivalent, so a generic-host app resolves it
-                // itself. Mirror the precedence Sentry.AspNetCore applies, so the API and the
-                // JobRunner always report the same environment:
-                //   1. SENTRY_ENVIRONMENT, used verbatim
-                //   2. otherwise DOTNET_ENVIRONMENT, via IHostEnvironment, lower-cased to Sentry's
-                //      convention for the three standard names and passed through for custom ones
-                // There is no third case: .NET already defaults EnvironmentName to Production.
-                var hostEnvironment = context.HostingEnvironment;
-                var sentryEnvironment = Environment.GetEnvironmentVariable("SENTRY_ENVIRONMENT");
-                if (string.IsNullOrWhiteSpace(sentryEnvironment))
-                {
-                    sentryEnvironment =
-                        hostEnvironment.IsProduction() ? "production" :
-                        hostEnvironment.IsStaging() ? "staging" :
-                        hostEnvironment.IsDevelopment() ? "development" :
-                        hostEnvironment.EnvironmentName;
-                }
-                options.Environment = sentryEnvironment;
-                // Deliberately 1.0, unlike the API. This is a scheduled batch job with bounded
-                // volume — a handful of runs a day, not a request per user — so full sampling
-                // costs almost nothing and a sampled-out run is one we cannot investigate.
-                options.TracesSampleRate = 1.0;
-                options.CaptureFailedRequests = true;
-                options.SendDefaultPii = true;
-                options.StackTraceMode = StackTraceMode.Enhanced;
-            });
             logging.AddConsole();
             logging.SetMinimumLevel(LogLevel.Information);
         })
+        // After ConfigureLogging: a later ClearProviders() removes Sentry's logger providers. https://github.com/getsentry/sentry-dotnet/issues/5755
+        .UseSentry(options =>
+        {
+#if DEBUG
+            options.Debug = true;
+#endif
+            // 1.0 unlike the API: a handful of runs a day, so a sampled-out run is one we cannot investigate.
+            options.TracesSampleRate = 1.0;
+            options.CaptureFailedRequests = true;
+            options.SendDefaultPii = true;
+            options.StackTraceMode = StackTraceMode.Enhanced;
+            options.EnableLogs = true;
+        })
+        .AddSentryMetricsExporter()
         .ConfigureServices((context, services) =>
         {
             // Add database context factory instead of scoped DbContext
@@ -124,7 +104,8 @@ try
         })
         .Build();
 
-    using var exporter = SentryMetricsExporter.Start(host.Services);
+    // Runs SentryHostedService, which initialises the SDK and closes it on shutdown.
+    await host.StartAsync();
 
     int? limit = null;
     var limitIndex = Array.IndexOf(args, "--limit");
@@ -144,15 +125,9 @@ try
     }
 
     var shouldRunDefaultFlow = !runMigrations && !runFetch && !runAnalyse;
-    var shouldCreateCheckIn = runFetch || runAnalyse || shouldRunDefaultFlow;
+    var shouldUpdateArticles = runFetch || runAnalyse || shouldRunDefaultFlow;
 
-    SentryId? checkInId = null;
-    if (shouldCreateCheckIn)
-    {
-        checkInId = SentrySdk.CaptureCheckIn("update-articles", CheckInStatus.InProgress);
-    }
-
-    try
+    async Task UpdateArticlesAsync()
     {
         if (runFetch)
         {
@@ -175,20 +150,15 @@ try
             var analyser = host.Services.GetRequiredService<ArticleAnalyser>();
             await analyser.RunAsync(limit);
         }
+    }
 
-        if (checkInId.HasValue)
-        {
-            SentrySdk.CaptureCheckIn("update-articles", CheckInStatus.Ok, checkInId.Value);
-        }
-    }
-    catch
+    if (shouldUpdateArticles)
     {
-        if (checkInId.HasValue)
-        {
-            SentrySdk.CaptureCheckIn("update-articles", CheckInStatus.Error, checkInId.Value);
-        }
-        throw;
+        // Sends the in-progress, ok and error check-ins and rethrows. No monitor config, so Sentry keeps the schedule.
+        await SentrySdk.WithMonitorAsync("update-articles", UpdateArticlesAsync);
     }
+
+    await host.StopAsync();
 }
 catch (Exception e)
 {
