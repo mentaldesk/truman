@@ -21,6 +21,7 @@ jobs:
       # Fork PRs build to prove they compile, but never publish and never receive secrets.
       # See AGENTS.md for how to give a fork PR a real preview deployment.
       PUBLISH: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+      HAS_SENTRY_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -77,9 +78,10 @@ jobs:
             sentry_auth_token=${{ secrets.SENTRY_AUTH_TOKEN }}
 
       # Powers suspect commits. Done here, not via SentrySetCommitOptions=--local, because the
-      # container build has no git history. PUBLISH is false exactly when the token is withheld.
+      # container build has no git history. Dependabot runs get their own secret store, so a
+      # same-repo PR can still arrive without a token.
       - name: Associate commits with the release
-        if: env.PUBLISH == 'true'
+        if: env.HAS_SENTRY_TOKEN == 'true'
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: mental-desk-ltd
