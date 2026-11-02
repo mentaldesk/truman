@@ -120,7 +120,42 @@ secret before suspecting the SDK.
 ### Infra
 
 - `compose.yaml` at the repo root is the local dev entrypoint — runs API, JobRunner, web, and Postgres.
+- `compose.prod.yaml` is the production stack on the app server. `compose.preview.yaml` brings up a
+  throwaway stack against any published image tag.
 - `.github/workflows` contains a build/test workflow and two GHCR image publishing workflows.
+
+## Production deployment
+
+Production runs as plain Docker Compose on the app server, reachable over Tailscale. There is no
+control plane: `compose.prod.yaml` plus a `.env` beside it is the whole deployment.
+
+- **Where:** `~/truman/src` on the app server, deployed as the `james` user (in the `docker` group).
+- **Secrets:** `.env` beside the compose file, gitignored, mode 600. `POSTGRES_HOST` is the compose
+  service name, `postgres`.
+- **Deploy:** `./deploy.sh` — pulls the current tags and recreates. Override the tag with
+  `IMAGE_TAG=pr-123 ./deploy.sh`.
+- **The database volume is external on purpose.** `truman-postgres-qufeci-data` predates this compose
+  file and holds live data, so it is declared `external: true` and `PGDATA` is pinned to
+  `/var/lib/postgresql/18/docker`. Change either and Postgres initialises an empty cluster against a
+  volume that still has the real data in it.
+- **Migrations are not automatic.** Run them explicitly:
+  `docker compose -f compose.prod.yaml run --rm jobrunner --run-migrations`
+- **The JobRunner is not a long-running service.** It has a `jobs` profile so `up -d` skips it, and a
+  crontab entry runs `docker compose -f compose.prod.yaml run --rm jobrunner` every six hours.
+
+### Previewing a pull request
+
+Previews run locally, not on a server. Every PR already has images in GHCR (`pr-<number>` tags), so
+with `docker login ghcr.io` done once and an env file in place:
+
+```bash
+IMAGE_TAG=pr-123 docker compose -p truman-pr-123 -f compose.preview.yaml \
+  --env-file ~/.config/truman/preview.env up -d
+```
+
+The app comes up on <http://localhost:8080> with an ephemeral database, migrated and seeded with ten
+analysed articles. `docker compose -p truman-pr-123 -f compose.preview.yaml down -v` removes it.
+Each preview spends a little Gemini quota, because seeding runs `--fetch --analyse`.
 
 ## Useful commands
 

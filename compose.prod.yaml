@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # postgres:18 keeps its data here, and the external volume below was created
+      # against this exact path. Mounting it elsewhere silently inits an empty cluster.
+      PGDATA: /var/lib/postgresql/18/docker
+    volumes:
+      - pgdata:/var/lib/postgresql/18/docker
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-truman} -d ${POSTGRES_DB:-trumandb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    image: ghcr.io/mentaldesk/truman:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      PORT: 5001
+    ports:
+      - "5001:5001"
+
+  jobrunner:
+    image: ghcr.io/mentaldesk/truman-jobrunner:${IMAGE_TAG:-latest}
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    profiles:
+      - jobs
+
+volumes:
+  pgdata:
+    external: true
+    name: truman-postgres-qufeci-data
