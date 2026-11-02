@@ -1,3 +1,5 @@
+name: truman
+
 services:
   postgres:
     image: postgres:18
