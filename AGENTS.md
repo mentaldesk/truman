@@ -155,7 +155,14 @@ IMAGE_TAG=pr-123 docker compose -p truman-pr-123 -f compose.preview.yaml \
 
 The app comes up on <http://localhost:8080> with an ephemeral database, migrated and seeded with ten
 analysed articles. `docker compose -p truman-pr-123 -f compose.preview.yaml down -v` removes it.
-Each preview spends a little Gemini quota, because seeding runs `--fetch --analyse`.
+
+Two things worth knowing:
+
+- Seeding runs `--fetch --analyse`, so each preview spends a little Gemini quota. Append
+  `postgres jobrunner-migrate app` to the `up` command to skip seeding and come up on an empty
+  database for free.
+- The published images are amd64-only, so on Apple Silicon the app and JobRunner run under
+  emulation and are noticeably slower than native. Postgres still runs native.
 
 ## Useful commands
 
