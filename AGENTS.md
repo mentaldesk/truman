@@ -120,6 +120,11 @@ secret before suspecting the SDK.
 ### Infra
 
 - `compose.yaml` at the repo root is the local dev entrypoint — runs API, JobRunner, web, and Postgres.
+- `compose.prod.yaml` is a production stack: the API, Postgres against an external volume, and the
+  JobRunner behind a `jobs` profile so `up -d` skips it and it runs as a one-shot container instead.
+- `compose.preview.yaml` brings up a throwaway stack against any published image tag (`IMAGE_TAG`),
+  with an ephemeral database that holds no state. Published images are amd64-only, so it pins
+  `platform: linux/amd64` to stay runnable on Apple Silicon.
 - `.github/workflows` contains a build/test workflow and two GHCR image publishing workflows.
 
 ## Useful commands

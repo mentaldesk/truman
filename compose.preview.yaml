@@ -14,6 +14,8 @@ services:
 
   jobrunner-migrate:
     image: ghcr.io/mentaldesk/truman-jobrunner:${IMAGE_TAG:-latest}
+    # Published images are amd64-only, so Apple Silicon needs this to run them.
+    platform: linux/amd64
     depends_on:
       postgres:
         condition: service_healthy
@@ -31,6 +33,7 @@ services:
 
   jobrunner-seed:
     image: ghcr.io/mentaldesk/truman-jobrunner:${IMAGE_TAG:-latest}
+    platform: linux/amd64
     depends_on:
       jobrunner-migrate:
         condition: service_completed_successfully
@@ -48,6 +51,7 @@ services:
 
   app:
     image: ghcr.io/mentaldesk/truman:${IMAGE_TAG:-latest}
+    platform: linux/amd64
     depends_on:
       postgres:
         condition: service_healthy
