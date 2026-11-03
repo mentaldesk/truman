@@ -120,49 +120,12 @@ secret before suspecting the SDK.
 ### Infra
 
 - `compose.yaml` at the repo root is the local dev entrypoint — runs API, JobRunner, web, and Postgres.
-- `compose.prod.yaml` is the production stack on the app server. `compose.preview.yaml` brings up a
-  throwaway stack against any published image tag.
+- `compose.prod.yaml` is a production stack: the API, Postgres against an external volume, and the
+  JobRunner behind a `jobs` profile so `up -d` skips it and it runs as a one-shot container instead.
+- `compose.preview.yaml` brings up a throwaway stack against any published image tag (`IMAGE_TAG`),
+  with an ephemeral database that holds no state. Published images are amd64-only, so it pins
+  `platform: linux/amd64` to stay runnable on Apple Silicon.
 - `.github/workflows` contains a build/test workflow and two GHCR image publishing workflows.
-
-## Production deployment
-
-Production runs as plain Docker Compose on the app server, reachable over Tailscale. There is no
-control plane: `compose.prod.yaml` plus a `.env` beside it is the whole deployment.
-
-- **Where:** `~/truman/src` on the app server, deployed as the `james` user (in the `docker` group).
-- **Secrets:** `.env` beside the compose file, gitignored, mode 600. `POSTGRES_HOST` is the compose
-  service name, `postgres`.
-- **Deploy:** `./deploy.sh` — pulls the current tags and recreates. Override the tag with
-  `IMAGE_TAG=pr-123 ./deploy.sh`.
-- **The database volume is external on purpose.** `truman-postgres-qufeci-data` predates this compose
-  file and holds live data, so it is declared `external: true` and `PGDATA` is pinned to
-  `/var/lib/postgresql/18/docker`. Change either and Postgres initialises an empty cluster against a
-  volume that still has the real data in it.
-- **Migrations are not automatic.** Run them explicitly:
-  `docker compose -f compose.prod.yaml run --rm jobrunner --run-migrations`
-- **The JobRunner is not a long-running service.** It has a `jobs` profile so `up -d` skips it, and a
-  crontab entry runs `docker compose -f compose.prod.yaml run --rm jobrunner` every six hours.
-
-### Previewing a pull request
-
-Previews run locally, not on a server. Every PR already has images in GHCR (`pr-<number>` tags), so
-with `docker login ghcr.io` done once and an env file in place:
-
-```bash
-IMAGE_TAG=pr-123 docker compose -p truman-pr-123 -f compose.preview.yaml \
-  --env-file ~/.config/truman/preview.env up -d
-```
-
-The app comes up on <http://localhost:8080> with an ephemeral database, migrated and seeded with ten
-analysed articles. `docker compose -p truman-pr-123 -f compose.preview.yaml down -v` removes it.
-
-Two things worth knowing:
-
-- Seeding runs `--fetch --analyse`, so each preview spends a little Gemini quota. Append
-  `postgres jobrunner-migrate app` to the `up` command to skip seeding and come up on an empty
-  database for free.
-- The published images are amd64-only, so on Apple Silicon the app and JobRunner run under
-  emulation and are noticeably slower than native. Postgres still runs native.
 
 ## Useful commands
 
