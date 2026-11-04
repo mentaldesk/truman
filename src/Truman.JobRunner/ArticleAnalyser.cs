@@ -21,9 +21,9 @@ public class ArticleAnalyser
     private readonly AnthropicClient _client;
     private readonly string _model;
     private readonly JevArticleScorer _scorer;
-    private readonly string _tagsInstructions;
+    private readonly string _analysisInstructions;
     private readonly string _contentInstructions;
-    private readonly OutputConfig _tagsOutput;
+    private readonly OutputConfig _analysisOutput;
     private readonly OutputConfig _contentOutput;
 
     public ArticleAnalyser(ILogger<ArticleAnalyser> logger,
@@ -38,12 +38,12 @@ public class ArticleAnalyser
         _scorer = scorer;
         _model = model;
 
-        _tagsInstructions = LoadInstructions("TagsInstructions.md");
+        _analysisInstructions = LoadInstructions("AnalysisInstructions.md");
         _contentInstructions = LoadInstructions("ContentInstructions.md");
 
-        _tagsOutput = new OutputConfig
+        _analysisOutput = new OutputConfig
         {
-            Format = new JsonOutputFormat { Schema = LoadSchema("TagsSchema.json") }
+            Format = new JsonOutputFormat { Schema = LoadSchema("ArticleAnalysisSchema.json") }
         };
         _contentOutput = new OutputConfig
         {
@@ -129,39 +129,89 @@ public class ArticleAnalyser
         await AnalyzePendingArticles(pending, db);
     }
 
-    private sealed class TagsData
+    private sealed class ArticleAnalysisData
     {
         [JsonPropertyName("tags")]
         public string[]? Tags { get; set; }
+
+        [JsonPropertyName("claim")]
+        public string? Claim { get; set; }
+
+        [JsonPropertyName("support")]
+        public string[]? Support { get; set; }
+
+        [JsonPropertyName("padding")]
+        public string[]? Padding { get; set; }
+
+        [JsonPropertyName("headline_gap")]
+        public string? HeadlineGap { get; set; }
+
+        [JsonPropertyName("source_depth")]
+        public string? SourceDepth { get; set; }
     }
 
-    private async Task<string[]?> ProcessArticleTags(Message result, RssItem rssItem, TrumanDbContext db)
+    private async Task<ArticleAnalysisData?> ProcessArticleAnalysis(Message result, RssItem rssItem, TrumanDbContext db)
     {
         if (result.StopReason is { } stopReason && stopReason != StopReason.EndTurn)
         {
-            await RecordFailure(rssItem, $"stop_reason == {stopReason}", db, stage: "article-tags");
+            await RecordFailure(rssItem, $"stop_reason == {stopReason}", db, stage: "article-analysis");
             return null;
         }
         if (ExtractText(result) is not { } responseContent)
         {
-            await RecordFailure(rssItem, "No content returned", db, stage: "article-tags");
+            await RecordFailure(rssItem, "No content returned", db, stage: "article-analysis");
             return null;
         }
         try
         {
-            if (JsonSerializer.Deserialize<TagsData>(responseContent)?.Tags is not { } tags)
+            if (JsonSerializer.Deserialize<ArticleAnalysisData>(responseContent) is not { Tags: not null } analysis)
             {
-                await RecordFailure(rssItem, "Deserialization returned null", db, stage: "article-tags");
+                await RecordFailure(rssItem, "Deserialization returned null", db, stage: "article-analysis");
                 return null;
             }
 
-            return tags;
+            return analysis;
         }
         catch (JsonException ex)
         {
-            await RecordFailure(rssItem, $"JSON deserialization failed: {ex.Message}", db, stage: "article-tags", ex, responseContent);
+            await RecordFailure(rssItem, $"JSON deserialization failed: {ex.Message}", db, stage: "article-analysis", ex, responseContent);
             _logger.LogError(ex, "JSON deserialization exception for {Link}. JSON: {JsonResponse}", rssItem.Link, responseContent);
             return null;
+        }
+    }
+
+    // A missing claim is not fatal: the presenter falls back to summarising the article unaided.
+    private static string? DescribeStructure(ArticleAnalysisData analysis)
+    {
+        if (string.IsNullOrWhiteSpace(analysis.Claim))
+        {
+            return null;
+        }
+
+        var lines = new List<string>
+        {
+            "Structural analysis of the article:",
+            $"- Claim: {analysis.Claim}",
+            $"- Support: {Join(analysis.Support) ?? "(none identified)"}",
+        };
+        if (Join(analysis.Padding) is { } padding)
+        {
+            lines.Add($"- Padding, do not spend words on: {padding}");
+        }
+        if (!string.IsNullOrWhiteSpace(analysis.HeadlineGap))
+        {
+            lines.Add($"- Headline relation to claim: {analysis.HeadlineGap}");
+        }
+        if (!string.IsNullOrWhiteSpace(analysis.SourceDepth))
+        {
+            lines.Add($"- Source depth: {analysis.SourceDepth}");
+        }
+        return string.Join("\n", lines);
+
+        static string? Join(string[]? values)
+        {
+            var joined = string.Join("; ", (values ?? []).Where(v => !string.IsNullOrWhiteSpace(v)));
+            return string.IsNullOrEmpty(joined) ? null : joined;
         }
     }
 
@@ -248,20 +298,24 @@ public class ArticleAnalyser
 
                 var scores = await _scorer.ScoreAsync(DescribeArticle(rssItem));
 
-                var tagsResponse = await _client.Messages.Create(new MessageCreateParams
+                var analysisResponse = await _client.Messages.Create(new MessageCreateParams
                 {
                     Model = _model,
                     MaxTokens = MaxTokens,
-                    System = _tagsInstructions,
-                    Messages = [new UserMessageParam { Content = $"The article to be tagged is:\n\n{DescribeArticle(rssItem)}" }],
-                    OutputConfig = _tagsOutput,
+                    System = _analysisInstructions,
+                    Messages = [new UserMessageParam { Content = $"The article to be analysed is:\n\n{DescribeArticle(rssItem)}" }],
+                    OutputConfig = _analysisOutput,
                 });
-                if (await ProcessArticleTags(tagsResponse, rssItem, db) is not { } tags)
+                if (await ProcessArticleAnalysis(analysisResponse, rssItem, db) is not { Tags: { } tags } analysis)
                 {
                     continue;
                 }
 
                 var articleData = BuildArticleData(rssItem, scores, tags);
+                var structure = DescribeStructure(analysis);
+                var presenterSource = structure is null
+                    ? DescribeArticle(rssItem)
+                    : $"{structure}\n\n{DescribeArticle(rssItem)}";
 
                 var presenterContents = new Dictionary<int, PresenterContentData>();
                 foreach (var presenter in presenters)
@@ -271,7 +325,7 @@ public class ArticleAnalyser
                         Model = _model,
                         MaxTokens = MaxTokens,
                         System = _contentInstructions,
-                        Messages = [new UserMessageParam { Content = $"Rewrite the following article in the style of {presenter.PresenterStyle}.\n\n{DescribeArticle(rssItem)}" }],
+                        Messages = [new UserMessageParam { Content = $"Rewrite the following article in the style of {presenter.PresenterStyle}.\n\n{presenterSource}" }],
                         OutputConfig = _contentOutput,
                         });
                     if (await ProcessArticleContent(presenterResult, rssItem, db) is { } presenterContent)
