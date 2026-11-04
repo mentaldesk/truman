@@ -128,10 +128,24 @@ try
         }
     }
 
-    if (shouldUpdateArticles)
+    if (shouldRunDefaultFlow)
     {
-        // Sends the in-progress, ok and error check-ins and rethrows. No monitor config, so Sentry keeps the schedule.
-        await SentrySdk.WithMonitorAsync("update-articles", UpdateArticlesAsync);
+        // Only the bare invocation is the scheduled one, so only it checks in; a manual --fetch or
+        // --analyse would otherwise satisfy the schedule and hide a run that never happened.
+        // The interval must match the crontab that invokes this. Declaring it here upserts it to Sentry.
+        await SentrySdk.WithMonitorAsync("update-articles", UpdateArticlesAsync, monitor =>
+        {
+            monitor.Interval("0 */6 * * *");
+            monitor.TimeZone = "Etc/UTC";
+            monitor.CheckInMargin = TimeSpan.FromMinutes(30);
+            monitor.MaxRuntime = TimeSpan.FromMinutes(60);
+            monitor.FailureIssueThreshold = 1;
+            monitor.RecoveryThreshold = 1;
+        });
+    }
+    else if (shouldUpdateArticles)
+    {
+        await UpdateArticlesAsync();
     }
 
     await host.StopAsync();
