@@ -5,6 +5,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Logging;
 using Anthropic;
+using Microsoft.Extensions.AI;
 using System.Net.Http.Headers;
 using Truman.JobRunner.Jev;
 using Polly;
@@ -17,7 +18,8 @@ using DotNetEnv.Configuration;
 Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", "Development");
 #endif
 
-#pragma warning disable SKEXP0070
+// AddSentry and SentryAIOptions.Experimental are flagged experimental by the Sentry SDK.
+#pragma warning disable SENTRY0001
 try
 {
     var host = Host.CreateDefaultBuilder(args)
@@ -50,6 +52,8 @@ try
         {
             // Add database context factory instead of scoped DbContext
             var connectionString = context.Configuration.GetPostgresConnectionString();
+            var model = context.Configuration["AI:Model"]
+                        ?? throw new InvalidOperationException("AI Model not found in configuration.");
             
             // Debug: Print current environment
             Console.WriteLine($"Current environment: {context.HostingEnvironment.EnvironmentName}");
@@ -63,10 +67,9 @@ try
                 new ArticleAnalyser(
                     sp.GetRequiredService<ILogger<ArticleAnalyser>>(),
                     sp.GetRequiredService<IDbContextFactory<TrumanDbContext>>(),
-                    sp.GetRequiredService<AnthropicClient>(),
+                    sp.GetRequiredService<IChatClient>(),
                     sp.GetRequiredService<JevArticleScorer>(),
-                    context.Configuration["AI:Model"]
-                        ?? throw new InvalidOperationException("AI Model not found in configuration.")
+                    model
                 )
             );
             services.AddSingleton<DbMigrator>();
@@ -80,6 +83,11 @@ try
                          ?? throw new InvalidOperationException("AI API key not found in configuration.");
 
             services.AddSingleton(_ => new AnthropicClient { ApiKey = apiKey });
+
+            services.AddSingleton<IChatClient>(sp => sp
+                .GetRequiredService<AnthropicClient>()
+                .AsIChatClient(defaultModelId: model)
+                .AddSentry(o => o.Experimental.AgentName = "truman-analyser"));
 
             var jevApiKey = context.Configuration["Jev:ApiKey"]
                             ?? throw new InvalidOperationException("Jev API key not found in configuration.");
@@ -183,4 +191,4 @@ catch (Exception e)
     // in k8s doesn't know the job has failed.
     Environment.Exit(1); 
 }
-#pragma warning restore SKEXP0070
+#pragma warning restore SENTRY0001
