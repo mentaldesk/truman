@@ -22,5 +22,7 @@
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.22" />
     <!-- Logging for FakeLogger -->
     <PackageVersion Include="Microsoft.Extensions.Diagnostics.Testing" Version="9.10.0" />
+    <!-- Anthropic SDK, so the chat-request shape can be asserted on the wire (match src) -->
+    <PackageVersion Include="Anthropic" Version="13.4.0" />
   </ItemGroup>
 </Project>
