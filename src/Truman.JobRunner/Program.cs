@@ -5,6 +5,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Logging;
 using Anthropic;
+using System.Net.Http.Headers;
+using Truman.JobRunner.Jev;
 using Polly;
 using Truman.Data;
 using Truman.JobRunner;
@@ -62,6 +64,7 @@ try
                     sp.GetRequiredService<ILogger<ArticleAnalyser>>(),
                     sp.GetRequiredService<IDbContextFactory<TrumanDbContext>>(),
                     sp.GetRequiredService<AnthropicClient>(),
+                    sp.GetRequiredService<JevArticleScorer>(),
                     context.Configuration["AI:Model"]
                         ?? throw new InvalidOperationException("AI Model not found in configuration.")
                 )
@@ -77,6 +80,19 @@ try
                          ?? throw new InvalidOperationException("AI API key not found in configuration.");
 
             services.AddSingleton(_ => new AnthropicClient { ApiKey = apiKey });
+
+            var jevApiKey = context.Configuration["Jev:ApiKey"]
+                            ?? throw new InvalidOperationException("Jev API key not found in configuration.");
+
+            services.AddHttpClient(JevClient.HttpClientName, httpClient =>
+            {
+                httpClient.BaseAddress = new Uri("https://api.typesafe.ai/");
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jevApiKey);
+            });
+
+            services.AddSingleton(sp => new JevClient(
+                sp.GetRequiredService<IHttpClientFactory>().CreateClient(JevClient.HttpClientName)));
+            services.AddSingleton<JevArticleScorer>();
         })
         .Build();
 

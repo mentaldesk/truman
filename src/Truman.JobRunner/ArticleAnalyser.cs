@@ -4,9 +4,11 @@ using Sentry;
 using Truman.Data;
 using Truman.Data.Entities;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.Json.Nodes;
 using Anthropic;
 using Anthropic.Models.Messages;
+using Truman.JobRunner.Jev;
 
 namespace Truman.JobRunner;
 
@@ -18,27 +20,30 @@ public class ArticleAnalyser
     private readonly IDbContextFactory<TrumanDbContext> _contextFactory;
     private readonly AnthropicClient _client;
     private readonly string _model;
-    private readonly string _analysisInstructions;
+    private readonly JevArticleScorer _scorer;
+    private readonly string _tagsInstructions;
     private readonly string _contentInstructions;
-    private readonly OutputConfig _analyserOutput;
+    private readonly OutputConfig _tagsOutput;
     private readonly OutputConfig _contentOutput;
 
     public ArticleAnalyser(ILogger<ArticleAnalyser> logger,
         IDbContextFactory<TrumanDbContext> contextFactory,
         AnthropicClient client,
+        JevArticleScorer scorer,
         string model)
     {
         _logger = logger;
         _contextFactory = contextFactory;
         _client = client;
+        _scorer = scorer;
         _model = model;
 
-        _analysisInstructions = LoadInstructions("AnalyserInstructions.md");
+        _tagsInstructions = LoadInstructions("TagsInstructions.md");
         _contentInstructions = LoadInstructions("ContentInstructions.md");
 
-        _analyserOutput = new OutputConfig
+        _tagsOutput = new OutputConfig
         {
-            Format = new JsonOutputFormat { Schema = LoadSchema("AnalyserSchema.json") }
+            Format = new JsonOutputFormat { Schema = LoadSchema("TagsSchema.json") }
         };
         _contentOutput = new OutputConfig
         {
@@ -124,37 +129,57 @@ public class ArticleAnalyser
         await AnalyzePendingArticles(pending, db);
     }
 
-    private async Task<ArticleData?> ProcessArticleAnalysis(Message result, RssItem rssItem, TrumanDbContext db)
+    private sealed class TagsData
+    {
+        [JsonPropertyName("tags")]
+        public string[]? Tags { get; set; }
+    }
+
+    private async Task<string[]?> ProcessArticleTags(Message result, RssItem rssItem, TrumanDbContext db)
     {
         if (result.StopReason is { } stopReason && stopReason != StopReason.EndTurn)
         {
-            await RecordFailure(rssItem, $"stop_reason == {stopReason}", db, stage: "article-analysis");
+            await RecordFailure(rssItem, $"stop_reason == {stopReason}", db, stage: "article-tags");
             return null;
         }
         if (ExtractText(result) is not { } responseContent)
         {
-            await RecordFailure(rssItem, "No content returned", db, stage: "article-analysis");
+            await RecordFailure(rssItem, "No content returned", db, stage: "article-tags");
             return null;
         }
-        _logger.LogInformation("Analysis results for {Link}:", rssItem.Link);
-        _logger.LogInformation("{Response}", responseContent);
         try
         {
-            var articleData = JsonSerializer.Deserialize<ArticleData>(responseContent);
-            if (articleData == null)
+            if (JsonSerializer.Deserialize<TagsData>(responseContent)?.Tags is not { } tags)
             {
-                await RecordFailure(rssItem, "Deserialization returned null", db, stage: "article-analysis");
+                await RecordFailure(rssItem, "Deserialization returned null", db, stage: "article-tags");
                 return null;
             }
 
-            return articleData;
+            return tags;
         }
         catch (JsonException ex)
         {
-            await RecordFailure(rssItem, $"JSON deserialization failed: {ex.Message}", db, stage: "article-analysis", ex, responseContent);
+            await RecordFailure(rssItem, $"JSON deserialization failed: {ex.Message}", db, stage: "article-tags", ex, responseContent);
             _logger.LogError(ex, "JSON deserialization exception for {Link}. JSON: {JsonResponse}", rssItem.Link, responseContent);
             return null;
         }
+    }
+
+    // Round-tripping reuses ArticleData's JsonPropertyName map instead of restating 24 assignments.
+    private static ArticleData BuildArticleData(RssItem rssItem, IReadOnlyDictionary<string, int> scores, string[] tags)
+    {
+        var payload = new Dictionary<string, object?>(scores.Count + 2)
+        {
+            ["link"] = rssItem.Link,
+            ["tags"] = tags,
+        };
+        foreach (var (name, score) in scores)
+        {
+            payload[name] = score;
+        }
+
+        return JsonSerializer.Deserialize<ArticleData>(JsonSerializer.Serialize(payload))
+               ?? throw new InvalidOperationException($"Could not assemble article data for {rssItem.Link}.");
     }
 
     private async Task<PresenterContentData?> ProcessArticleContent(Message result, RssItem rssItem, TrumanDbContext db)
@@ -221,18 +246,22 @@ public class ArticleAnalyser
             {
                 count++;
 
-                var analyserResponse = await _client.Messages.Create(new MessageCreateParams
+                var scores = await _scorer.ScoreAsync(DescribeArticle(rssItem));
+
+                var tagsResponse = await _client.Messages.Create(new MessageCreateParams
                 {
                     Model = _model,
                     MaxTokens = MaxTokens,
-                    System = _analysisInstructions,
-                    Messages = [new UserMessageParam { Content = $"The article to be analysed is:\n\n{DescribeArticle(rssItem)}" }],
-                    OutputConfig = _analyserOutput,
+                    System = _tagsInstructions,
+                    Messages = [new UserMessageParam { Content = $"The article to be tagged is:\n\n{DescribeArticle(rssItem)}" }],
+                    OutputConfig = _tagsOutput,
                 });
-                if (await ProcessArticleAnalysis(analyserResponse, rssItem, db) is not { } articleData)
+                if (await ProcessArticleTags(tagsResponse, rssItem, db) is not { } tags)
                 {
                     continue;
                 }
+
+                var articleData = BuildArticleData(rssItem, scores, tags);
 
                 var presenterContents = new Dictionary<int, PresenterContentData>();
                 foreach (var presenter in presenters)

@@ -1,0 +1,94 @@
+[
+  {
+    "id": "freedom",
+    "description": "The right to live, think, and act freely"
+  },
+  {
+    "id": "independence",
+    "description": "Relying on yourself; self-sufficiency"
+  },
+  {
+    "id": "self-respect",
+    "description": "Pride in who you are and how you act"
+  },
+  {
+    "id": "self-actualization",
+    "description": "Becoming the best version of yourself"
+  },
+  {
+    "id": "creativity",
+    "description": "Expressing new ideas and original thought"
+  },
+  {
+    "id": "honesty",
+    "description": "Telling the truth and being transparent"
+  },
+  {
+    "id": "compassion",
+    "description": "Caring for others and their well-being"
+  },
+  {
+    "id": "loyalty",
+    "description": "Standing by people and commitments"
+  },
+  {
+    "id": "justice",
+    "description": "Treating people fairly and upholding rights"
+  },
+  {
+    "id": "responsibility",
+    "description": "Being accountable for your actions"
+  },
+  {
+    "id": "security",
+    "description": "Physical, financial, and emotional safety"
+  },
+  {
+    "id": "equality",
+    "description": "Fair treatment regardless of identity"
+  },
+  {
+    "id": "tradition",
+    "description": "Respecting customs and cultural continuity"
+  },
+  {
+    "id": "obedience",
+    "description": "Following rules and authority"
+  },
+  {
+    "id": "success",
+    "description": "Accomplishing goals and excelling"
+  },
+  {
+    "id": "ambition",
+    "description": "Striving to achieve more"
+  },
+  {
+    "id": "discipline",
+    "description": "Controlling impulses to reach long-term goals"
+  },
+  {
+    "id": "knowledge",
+    "description": "Seeking truth and understanding"
+  },
+  {
+    "id": "open-mindedness",
+    "description": "Being receptive to different views"
+  },
+  {
+    "id": "peace-of-mind",
+    "description": "Inner calm and lack of anxiety"
+  },
+  {
+    "id": "pleasure",
+    "description": "Enjoying life's moments"
+  },
+  {
+    "id": "connection",
+    "description": "Feeling close to others"
+  },
+  {
+    "id": "adventure",
+    "description": "Seeking novelty and challenge"
+  }
+]
