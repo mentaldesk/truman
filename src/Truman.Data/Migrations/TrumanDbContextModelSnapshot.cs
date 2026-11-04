@@ -113,14 +113,6 @@ namespace Truman.Data.Migrations
                         .IsRequired()
                         .HasColumnType("jsonb");
 
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Tldr")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<int>("Tradition")
                         .HasColumnType("integer");
 

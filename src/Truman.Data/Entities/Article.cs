@@ -6,8 +6,6 @@ public class Article
 {
     public int Id { get; set; }
     public string Link { get; set; } = string.Empty;
-    public string Title { get; set; } = string.Empty;
-    public string Tldr { get; set; } = string.Empty;
     public int Sentiment { get; set; }
     public string[] Tags { get; set; } = Array.Empty<string>();
     
