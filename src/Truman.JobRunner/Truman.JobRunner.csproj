@@ -50,6 +50,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <InternalsVisibleTo Include="Truman.JobRunner.Tests" />
+    </ItemGroup>
+
+    <ItemGroup>
       <ProjectReference Include="..\Truman.Data\Truman.Data.csproj" />
       <ProjectReference Include="..\Truman.Diagnostics\Truman.Diagnostics.csproj" />
     </ItemGroup>

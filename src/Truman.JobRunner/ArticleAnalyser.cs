@@ -311,6 +311,12 @@ public class ArticleAnalyser
             try
             {
                 var scores = await _scorer.ScoreAsync(DescribeArticle(rssItem), cancellationToken);
+                if (scores.MissingAnswers > 0)
+                {
+                    _logger.LogWarning(
+                        "Jev left {MissingAnswers} of {QuestionCount} questions unanswered for {Link}; those scored 0",
+                        scores.MissingAnswers, scores.Values.Count, rssItem.Link);
+                }
 
                 var analysisResponse = await _chatClient.GetResponseAsync(
                     [
@@ -324,7 +330,7 @@ public class ArticleAnalyser
                     continue;
                 }
 
-                var articleData = BuildArticleData(rssItem, scores, tags);
+                var articleData = BuildArticleData(rssItem, scores.Values, tags);
                 var structure = DescribeStructure(analysis);
                 var presenterSource = structure is null
                     ? DescribeArticle(rssItem)
