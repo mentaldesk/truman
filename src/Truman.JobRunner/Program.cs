@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Logging;
-using Microsoft.SemanticKernel;
+using Anthropic;
 using Polly;
 using Truman.Data;
 using Truman.JobRunner;
@@ -61,7 +61,9 @@ try
                 new ArticleAnalyser(
                     sp.GetRequiredService<ILogger<ArticleAnalyser>>(),
                     sp.GetRequiredService<IDbContextFactory<TrumanDbContext>>(),
-                    sp.GetRequiredService<Kernel>()
+                    sp.GetRequiredService<AnthropicClient>(),
+                    context.Configuration["AI:Model"]
+                        ?? throw new InvalidOperationException("AI Model not found in configuration.")
                 )
             );
             services.AddSingleton<DbMigrator>();
@@ -70,41 +72,11 @@ try
                 .AddHttpClient("RssClient")
                 .ConfigureHttpClient(c => c.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (compatible; TrumanBot/1.0)"));
 
-            services
-                .AddHttpClient("GeminiClient")
-                .RedactLoggedHeaders(["Authorization"])
-                .AddResilienceHandler("gemini-pipeline", static pipeline =>
-                {
-                    // Retry with exponential backoff on 429 responses
-                    pipeline.AddRetry(new HttpRetryStrategyOptions
-                    {
-                        MaxRetryAttempts = 3,
-                        Delay = TimeSpan.FromMinutes(1),
-                        BackoffType = DelayBackoffType.Exponential,
-                        ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
-                            .HandleResult(msg => msg.StatusCode == HttpStatusCode.TooManyRequests)
-                    });
-
-                    // Add timeout per request
-                    pipeline.AddTimeout(TimeSpan.FromSeconds(30));
-                });        
-        
-            // Register Semantic Kernel
-            var aiModel = context.Configuration["AI:Model"] 
-                          ?? throw new InvalidOperationException("AI Model not found in configuration.");
-            var apiKey = context.Configuration["AI:ApiKey"] 
+            // The Anthropic SDK retries 429s and 5xxs itself, so there is no resilience pipeline here.
+            var apiKey = context.Configuration["AI:ApiKey"]
                          ?? throw new InvalidOperationException("AI API key not found in configuration.");
-           
-            // var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
-            services.AddTransient<Kernel>(sp =>
-            {
-                var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
-                var httpClient = httpClientFactory.CreateClient("GeminiClient");
 
-                return Kernel.CreateBuilder()
-                    .AddGoogleAIGeminiChatCompletion(aiModel, apiKey, httpClient: httpClient)
-                    .Build();
-            });
+            services.AddSingleton(_ => new AnthropicClient { ApiKey = apiKey });
         })
         .Build();
 

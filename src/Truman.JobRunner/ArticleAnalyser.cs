@@ -2,11 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Sentry;
 using Truman.Data;
-using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.ChatCompletion;
 using Truman.Data.Entities;
-using Microsoft.SemanticKernel.Connectors.Google;
 using System.Text.Json;
+using System.Text.Json.Nodes;
+using Anthropic;
+using Anthropic.Models.Messages;
 
 namespace Truman.JobRunner;
 
@@ -16,43 +16,91 @@ public class ArticleAnalyser
 {
     private readonly ILogger<ArticleAnalyser> _logger;
     private readonly IDbContextFactory<TrumanDbContext> _contextFactory;
-    private readonly Kernel _kernel;
+    private readonly AnthropicClient _client;
+    private readonly string _model;
     private readonly string _analysisInstructions;
     private readonly string _contentInstructions;
-    private readonly GeminiPromptExecutionSettings _analyserPromptSettings;
-    private readonly GeminiPromptExecutionSettings _contentPromptSettings;
+    private readonly OutputConfig _analyserOutput;
+    private readonly OutputConfig _contentOutput;
 
     public ArticleAnalyser(ILogger<ArticleAnalyser> logger,
         IDbContextFactory<TrumanDbContext> contextFactory,
-        Kernel kernel)
+        AnthropicClient client,
+        string model)
     {
         _logger = logger;
         _contextFactory = contextFactory;
-        _kernel = kernel;
+        _client = client;
+        _model = model;
 
         _analysisInstructions = LoadInstructions("AnalyserInstructions.md");
         _contentInstructions = LoadInstructions("ContentInstructions.md");
 
-        var analyserSchemaPath = Path.Combine(AppContext.BaseDirectory, "AnalyserSchema.json");
-        var analyserSchema = JsonDocument.Parse(File.ReadAllText(analyserSchemaPath)).RootElement;
-        _analyserPromptSettings = new GeminiPromptExecutionSettings
+        _analyserOutput = new OutputConfig
         {
-            MaxTokens = MaxTokens, 
-            ResponseMimeType = "application/json",
-            ResponseSchema = analyserSchema
+            Format = new JsonOutputFormat { Schema = LoadSchema("AnalyserSchema.json") }
         };
-
-        var contentSchemaPath = Path.Combine(AppContext.BaseDirectory, "PresenterContentSchema.json");
-        var contentSchema = JsonDocument.Parse(File.ReadAllText(contentSchemaPath)).RootElement;
-        _contentPromptSettings = new GeminiPromptExecutionSettings
+        _contentOutput = new OutputConfig
         {
-            MaxTokens = MaxTokens, 
-            ResponseMimeType = "application/json",
-            ResponseSchema = contentSchema
+            Format = new JsonOutputFormat { Schema = LoadSchema("PresenterContentSchema.json") }
         };
 
         return;
         string LoadInstructions(string fileName) => File.ReadAllText(Path.Combine(AppContext.BaseDirectory, fileName));
+    }
+
+    private static string? ExtractText(Message message)
+    {
+        var text = string.Concat(message.Content.Select(block => block.Value is TextBlock textBlock ? textBlock.Text : string.Empty));
+        return string.IsNullOrWhiteSpace(text) ? null : text;
+    }
+
+    private static Dictionary<string, JsonElement> LoadSchema(string fileName)
+    {
+        var schema = JsonNode.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, fileName)))!;
+        StripUnsupportedKeywords(schema);
+        using var document = JsonDocument.Parse(schema.ToJsonString());
+        return document.RootElement.EnumerateObject().ToDictionary(property => property.Name, property => property.Value.Clone());
+    }
+
+    // Structured outputs reject these; each property's description already states its range.
+    // https://platform.claude.com/docs/en/build-with-claude/structured-outputs
+    private static readonly string[] UnsupportedSchemaKeywords =
+        ["minimum", "maximum", "multipleOf", "minLength", "maxLength", "maxItems"];
+
+    private static void StripUnsupportedKeywords(JsonNode node)
+    {
+        switch (node)
+        {
+            case JsonObject jsonObject:
+                foreach (var keyword in UnsupportedSchemaKeywords)
+                {
+                    jsonObject.Remove(keyword);
+                }
+
+                // minItems is accepted only as 0 or 1.
+                if (jsonObject["minItems"]?.GetValue<int>() is { } minItems && minItems > 1)
+                {
+                    jsonObject.Remove("minItems");
+                }
+                foreach (var property in jsonObject.ToList())
+                {
+                    if (property.Value is { } value)
+                    {
+                        StripUnsupportedKeywords(value);
+                    }
+                }
+                break;
+            case JsonArray jsonArray:
+                foreach (var item in jsonArray)
+                {
+                    if (item is { } value)
+                    {
+                        StripUnsupportedKeywords(value);
+                    }
+                }
+                break;
+        }
     }
 
     const int MaxTokens = 10_000;
@@ -76,14 +124,14 @@ public class ArticleAnalyser
         await AnalyzePendingArticles(pending, db);
     }
 
-    private async Task<ArticleData?> ProcessArticleAnalysis(ChatMessageContent result, RssItem rssItem, TrumanDbContext db)
+    private async Task<ArticleData?> ProcessArticleAnalysis(Message result, RssItem rssItem, TrumanDbContext db)
     {
-        if (result.Metadata!.ReadValue<GeminiFinishReason>("FinishReason") is { } finishReason && finishReason.Label != "STOP")
+        if (result.StopReason is { } stopReason && stopReason != StopReason.EndTurn)
         {
-            await RecordFailure(rssItem, $"GeminiFinishReason == {finishReason}", db, stage: "article-analysis");
+            await RecordFailure(rssItem, $"stop_reason == {stopReason}", db, stage: "article-analysis");
             return null;
         }
-        if (result.Content is not { } responseContent)
+        if (ExtractText(result) is not { } responseContent)
         {
             await RecordFailure(rssItem, "No content returned", db, stage: "article-analysis");
             return null;
@@ -92,7 +140,7 @@ public class ArticleAnalyser
         _logger.LogInformation("{Response}", responseContent);
         try
         {
-            var articleData = JsonSerializer.Deserialize<ArticleData>(result.Content);
+            var articleData = JsonSerializer.Deserialize<ArticleData>(responseContent);
             if (articleData == null)
             {
                 await RecordFailure(rssItem, "Deserialization returned null", db, stage: "article-analysis");
@@ -109,14 +157,14 @@ public class ArticleAnalyser
         }
     }
 
-    private async Task<PresenterContentData?> ProcessArticleContent(ChatMessageContent result, RssItem rssItem, TrumanDbContext db)
+    private async Task<PresenterContentData?> ProcessArticleContent(Message result, RssItem rssItem, TrumanDbContext db)
     {
-        if (result.Metadata!.ReadValue<GeminiFinishReason>("FinishReason") is { } finishReason && finishReason.Label != "STOP")
+        if (result.StopReason is { } stopReason && stopReason != StopReason.EndTurn)
         {
-            await RecordFailure(rssItem, $"GeminiFinishReason == {finishReason}", db, stage: "presenter-content");
+            await RecordFailure(rssItem, $"stop_reason == {stopReason}", db, stage: "presenter-content");
             return null;
         }
-        if (result.Content is not { } responseContent)
+        if (ExtractText(result) is not { } responseContent)
         {
             await RecordFailure(rssItem, "No content returned", db, stage: "presenter-content");
             return null;
@@ -158,7 +206,6 @@ public class ArticleAnalyser
 
     private async Task AnalyzePendingArticles(List<RssItem> pending, TrumanDbContext db)
     {
-        var chatService = _kernel.GetRequiredService<IChatCompletionService>();
 
         var presenters = await db.Presenters.OrderBy(p => p.Id).ToListAsync();
         if (presenters.Count == 0)
@@ -174,9 +221,14 @@ public class ArticleAnalyser
             {
                 count++;
 
-                var chatHistory = new ChatHistory(_analysisInstructions);
-                chatHistory.AddUserMessage($"The article to be analysed is:\n\n{DescribeArticle(rssItem)}");
-                var analyserResponse = await chatService.GetChatMessageContentAsync(chatHistory, _analyserPromptSettings, _kernel);
+                var analyserResponse = await _client.Messages.Create(new MessageCreateParams
+                {
+                    Model = _model,
+                    MaxTokens = MaxTokens,
+                    System = _analysisInstructions,
+                    Messages = [new UserMessageParam { Content = $"The article to be analysed is:\n\n{DescribeArticle(rssItem)}" }],
+                    OutputConfig = _analyserOutput,
+                });
                 if (await ProcessArticleAnalysis(analyserResponse, rssItem, db) is not { } articleData)
                 {
                     continue;
@@ -185,10 +237,14 @@ public class ArticleAnalyser
                 var presenterContents = new Dictionary<int, PresenterContentData>();
                 foreach (var presenter in presenters)
                 {
-                    var presenterChatHistory = new ChatHistory(_contentInstructions);
-                    presenterChatHistory.AddUserMessage($"Rewrite the following article in the style of {presenter.PresenterStyle}.\n\n{DescribeArticle(rssItem)}");
-                    var presenterResult = await chatService.GetChatMessageContentAsync(presenterChatHistory,
-                        _contentPromptSettings, _kernel);
+                    var presenterResult = await _client.Messages.Create(new MessageCreateParams
+                    {
+                        Model = _model,
+                        MaxTokens = MaxTokens,
+                        System = _contentInstructions,
+                        Messages = [new UserMessageParam { Content = $"Rewrite the following article in the style of {presenter.PresenterStyle}.\n\n{DescribeArticle(rssItem)}" }],
+                        OutputConfig = _contentOutput,
+                        });
                     if (await ProcessArticleContent(presenterResult, rssItem, db) is { } presenterContent)
                     {
                         presenterContents[presenter.Id] = presenterContent;
