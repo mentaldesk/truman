@@ -59,10 +59,17 @@ public class RssFetcher(
                         pubDate = item.PublishingDate.Value;
                     }
 
+                    // Some feeds put the article body in <description>, others in <content:encoded>.
+                    var body = (item.Content ?? string.Empty).Length > (item.Description ?? string.Empty).Length
+                        ? item.Content
+                        : item.Description;
+
                     // Create new article
                     var rssItem = new RssItem
                     {
                         Link = link,
+                        Title = item.Title ?? string.Empty,
+                        Description = body ?? string.Empty,
                         PubDate = pubDate,
                         TimeAnalysed = null // This will be set by the analysis job
                     };
