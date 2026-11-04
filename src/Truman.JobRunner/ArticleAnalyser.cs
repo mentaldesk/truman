@@ -19,9 +19,9 @@ public class ArticleAnalyser
     private readonly IDbContextFactory<TrumanDbContext> _contextFactory;
     private readonly IChatClient _chatClient;
     private readonly JevArticleScorer _scorer;
-    private readonly string _tagsInstructions;
+    private readonly string _analysisInstructions;
     private readonly string _contentInstructions;
-    private readonly ChatOptions _tagsOptions;
+    private readonly ChatOptions _analysisOptions;
     private readonly ChatOptions _contentOptions;
 
     public ArticleAnalyser(ILogger<ArticleAnalyser> logger,
@@ -35,10 +35,10 @@ public class ArticleAnalyser
         _chatClient = chatClient;
         _scorer = scorer;
 
-        _tagsInstructions = LoadInstructions("TagsInstructions.md");
+        _analysisInstructions = LoadInstructions("AnalysisInstructions.md");
         _contentInstructions = LoadInstructions("ContentInstructions.md");
 
-        _tagsOptions = BuildOptions(model, "TagsSchema.json", "article_tags");
+        _analysisOptions = BuildOptions(model, "ArticleAnalysisSchema.json", "article_analysis");
         _contentOptions = BuildOptions(model, "PresenterContentSchema.json", "presenter_content");
 
         return;
@@ -49,6 +49,7 @@ public class ArticleAnalyser
     {
         ModelId = model,
         MaxOutputTokens = MaxTokens,
+        Reasoning = new ReasoningOptions { Effort = ReasoningEffort.Low },
         ResponseFormat = ChatResponseFormat.ForJsonSchema(LoadSchema(schemaFile), schemaName),
     };
 
@@ -121,39 +122,89 @@ public class ArticleAnalyser
         return await AnalyzePendingArticles(pending, db);
     }
 
-    private sealed class TagsData
+    private sealed class ArticleAnalysisData
     {
         [JsonPropertyName("tags")]
         public string[]? Tags { get; set; }
+
+        [JsonPropertyName("claim")]
+        public string? Claim { get; set; }
+
+        [JsonPropertyName("support")]
+        public string[]? Support { get; set; }
+
+        [JsonPropertyName("padding")]
+        public string[]? Padding { get; set; }
+
+        [JsonPropertyName("headline_gap")]
+        public string? HeadlineGap { get; set; }
+
+        [JsonPropertyName("source_depth")]
+        public string? SourceDepth { get; set; }
     }
 
-    private async Task<string[]?> ProcessArticleTags(ChatResponse result, RssItem rssItem, TrumanDbContext db)
+    private async Task<ArticleAnalysisData?> ProcessArticleAnalysis(ChatResponse result, RssItem rssItem, TrumanDbContext db)
     {
         if (result.FinishReason is { } finishReason && finishReason != ChatFinishReason.Stop)
         {
-            await RecordFailure(rssItem, $"finish_reason == {finishReason}", db, stage: "article-tags");
+            await RecordFailure(rssItem, $"finish_reason == {finishReason}", db, stage: "article-analysis");
             return null;
         }
         if (NonEmptyText(result) is not { } responseContent)
         {
-            await RecordFailure(rssItem, "No content returned", db, stage: "article-tags");
+            await RecordFailure(rssItem, "No content returned", db, stage: "article-analysis");
             return null;
         }
         try
         {
-            if (JsonSerializer.Deserialize<TagsData>(responseContent)?.Tags is not { } tags)
+            if (JsonSerializer.Deserialize<ArticleAnalysisData>(responseContent) is not { Tags: not null } analysis)
             {
-                await RecordFailure(rssItem, "Deserialization returned null", db, stage: "article-tags");
+                await RecordFailure(rssItem, "Deserialization returned null", db, stage: "article-analysis");
                 return null;
             }
 
-            return tags;
+            return analysis;
         }
         catch (JsonException ex)
         {
-            await RecordFailure(rssItem, $"JSON deserialization failed: {ex.Message}", db, stage: "article-tags", ex, responseContent);
+            await RecordFailure(rssItem, $"JSON deserialization failed: {ex.Message}", db, stage: "article-analysis", ex, responseContent);
             _logger.LogError(ex, "JSON deserialization exception for {Link}. JSON: {JsonResponse}", rssItem.Link, responseContent);
             return null;
+        }
+    }
+
+    // A missing claim is not fatal: the presenter falls back to summarising the article unaided.
+    private static string? DescribeStructure(ArticleAnalysisData analysis)
+    {
+        if (string.IsNullOrWhiteSpace(analysis.Claim))
+        {
+            return null;
+        }
+
+        var lines = new List<string>
+        {
+            "Structural analysis of the article:",
+            $"- Claim: {analysis.Claim}",
+            $"- Support: {Join(analysis.Support) ?? "(none identified)"}",
+        };
+        if (Join(analysis.Padding) is { } padding)
+        {
+            lines.Add($"- Padding, do not spend words on: {padding}");
+        }
+        if (!string.IsNullOrWhiteSpace(analysis.HeadlineGap))
+        {
+            lines.Add($"- Headline relation to claim: {analysis.HeadlineGap}");
+        }
+        if (!string.IsNullOrWhiteSpace(analysis.SourceDepth))
+        {
+            lines.Add($"- Source depth: {analysis.SourceDepth}");
+        }
+        return string.Join("\n", lines);
+
+        static string? Join(string[]? values)
+        {
+            var joined = string.Join("; ", (values ?? []).Where(v => !string.IsNullOrWhiteSpace(v)));
+            return string.IsNullOrEmpty(joined) ? null : joined;
         }
     }
 
@@ -250,18 +301,22 @@ public class ArticleAnalyser
             {
                 var scores = await _scorer.ScoreAsync(DescribeArticle(rssItem));
 
-                var tagsResponse = await _chatClient.GetResponseAsync(
+                var analysisResponse = await _chatClient.GetResponseAsync(
                     [
-                        new ChatMessage(ChatRole.System, _tagsInstructions),
-                        new ChatMessage(ChatRole.User, $"The article to be tagged is:\n\n{DescribeArticle(rssItem)}"),
+                        new ChatMessage(ChatRole.System, _analysisInstructions),
+                        new ChatMessage(ChatRole.User, $"The article to be analysed is:\n\n{DescribeArticle(rssItem)}"),
                     ],
-                    _tagsOptions);
-                if (await ProcessArticleTags(tagsResponse, rssItem, db) is not { } tags)
+                    _analysisOptions);
+                if (await ProcessArticleAnalysis(analysisResponse, rssItem, db) is not { Tags: { } tags } analysis)
                 {
                     continue;
                 }
 
                 var articleData = BuildArticleData(rssItem, scores, tags);
+                var structure = DescribeStructure(analysis);
+                var presenterSource = structure is null
+                    ? DescribeArticle(rssItem)
+                    : $"{structure}\n\n{DescribeArticle(rssItem)}";
 
                 var presenterContents = new Dictionary<int, PresenterContentData>();
                 foreach (var presenter in presenters)
@@ -269,7 +324,7 @@ public class ArticleAnalyser
                     var presenterResult = await _chatClient.GetResponseAsync(
                         [
                             new ChatMessage(ChatRole.System, _contentInstructions),
-                            new ChatMessage(ChatRole.User, $"Rewrite the following article in the style of {presenter.PresenterStyle}.\n\n{DescribeArticle(rssItem)}"),
+                            new ChatMessage(ChatRole.User, $"Rewrite the following article in the style of {presenter.PresenterStyle}.\n\n{presenterSource}"),
                         ],
                         _contentOptions);
                     if (await ProcessArticleContent(presenterResult, rssItem, db) is { } presenterContent)
