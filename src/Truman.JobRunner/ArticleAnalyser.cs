@@ -140,6 +140,22 @@ public class ArticleAnalyser
         }                
     }
 
+    private static string DescribeArticle(RssItem rssItem)
+    {
+        var parts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(rssItem.Title))
+        {
+            parts.Add($"Title: {rssItem.Title}");
+        }
+        parts.Add($"Link: {rssItem.Link}");
+        if (!string.IsNullOrWhiteSpace(rssItem.Description))
+        {
+            parts.Add(string.Empty);
+            parts.Add(rssItem.Description);
+        }
+        return string.Join("\n", parts);
+    }
+
     private async Task AnalyzePendingArticles(List<RssItem> pending, TrumanDbContext db)
     {
         var chatService = _kernel.GetRequiredService<IChatCompletionService>();
@@ -159,7 +175,7 @@ public class ArticleAnalyser
                 count++;
 
                 var chatHistory = new ChatHistory(_analysisInstructions);
-                chatHistory.AddUserMessage($"The article to be analysed is: {rssItem.Link}");
+                chatHistory.AddUserMessage($"The article to be analysed is:\n\n{DescribeArticle(rssItem)}");
                 var analyserResponse = await chatService.GetChatMessageContentAsync(chatHistory, _analyserPromptSettings, _kernel);
                 if (await ProcessArticleAnalysis(analyserResponse, rssItem, db) is not { } articleData)
                 {
@@ -170,7 +186,7 @@ public class ArticleAnalyser
                 foreach (var presenter in presenters)
                 {
                     var presenterChatHistory = new ChatHistory(_contentInstructions);
-                    presenterChatHistory.AddUserMessage($"Rewrite the article at {rssItem.Link} in the style of {presenter.PresenterStyle}.");
+                    presenterChatHistory.AddUserMessage($"Rewrite the following article in the style of {presenter.PresenterStyle}.\n\n{DescribeArticle(rssItem)}");
                     var presenterResult = await chatService.GetChatMessageContentAsync(presenterChatHistory,
                         _contentPromptSettings, _kernel);
                     if (await ProcessArticleContent(presenterResult, rssItem, db) is { } presenterContent)
