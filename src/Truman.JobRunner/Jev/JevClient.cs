@@ -7,7 +7,7 @@ public sealed class JevClient(HttpClient httpClient)
 {
     public const string HttpClientName = "JevClient";
 
-    private const string Model = "jev-latest";
+    public const string Model = "jev-latest";
 
     public async Task<JevResponse> AskAsync(
         string state,
