@@ -4,6 +4,7 @@ using Sentry;
 using Truman.Data;
 using Truman.Data.Entities;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Anthropic;
 using Anthropic.Models.Messages;
 
@@ -67,8 +68,50 @@ public class ArticleAnalyser
 
     private static Dictionary<string, JsonElement> LoadSchema(string fileName)
     {
-        using var document = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, fileName)));
+        var schema = JsonNode.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, fileName)))!;
+        StripUnsupportedKeywords(schema);
+        using var document = JsonDocument.Parse(schema.ToJsonString());
         return document.RootElement.EnumerateObject().ToDictionary(property => property.Name, property => property.Value.Clone());
+    }
+
+    // Structured outputs reject these; each property's description already states its range.
+    // https://platform.claude.com/docs/en/build-with-claude/structured-outputs
+    private static readonly string[] UnsupportedSchemaKeywords =
+        ["minimum", "maximum", "multipleOf", "minLength", "maxLength", "maxItems"];
+
+    private static void StripUnsupportedKeywords(JsonNode node)
+    {
+        switch (node)
+        {
+            case JsonObject jsonObject:
+                foreach (var keyword in UnsupportedSchemaKeywords)
+                {
+                    jsonObject.Remove(keyword);
+                }
+
+                // minItems is accepted only as 0 or 1.
+                if (jsonObject["minItems"]?.GetValue<int>() is { } minItems && minItems > 1)
+                {
+                    jsonObject.Remove("minItems");
+                }
+                foreach (var property in jsonObject.ToList())
+                {
+                    if (property.Value is { } value)
+                    {
+                        StripUnsupportedKeywords(value);
+                    }
+                }
+                break;
+            case JsonArray jsonArray:
+                foreach (var item in jsonArray)
+                {
+                    if (item is { } value)
+                    {
+                        StripUnsupportedKeywords(value);
+                    }
+                }
+                break;
+        }
     }
 
     const int MaxTokens = 10_000;
