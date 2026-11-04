@@ -140,7 +140,7 @@ try
         if (runAnalyse)
         {
             var analyser = host.Services.GetRequiredService<ArticleAnalyser>();
-            ThrowIfNothingSucceeded(await analyser.RunAsync(limit, stopping));
+            (await analyser.RunAsync(limit, stopping)).ThrowIfNothingSucceeded();
         }
 
         if (shouldRunDefaultFlow)
@@ -150,17 +150,7 @@ try
             await fetcher.RunAsync(stopping);
 
             var analyser = host.Services.GetRequiredService<ArticleAnalyser>();
-            ThrowIfNothingSucceeded(await analyser.RunAsync(limit, stopping));
-        }
-    }
-
-    // A run that saved nothing must not report success: it would check in as healthy and exit 0.
-    static void ThrowIfNothingSucceeded(AnalysisOutcome outcome)
-    {
-        if (outcome.Attempted > 0 && outcome.Succeeded == 0)
-        {
-            throw new InvalidOperationException(
-                $"Analysis failed for all {outcome.Attempted} articles; see the recorded failures for the cause.");
+            (await analyser.RunAsync(limit, stopping)).ThrowIfNothingSucceeded();
         }
     }
 

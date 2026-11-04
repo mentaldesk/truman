@@ -11,7 +11,18 @@ using Truman.JobRunner.Jev;
 
 namespace Truman.JobRunner;
 
-public readonly record struct AnalysisOutcome(int Attempted, int Succeeded, int Failed);
+public readonly record struct AnalysisOutcome(int Attempted, int Succeeded, int Failed)
+{
+    // A run that saved nothing must not report success: it would check in as healthy and exit 0.
+    public void ThrowIfNothingSucceeded()
+    {
+        if (Attempted > 0 && Succeeded == 0)
+        {
+            throw new InvalidOperationException(
+                $"Analysis failed for all {Attempted} articles; see the recorded failures for the cause.");
+        }
+    }
+}
 
 public class ArticleAnalyser
 {
