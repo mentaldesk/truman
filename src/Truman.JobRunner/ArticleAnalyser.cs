@@ -6,68 +6,58 @@ using Truman.Data.Entities;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Nodes;
-using Anthropic;
-using Anthropic.Models.Messages;
+using Microsoft.Extensions.AI;
 using Truman.JobRunner.Jev;
 
 namespace Truman.JobRunner;
 
 public readonly record struct AnalysisOutcome(int Attempted, int Succeeded, int Failed);
 
-#pragma warning disable SKEXP0070
-
 public class ArticleAnalyser
 {
     private readonly ILogger<ArticleAnalyser> _logger;
     private readonly IDbContextFactory<TrumanDbContext> _contextFactory;
-    private readonly AnthropicClient _client;
-    private readonly string _model;
+    private readonly IChatClient _chatClient;
     private readonly JevArticleScorer _scorer;
     private readonly string _tagsInstructions;
     private readonly string _contentInstructions;
-    private readonly OutputConfig _tagsOutput;
-    private readonly OutputConfig _contentOutput;
+    private readonly ChatOptions _tagsOptions;
+    private readonly ChatOptions _contentOptions;
 
     public ArticleAnalyser(ILogger<ArticleAnalyser> logger,
         IDbContextFactory<TrumanDbContext> contextFactory,
-        AnthropicClient client,
+        IChatClient chatClient,
         JevArticleScorer scorer,
         string model)
     {
         _logger = logger;
         _contextFactory = contextFactory;
-        _client = client;
+        _chatClient = chatClient;
         _scorer = scorer;
-        _model = model;
 
         _tagsInstructions = LoadInstructions("TagsInstructions.md");
         _contentInstructions = LoadInstructions("ContentInstructions.md");
 
-        _tagsOutput = new OutputConfig
-        {
-            Format = new JsonOutputFormat { Schema = LoadSchema("TagsSchema.json") }
-        };
-        _contentOutput = new OutputConfig
-        {
-            Format = new JsonOutputFormat { Schema = LoadSchema("PresenterContentSchema.json") }
-        };
+        _tagsOptions = BuildOptions(model, "TagsSchema.json", "article_tags");
+        _contentOptions = BuildOptions(model, "PresenterContentSchema.json", "presenter_content");
 
         return;
         string LoadInstructions(string fileName) => File.ReadAllText(Path.Combine(AppContext.BaseDirectory, fileName));
     }
 
-    private static string? ExtractText(Message message)
+    private static ChatOptions BuildOptions(string model, string schemaFile, string schemaName) => new()
     {
-        var text = string.Concat(message.Content.Select(block => block.Value is TextBlock textBlock ? textBlock.Text : string.Empty));
-        return string.IsNullOrWhiteSpace(text) ? null : text;
-    }
+        ModelId = model,
+        MaxOutputTokens = MaxTokens,
+        ResponseFormat = ChatResponseFormat.ForJsonSchema(LoadSchema(schemaFile), schemaName),
+    };
 
-    private static Dictionary<string, JsonElement> LoadSchema(string fileName)
+    private static JsonElement LoadSchema(string fileName)
     {
         var schema = JsonNode.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, fileName)))!;
         StripUnsupportedKeywords(schema);
         using var document = JsonDocument.Parse(schema.ToJsonString());
-        return document.RootElement.EnumerateObject().ToDictionary(property => property.Name, property => property.Value.Clone());
+        return document.RootElement.Clone();
     }
 
     // Structured outputs reject these; each property's description already states its range.
@@ -137,14 +127,14 @@ public class ArticleAnalyser
         public string[]? Tags { get; set; }
     }
 
-    private async Task<string[]?> ProcessArticleTags(Message result, RssItem rssItem, TrumanDbContext db)
+    private async Task<string[]?> ProcessArticleTags(ChatResponse result, RssItem rssItem, TrumanDbContext db)
     {
-        if (result.StopReason is { } stopReason && stopReason != StopReason.EndTurn)
+        if (result.FinishReason is { } finishReason && finishReason != ChatFinishReason.Stop)
         {
-            await RecordFailure(rssItem, $"stop_reason == {stopReason}", db, stage: "article-tags");
+            await RecordFailure(rssItem, $"finish_reason == {finishReason}", db, stage: "article-tags");
             return null;
         }
-        if (ExtractText(result) is not { } responseContent)
+        if (NonEmptyText(result) is not { } responseContent)
         {
             await RecordFailure(rssItem, "No content returned", db, stage: "article-tags");
             return null;
@@ -184,14 +174,14 @@ public class ArticleAnalyser
                ?? throw new InvalidOperationException($"Could not assemble article data for {rssItem.Link}.");
     }
 
-    private async Task<PresenterContentData?> ProcessArticleContent(Message result, RssItem rssItem, TrumanDbContext db)
+    private async Task<PresenterContentData?> ProcessArticleContent(ChatResponse result, RssItem rssItem, TrumanDbContext db)
     {
-        if (result.StopReason is { } stopReason && stopReason != StopReason.EndTurn)
+        if (result.FinishReason is { } finishReason && finishReason != ChatFinishReason.Stop)
         {
-            await RecordFailure(rssItem, $"stop_reason == {stopReason}", db, stage: "presenter-content");
+            await RecordFailure(rssItem, $"finish_reason == {finishReason}", db, stage: "presenter-content");
             return null;
         }
-        if (ExtractText(result) is not { } responseContent)
+        if (NonEmptyText(result) is not { } responseContent)
         {
             await RecordFailure(rssItem, "No content returned", db, stage: "presenter-content");
             return null;
@@ -214,6 +204,9 @@ public class ArticleAnalyser
             return null;
         }                
     }
+
+    private static string? NonEmptyText(ChatResponse response) =>
+        string.IsNullOrWhiteSpace(response.Text) ? null : response.Text;
 
     private static string DescribeArticle(RssItem rssItem)
     {
@@ -246,18 +239,24 @@ public class ArticleAnalyser
         foreach (var rssItem in pending)
         {
             attempted++;
+
+            // Without an ambient transaction, each LLM call below would become its own.
+            using var sentryScope = SentrySdk.PushScope();
+            var transaction = SentrySdk.StartTransaction("analyse-article", "gen_ai.pipeline");
+            SentrySdk.ConfigureScope(configured => configured.Transaction = transaction);
+            transaction.SetTag("analysis.link", rssItem.Link);
+
             try
             {
                 var scores = await _scorer.ScoreAsync(DescribeArticle(rssItem), cancellationToken);
 
-                var tagsResponse = await _client.Messages.Create(new MessageCreateParams
-                {
-                    Model = _model,
-                    MaxTokens = MaxTokens,
-                    System = _tagsInstructions,
-                    Messages = [new UserMessageParam { Content = $"The article to be tagged is:\n\n{DescribeArticle(rssItem)}" }],
-                    OutputConfig = _tagsOutput,
-                }, cancellationToken);
+                var tagsResponse = await _chatClient.GetResponseAsync(
+                    [
+                        new ChatMessage(ChatRole.System, _tagsInstructions),
+                        new ChatMessage(ChatRole.User, $"The article to be tagged is:\n\n{DescribeArticle(rssItem)}"),
+                    ],
+                    _tagsOptions,
+                    cancellationToken);
                 if (await ProcessArticleTags(tagsResponse, rssItem, db) is not { } tags)
                 {
                     continue;
@@ -268,14 +267,13 @@ public class ArticleAnalyser
                 var presenterContents = new Dictionary<int, PresenterContentData>();
                 foreach (var presenter in presenters)
                 {
-                    var presenterResult = await _client.Messages.Create(new MessageCreateParams
-                    {
-                        Model = _model,
-                        MaxTokens = MaxTokens,
-                        System = _contentInstructions,
-                        Messages = [new UserMessageParam { Content = $"Rewrite the following article in the style of {presenter.PresenterStyle}.\n\n{DescribeArticle(rssItem)}" }],
-                        OutputConfig = _contentOutput,
-                        }, cancellationToken);
+                    var presenterResult = await _chatClient.GetResponseAsync(
+                        [
+                            new ChatMessage(ChatRole.System, _contentInstructions),
+                            new ChatMessage(ChatRole.User, $"Rewrite the following article in the style of {presenter.PresenterStyle}.\n\n{DescribeArticle(rssItem)}"),
+                        ],
+                        _contentOptions,
+                        cancellationToken);
                     if (await ProcessArticleContent(presenterResult, rssItem, db) is { } presenterContent)
                     {
                         presenterContents[presenter.Id] = presenterContent;
@@ -303,9 +301,14 @@ public class ArticleAnalyser
             }
             catch (Exception ex)
             {
+                transaction.Finish(ex);
                 SentrySdk.CaptureException(ex);
                 _logger.LogWarning(ex, "Skipping article {Link} due to unhandled exception", rssItem.Link);
                 await RecordFailure(rssItem, $"Unhandled exception: {ex.Message}", db, stage: "analysis-loop", exception: ex);
+            }
+            finally
+            {
+                transaction.Finish(); // Idempotent; the catch above may already have.
             }
         }
         var outcome = new AnalysisOutcome(attempted, succeeded, attempted - succeeded);
@@ -451,5 +454,3 @@ public class ArticleAnalyser
         return !validationErrors.Any();
     }
 }
-
-#pragma warning restore SKEXP0070
