@@ -127,28 +127,30 @@ try
     var shouldRunDefaultFlow = !runMigrations && !runFetch && !runAnalyse;
     var shouldUpdateArticles = runFetch || runAnalyse || shouldRunDefaultFlow;
 
+    var stopping = host.Services.GetRequiredService<IHostApplicationLifetime>().ApplicationStopping;
+
     async Task UpdateArticlesAsync()
     {
         if (runFetch)
         {
             var fetcher = host.Services.GetRequiredService<RssFetcher>();
-            await fetcher.RunAsync();
+            await fetcher.RunAsync(stopping);
         }
 
         if (runAnalyse)
         {
             var analyser = host.Services.GetRequiredService<ArticleAnalyser>();
-            ThrowIfNothingSucceeded(await analyser.RunAsync(limit));
+            ThrowIfNothingSucceeded(await analyser.RunAsync(limit, stopping));
         }
 
         if (shouldRunDefaultFlow)
         {
             // By default, we fetch and analyse
             var fetcher = host.Services.GetRequiredService<RssFetcher>();
-            await fetcher.RunAsync();
+            await fetcher.RunAsync(stopping);
 
             var analyser = host.Services.GetRequiredService<ArticleAnalyser>();
-            ThrowIfNothingSucceeded(await analyser.RunAsync(limit));
+            ThrowIfNothingSucceeded(await analyser.RunAsync(limit, stopping));
         }
     }
 

@@ -11,18 +11,18 @@ public class RssFetcher(
     ILogger<RssFetcher> logger,
     IDbContextFactory<TrumanDbContext> contextFactory)
 {
-    public async Task RunAsync()
+    public async Task RunAsync(CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Starting RSS fetch job...");
 
         var client = httpClientFactory.CreateClient("RssClient");
 
         // Create a new context for this operation
-        await using var dbContext = await contextFactory.CreateDbContextAsync();
+        await using var dbContext = await contextFactory.CreateDbContextAsync(cancellationToken);
 
         var feeds = await dbContext.Feeds
             .Where(f => f.IsEnabled)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         if (feeds.Count == 0)
         {
@@ -37,7 +37,7 @@ public class RssFetcher(
         {
             try
             {
-                var response = await client.GetStringAsync(feedSource.Url);
+                var response = await client.GetStringAsync(feedSource.Url, cancellationToken);
                 var feed = FeedReader.ReadFromString(response);
 
                 foreach (var item in feed.Items)
@@ -75,7 +75,7 @@ public class RssFetcher(
                     };
 
                     dbContext.RssItems.Add(rssItem);
-                    await dbContext.SaveChangesAsync();
+                    await dbContext.SaveChangesAsync(cancellationToken);
 
                     logger.LogInformation("New article found from {Feed}: {Title} ({Link})", feedSource.Name, item.Title, link);
                     newArticleCount++;

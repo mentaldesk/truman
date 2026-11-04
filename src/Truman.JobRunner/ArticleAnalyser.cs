@@ -103,12 +103,12 @@ public class ArticleAnalyser
 
     const int MaxTokens = 10_000;
 
-    public async Task<AnalysisOutcome> RunAsync(int? limit = null)
+    public async Task<AnalysisOutcome> RunAsync(int? limit = null, CancellationToken cancellationToken = default)
     {
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var pending = await db.RssItems
             .Where(x => x.TimeAnalysed == null)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
         _logger.LogInformation("Found {PendingCount} RssItems to be analysed", pending.Count);
         if (pending.Count == 0)
         {
@@ -119,7 +119,7 @@ public class ArticleAnalyser
             _logger.LogInformation("Limiting analysis to {Limit} articles", limit.Value);
             pending = pending.Take(limit.Value).ToList();
         }
-        return await AnalyzePendingArticles(pending, db);
+        return await AnalyzePendingArticles(pending, db, cancellationToken);
     }
 
     private sealed class ArticleAnalysisData
@@ -275,10 +275,10 @@ public class ArticleAnalyser
         return string.Join("\n", parts);
     }
 
-    private async Task<AnalysisOutcome> AnalyzePendingArticles(List<RssItem> pending, TrumanDbContext db)
+    private async Task<AnalysisOutcome> AnalyzePendingArticles(List<RssItem> pending, TrumanDbContext db, CancellationToken cancellationToken)
     {
 
-        var presenters = await db.Presenters.OrderBy(p => p.Id).ToListAsync();
+        var presenters = await db.Presenters.OrderBy(p => p.Id).ToListAsync(cancellationToken);
         if (presenters.Count == 0)
         {
             _logger.LogWarning("No presenters configured - skipping analysis. Configure presenters via the admin UI.");
@@ -299,14 +299,15 @@ public class ArticleAnalyser
 
             try
             {
-                var scores = await _scorer.ScoreAsync(DescribeArticle(rssItem));
+                var scores = await _scorer.ScoreAsync(DescribeArticle(rssItem), cancellationToken);
 
                 var analysisResponse = await _chatClient.GetResponseAsync(
                     [
                         new ChatMessage(ChatRole.System, _analysisInstructions),
                         new ChatMessage(ChatRole.User, $"The article to be analysed is:\n\n{DescribeArticle(rssItem)}"),
                     ],
-                    _analysisOptions);
+                    _analysisOptions,
+                    cancellationToken);
                 if (await ProcessArticleAnalysis(analysisResponse, rssItem, db) is not { Tags: { } tags } analysis)
                 {
                     continue;
@@ -326,7 +327,8 @@ public class ArticleAnalyser
                             new ChatMessage(ChatRole.System, _contentInstructions),
                             new ChatMessage(ChatRole.User, $"Rewrite the following article in the style of {presenter.PresenterStyle}.\n\n{presenterSource}"),
                         ],
-                        _contentOptions);
+                        _contentOptions,
+                        cancellationToken);
                     if (await ProcessArticleContent(presenterResult, rssItem, db) is { } presenterContent)
                     {
                         presenterContents[presenter.Id] = presenterContent;
@@ -341,10 +343,16 @@ public class ArticleAnalyser
                 }
 
                 _logger.LogInformation("Successfully deserialized and aggregated ArticleData for {Link}", rssItem.Link);
-                if (await SaveAnalysisResults(rssItem, articleData, presenterContents, db))
+                if (await SaveAnalysisResults(rssItem, articleData, presenterContents, db, cancellationToken))
                 {
                     succeeded++;
                 }
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                // Shutting down is not the article's fault; leave it pending rather than writing it off.
+                _logger.LogInformation("Analysis cancelled before {Link} completed", rssItem.Link);
+                throw;
             }
             catch (Exception ex)
             {
@@ -365,9 +373,9 @@ public class ArticleAnalyser
         return outcome;
     }
 
-    private async Task<bool> SaveAnalysisResults(RssItem rssItem, ArticleData articleData, Dictionary<int, PresenterContentData> presenterContents, TrumanDbContext db)
+    private async Task<bool> SaveAnalysisResults(RssItem rssItem, ArticleData articleData, Dictionary<int, PresenterContentData> presenterContents, TrumanDbContext db, CancellationToken cancellationToken)
     {
-        await using var transaction = await db.Database.BeginTransactionAsync();
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
         try
         {
             // Create a new Article record
@@ -404,7 +412,7 @@ public class ArticleAnalyser
             };
             
             db.Articles.Add(article);
-            await db.SaveChangesAsync(); // Save to get the article ID
+            await db.SaveChangesAsync(cancellationToken); // Save to get the article ID
             
             // Save presenter content using presenter IDs as keys
             foreach (var (presenterId, content) in presenterContents)
@@ -424,15 +432,20 @@ public class ArticleAnalyser
             // Mark RssItem as analysed
             rssItem.TimeAnalysed = DateTimeOffset.UtcNow;
             
-            await db.SaveChangesAsync();
-            await transaction.CommitAsync();
+            await db.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
             
             _logger.LogInformation("Successfully saved analysis for {Link}", rssItem.Link);
             return true;
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            await transaction.RollbackAsync(CancellationToken.None);
+            throw;
+        }
         catch (Exception ex)
         {
-            await transaction.RollbackAsync();
+            await transaction.RollbackAsync(CancellationToken.None);
             await RecordFailure(rssItem, $"Database save failed: {ex.Message}", db, stage: "save-results", exception: ex);
             return false;
         }
@@ -464,7 +477,8 @@ public class ArticleAnalyser
         
         // Mark the RssItem as analysed to prevent infinite retry loops
         rssItem.TimeAnalysed = DateTimeOffset.UtcNow;
-        await db.SaveChangesAsync();
+        // Untokened on purpose: a failure record must persist even as the host shuts down.
+        await db.SaveChangesAsync(CancellationToken.None);
     }
 
     private bool ValidateArticleData(ArticleData? articleData, Dictionary<int, PresenterContentData> presenterContents, out List<string> validationErrors)
