@@ -1,8 +1,12 @@
+using System.Text;
+using System.Xml;
 using CodeHollow.FeedReader;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Truman.Data;
 using Truman.Data.Entities;
+using FeedSource = Truman.Data.Entities.Feed;
+using ParsedFeed = CodeHollow.FeedReader.Feed;
 
 namespace Truman.JobRunner;
 
@@ -11,6 +15,10 @@ public class RssFetcher(
     ILogger<RssFetcher> logger,
     IDbContextFactory<TrumanDbContext> contextFactory)
 {
+    internal const int BodyPreviewBytes = 200;
+    internal const string CacheBusterKey = "trumancb";
+    private const int MaxAttempts = 2;
+
     public async Task RunAsync(CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Starting RSS fetch job...");
@@ -37,8 +45,7 @@ public class RssFetcher(
         {
             try
             {
-                var response = await client.GetStringAsync(feedSource.Url, cancellationToken);
-                var feed = FeedReader.ReadFromString(response);
+                var feed = await ReadFeedAsync(client, feedSource, cancellationToken);
 
                 foreach (var item in feed.Items)
                 {
@@ -91,5 +98,66 @@ public class RssFetcher(
             "RSS fetch job completed with {NewCount} new articles and {ExistingCount} existing articles",
             newArticleCount,
             existingArticleCount);
+    }
+
+    private async Task<ParsedFeed> ReadFeedAsync(
+        HttpClient client,
+        FeedSource feedSource,
+        CancellationToken cancellationToken)
+    {
+        for (var attempt = 1; ; attempt++)
+        {
+            var url = attempt == 1 ? feedSource.Url : WithCacheBuster(feedSource.Url);
+            var body = await client.GetByteArrayAsync(url, cancellationToken);
+
+            try
+            {
+                return FeedReader.ReadFromByteArray(body);
+            }
+            catch (XmlException)
+            {
+                logger.LogWarning(
+                    "Feed {Feed} returned {ByteCount} bytes that are not XML on attempt {Attempt} of {MaxAttempts}; body starts: {BodyStart}",
+                    feedSource.Name, body.Length, attempt, MaxAttempts, DescribeBody(body));
+
+                if (attempt == MaxAttempts)
+                {
+                    throw;
+                }
+            }
+        }
+    }
+
+    internal static string WithCacheBuster(string url)
+    {
+        var builder = new UriBuilder(url);
+        var buster = $"{CacheBusterKey}={Guid.NewGuid():N}";
+        var query = builder.Query.TrimStart('?');
+        builder.Query = query.Length == 0 ? buster : $"{query}&{buster}";
+        return builder.Uri.AbsoluteUri;
+    }
+
+    internal static string DescribeBody(byte[] body)
+    {
+        var description = new StringBuilder();
+
+        foreach (var b in body.Take(BodyPreviewBytes))
+        {
+            if (b is >= 0x20 and < 0x7f)
+            {
+                description.Append((char)b);
+            }
+            else
+            {
+                description.Append($"\\x{b:x2}");
+            }
+        }
+
+        if (body.Length > BodyPreviewBytes)
+        {
+            description.Append("...");
+        }
+
+        return description.ToString();
     }
 }
