@@ -1,0 +1,36 @@
+{
+  "type": "object",
+  "properties": {
+    "tags": {
+      "type": "array",
+      "description": "Up to 10 tags/keywords that capture the essence of the article",
+      "items": { "type": "string" }
+    },
+    "claim": {
+      "type": "string",
+      "description": "The single thing the article asks the reader to accept, in one plain sentence, including any answer its headline withholds"
+    },
+    "support": {
+      "type": "array",
+      "description": "What the claim rests on, most load-bearing first, at most five, one short phrase each",
+      "items": { "type": "string" }
+    },
+    "padding": {
+      "type": "array",
+      "description": "Material the claim does not rest on, at most five, one short phrase each; empty if there is none",
+      "items": { "type": "string" }
+    },
+    "headline_gap": {
+      "type": "string",
+      "description": "Whether the article's own title states the claim, overstates it, or withholds it",
+      "enum": [ "none", "overstates", "withholds" ]
+    },
+    "source_depth": {
+      "type": "string",
+      "description": "Whether the supplied text is the full article body or only a headline and a line or two of blurb",
+      "enum": [ "full", "summary" ]
+    }
+  },
+  "required": [ "tags", "claim", "support", "padding", "headline_gap", "source_depth" ],
+  "additionalProperties": false
+}

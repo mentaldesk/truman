@@ -11,7 +11,7 @@
     },
     "content": {
       "type": "string",
-      "description": "A paragraph-style summary of the article, consisting of no more than 400 words"
+      "description": "A paragraph-style summary of the article, no more than 400 words and as short as the source supports"
     }
   },
   "required": [
