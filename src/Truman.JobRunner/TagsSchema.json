@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "properties": {
+    "tags": {
+      "type": "array",
+      "description": "Up to 10 tags/keywords that capture the essence of the article",
+      "items": { "type": "string" }
+    }
+  },
+  "required": [ "tags" ],
+  "additionalProperties": false
+}
