@@ -63,8 +63,6 @@ public class RelevantArticlesServiceTests : IAsyncLifetime
         var article = new Article
         {
             Link = link,
-            Title = link + " Title",
-            Tldr = link + " Tldr",
             Sentiment = sentiment,
             Tags = tags,
             Freedom = 0,
