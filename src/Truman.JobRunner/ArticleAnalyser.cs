@@ -48,6 +48,17 @@ public class ArticleAnalyser
         string LoadInstructions(string fileName) => File.ReadAllText(Path.Combine(AppContext.BaseDirectory, fileName));
     }
 
+    // Lets Claude read the article itself. Only URLs already in the conversation are fetchable,
+    // and the user message carries the link. Citations stay off: they 400 with output_config.format.
+    private static ToolUnion[] WebFetchTools() =>
+    [
+        new ToolUnion(new WebFetchTool20260318
+        {
+            MaxUses = 2,
+            MaxContentTokens = 20_000,
+        })
+    ];
+
     private static string? ExtractText(Message message)
     {
         var text = string.Concat(message.Content.Select(block => block.Value is TextBlock textBlock ? textBlock.Text : string.Empty));
@@ -185,6 +196,7 @@ public class ArticleAnalyser
                     System = _analysisInstructions,
                     Messages = [new UserMessageParam { Content = $"The article to be analysed is:\n\n{DescribeArticle(rssItem)}" }],
                     OutputConfig = _analyserOutput,
+                    Tools = WebFetchTools(),
                 });
                 if (await ProcessArticleAnalysis(analyserResponse, rssItem, db) is not { } articleData)
                 {
@@ -201,6 +213,7 @@ public class ArticleAnalyser
                         System = _contentInstructions,
                         Messages = [new UserMessageParam { Content = $"Rewrite the following article in the style of {presenter.PresenterStyle}.\n\n{DescribeArticle(rssItem)}" }],
                         OutputConfig = _contentOutput,
+                        Tools = WebFetchTools(),
                     });
                     if (await ProcessArticleContent(presenterResult, rssItem, db) is { } presenterContent)
                     {
