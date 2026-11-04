@@ -47,6 +47,7 @@ public class ArticleAnalyser
     {
         ModelId = model,
         MaxOutputTokens = MaxTokens,
+        Reasoning = new ReasoningOptions { Effort = ReasoningEffort.Low },
         ResponseFormat = ChatResponseFormat.ForJsonSchema(LoadSchema(schemaFile), schemaName),
     };
 
