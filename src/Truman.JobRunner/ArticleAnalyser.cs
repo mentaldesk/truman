@@ -11,6 +11,8 @@ using Truman.JobRunner.Jev;
 
 namespace Truman.JobRunner;
 
+public readonly record struct AnalysisOutcome(int Attempted, int Succeeded, int Failed);
+
 public class ArticleAnalyser
 {
     private readonly ILogger<ArticleAnalyser> _logger;
@@ -100,7 +102,7 @@ public class ArticleAnalyser
 
     const int MaxTokens = 10_000;
 
-    public async Task RunAsync(int? limit = null)
+    public async Task<AnalysisOutcome> RunAsync(int? limit = null)
     {
         await using var db = await _contextFactory.CreateDbContextAsync();
         var pending = await db.RssItems
@@ -109,14 +111,14 @@ public class ArticleAnalyser
         _logger.LogInformation("Found {PendingCount} RssItems to be analysed", pending.Count);
         if (pending.Count == 0)
         {
-            return;
+            return new AnalysisOutcome(0, 0, 0);
         }
         if (limit.HasValue)
         {
             _logger.LogInformation("Limiting analysis to {Limit} articles", limit.Value);
             pending = pending.Take(limit.Value).ToList();
         }
-        await AnalyzePendingArticles(pending, db);
+        return await AnalyzePendingArticles(pending, db);
     }
 
     private sealed class TagsData
@@ -222,19 +224,22 @@ public class ArticleAnalyser
         return string.Join("\n", parts);
     }
 
-    private async Task AnalyzePendingArticles(List<RssItem> pending, TrumanDbContext db)
+    private async Task<AnalysisOutcome> AnalyzePendingArticles(List<RssItem> pending, TrumanDbContext db)
     {
 
         var presenters = await db.Presenters.OrderBy(p => p.Id).ToListAsync();
         if (presenters.Count == 0)
         {
             _logger.LogWarning("No presenters configured - skipping analysis. Configure presenters via the admin UI.");
-            return;
+            return new AnalysisOutcome(0, 0, 0);
         }
 
-        int count = 0;
+        var attempted = 0;
+        var succeeded = 0;
         foreach (var rssItem in pending)
         {
+            attempted++;
+
             // Without an ambient transaction, each LLM call below would become its own.
             using var sentryScope = SentrySdk.PushScope();
             var transaction = SentrySdk.StartTransaction("analyse-article", "gen_ai.pipeline");
@@ -243,8 +248,6 @@ public class ArticleAnalyser
 
             try
             {
-                count++;
-
                 var scores = await _scorer.ScoreAsync(DescribeArticle(rssItem));
 
                 var tagsResponse = await _chatClient.GetResponseAsync(
@@ -283,7 +286,10 @@ public class ArticleAnalyser
                 }
 
                 _logger.LogInformation("Successfully deserialized and aggregated ArticleData for {Link}", rssItem.Link);
-                await SaveAnalysisResults(rssItem, articleData, presenterContents, db);
+                if (await SaveAnalysisResults(rssItem, articleData, presenterContents, db))
+                {
+                    succeeded++;
+                }
             }
             catch (Exception ex)
             {
@@ -297,10 +303,14 @@ public class ArticleAnalyser
                 transaction.Finish(); // Idempotent; the catch above may already have.
             }
         }
-        _logger.LogInformation("Analysis {Count} articles - job complete", count);
+        var outcome = new AnalysisOutcome(attempted, succeeded, attempted - succeeded);
+        _logger.LogInformation(
+            "Analysis complete: {Attempted} attempted, {Succeeded} succeeded, {Failed} failed",
+            outcome.Attempted, outcome.Succeeded, outcome.Failed);
+        return outcome;
     }
 
-    private async Task SaveAnalysisResults(RssItem rssItem, ArticleData articleData, Dictionary<int, PresenterContentData> presenterContents, TrumanDbContext db)
+    private async Task<bool> SaveAnalysisResults(RssItem rssItem, ArticleData articleData, Dictionary<int, PresenterContentData> presenterContents, TrumanDbContext db)
     {
         await using var transaction = await db.Database.BeginTransactionAsync();
         try
@@ -363,11 +373,13 @@ public class ArticleAnalyser
             await transaction.CommitAsync();
             
             _logger.LogInformation("Successfully saved analysis for {Link}", rssItem.Link);
+            return true;
         }
         catch (Exception ex)
         {
             await transaction.RollbackAsync();
             await RecordFailure(rssItem, $"Database save failed: {ex.Message}", db, stage: "save-results", exception: ex);
+            return false;
         }
     }
 
