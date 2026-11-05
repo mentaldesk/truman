@@ -76,7 +76,16 @@ try
 
             services
                 .AddHttpClient("RssClient")
-                .ConfigureHttpClient(c => c.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (compatible; TrumanBot/1.0)"));
+                .ConfigureHttpClient(c =>
+                {
+                    c.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (compatible; TrumanBot/1.0)");
+                    c.DefaultRequestHeaders.Accept.ParseAdd(
+                        "application/rss+xml, application/atom+xml, application/xml, text/xml;q=0.9, */*;q=0.8");
+                })
+                .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+                {
+                    AutomaticDecompression = DecompressionMethods.All
+                });
 
             // The Anthropic SDK retries 429s and 5xxs itself, so there is no resilience pipeline here.
             var apiKey = context.Configuration["AI:ApiKey"]
