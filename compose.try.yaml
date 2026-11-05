@@ -1,0 +1,63 @@
+# The stack `scripts/try.sh` runs: both images built from this checkout, a database that dies with
+# it, and a host port chosen per run so two tries can run side by side. Nothing here is deployed.
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-truman}
+      POSTGRES_USER: ${POSTGRES_USER:-truman}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-truman} -d ${POSTGRES_DB:-truman}"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    # No volumes, named or otherwise: `down -v` leaves nothing behind.
+
+  jobrunner:
+    build:
+      context: ./src
+      dockerfile: Truman.JobRunner/Dockerfile
+    # try.sh drives this with `run --rm`. A profile hides a service from `build` as well as `up`,
+    # so try.sh passes `--profile jobs` on every compose command.
+    profiles: [jobs]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-truman}
+      POSTGRES_USER: ${POSTGRES_USER:-truman}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      AI__ApiKey: ${AI__ApiKey}
+      AI__Model: ${AI__Model}
+      Jev__ApiKey: ${Jev__ApiKey}
+      Sentry__Dsn: ${Sentry__Dsn:-}
+      DOTNET_ENVIRONMENT: ${DOTNET_ENVIRONMENT:-Development}
+
+  app:
+    build:
+      context: ./src
+      dockerfile: Truman.Api/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${TRUMAN_TRY_PORT:-8081}:5001"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-truman}
+      POSTGRES_USER: ${POSTGRES_USER:-truman}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PORT: 5001
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      # The OAuth providers have no redirect URI registered for a port picked at random.
+      Authentication__Social__Enabled: "false"
+      Authentication__Jwt__Key: ${Authentication__Jwt__Key}
+      Authentication__Jwt__Issuer: ${Authentication__Jwt__Issuer:-truman-api}
+      Authentication__Jwt__Audience: ${Authentication__Jwt__Audience:-truman-web}
+      Email__Brevo__ApiKey: ${Email__Brevo__ApiKey:-}
+      Email__Brevo__MagicLinkTemplateId: ${Email__Brevo__MagicLinkTemplateId:-1}
+      Frontend__BaseUrl: ${Frontend__BaseUrl}
+      Sentry__Dsn: ${Sentry__Dsn:-}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
