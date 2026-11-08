@@ -1,6 +1,3 @@
-*Drafted by the Lead from the repo: run **Write the vision with me** in the a-team app (or
-`a-team vision truman`) to replace it with yours.*
-
 # Truman: vision
 
 > Your reality is defined by the sum of all the little things you choose to pay attention to.
@@ -58,15 +55,14 @@ links back to its source.
 
 ## Next themes
 
-1. **News that turns up every day.** The analysis pipeline died for two months without anyone
+1. **Reliability.** The analysis pipeline died for two months without anyone
    noticing. Fresh articles should arrive every run, and a run that doesn't happen or produces
    nothing should be noticed the same day. Open: #175, #176, #163, #79, #73.
-2. **Comfortable to read on a phone.** Readers check the news on their phone, and today the text is
+2. **Usability.** We're still missing lots of basics like indicating the source for each article (one example).   
+3. **Comfortable to read on a phone.** Readers check the news on their phone, and today the text is
    too small and they're logged out every week. Open: #52, #61, #45.
-3. **Stories worth reading in full.** Many feeds carry only a teaser, so the rewrite has little to
+4. **Stories worth reading in full.** Many feeds carry only a teaser, so the rewrite has little to
    work with. Readers should get stories with enough substance to be worth the click, from sources
    they can see and choose. Open: none yet.
-4. **Easy to run your own.** The README invites people to run their own instance. That should take
-   one command and a few keys, with nothing left over from old deployments. Open: #123, #5.
 
 <!-- a-team:lead -->
