@@ -19,7 +19,7 @@ A daily news feed that each reader shapes:
 
 - **What it covers**: the tags they follow, rank or ban, and the values they hold, in the order
   they rank them.
-- **How it feels**: a mood setting that keeps out stories below the sentiment they choose.
+- **How it feels**: a mood setting that keeps out stories above the sentiment they choose.
 - **How it reads**: one presenter's voice, chosen by the reader, that rewrites each story around
   its actual claim and evidence, leaving the padding and the clickbait headline behind.
 
