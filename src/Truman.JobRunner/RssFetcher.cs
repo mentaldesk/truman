@@ -10,6 +10,8 @@ using ParsedFeed = CodeHollow.FeedReader.Feed;
 
 namespace Truman.JobRunner;
 
+public readonly record struct FetchOutcome(int EnabledFeeds, int FailedFeeds);
+
 public class RssFetcher(
     IHttpClientFactory httpClientFactory,
     ILogger<RssFetcher> logger,
@@ -19,7 +21,7 @@ public class RssFetcher(
     internal const string CacheBusterKey = "trumancb";
     private const int MaxAttempts = 2;
 
-    public async Task RunAsync(CancellationToken cancellationToken = default)
+    public async Task<FetchOutcome> RunAsync(CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Starting RSS fetch job...");
 
@@ -35,11 +37,12 @@ public class RssFetcher(
         if (feeds.Count == 0)
         {
             logger.LogWarning("No enabled feeds found - exiting cleanly");
-            return;
+            return new FetchOutcome(0, 0);
         }
 
         var existingArticleCount = await dbContext.RssItems.CountAsync();
         var newArticleCount = 0;
+        var failedFeedCount = 0;
 
         foreach (var feedSource in feeds)
         {
@@ -91,6 +94,7 @@ public class RssFetcher(
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to fetch or parse feed {Feed} ({Url})", feedSource.Name, feedSource.Url);
+                failedFeedCount++;
             }
         }
 
@@ -98,6 +102,8 @@ public class RssFetcher(
             "RSS fetch job completed with {NewCount} new articles and {ExistingCount} existing articles",
             newArticleCount,
             existingArticleCount);
+
+        return new FetchOutcome(feeds.Count, failedFeedCount);
     }
 
     private async Task<ParsedFeed> ReadFeedAsync(

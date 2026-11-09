@@ -5,7 +5,7 @@ namespace Truman.JobRunner.Tests.TestSupport;
 
 public sealed class ScriptedHttpHandler : HttpMessageHandler, IHttpClientFactory
 {
-    private readonly Queue<byte[]> _bodies = new();
+    private readonly Queue<Func<byte[]>> _bodies = new();
 
     public List<Uri> Requests { get; } = [];
 
@@ -13,7 +13,18 @@ public sealed class ScriptedHttpHandler : HttpMessageHandler, IHttpClientFactory
 
     public ScriptedHttpHandler Then(byte[] body)
     {
-        _bodies.Enqueue(body);
+        _bodies.Enqueue(() => body);
+        return this;
+    }
+
+    public ScriptedHttpHandler ThenCancel(CancellationTokenSource shutdown)
+    {
+        _bodies.Enqueue(() =>
+        {
+            shutdown.Cancel();
+            shutdown.Token.ThrowIfCancellationRequested();
+            return [];
+        });
         return this;
     }
 
@@ -30,7 +41,7 @@ public sealed class ScriptedHttpHandler : HttpMessageHandler, IHttpClientFactory
 
         return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
         {
-            Content = new ByteArrayContent(_bodies.Dequeue())
+            Content = new ByteArrayContent(_bodies.Dequeue()())
         });
     }
 }

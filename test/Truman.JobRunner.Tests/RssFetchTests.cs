@@ -27,7 +27,6 @@ public class RssFetchTests(JobRunnerDatabaseFixture fixture) : IAsyncLifetime
         await fixture.ResetAsync();
 
         await using var db = fixture.NewContext();
-        await db.Database.ExecuteSqlRawAsync("""TRUNCATE "Feeds" RESTART IDENTITY CASCADE;""");
         db.Feeds.Add(new Feed { Name = "Example", Url = FeedUrl, IsEnabled = true });
         await db.SaveChangesAsync();
     }

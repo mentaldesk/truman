@@ -72,6 +72,7 @@ try
                     model
                 )
             );
+            services.AddSingleton<ArticleUpdater>();
             services.AddSingleton<DbMigrator>();
 
             services
@@ -138,37 +139,14 @@ try
 
     var stopping = host.Services.GetRequiredService<IHostApplicationLifetime>().ApplicationStopping;
 
-    async Task UpdateArticlesAsync()
-    {
-        if (runFetch)
-        {
-            var fetcher = host.Services.GetRequiredService<RssFetcher>();
-            await fetcher.RunAsync(stopping);
-        }
-
-        if (runAnalyse)
-        {
-            var analyser = host.Services.GetRequiredService<ArticleAnalyser>();
-            (await analyser.RunAsync(limit, stopping)).ThrowIfNothingSucceeded();
-        }
-
-        if (shouldRunDefaultFlow)
-        {
-            // By default, we fetch and analyse
-            var fetcher = host.Services.GetRequiredService<RssFetcher>();
-            await fetcher.RunAsync(stopping);
-
-            var analyser = host.Services.GetRequiredService<ArticleAnalyser>();
-            (await analyser.RunAsync(limit, stopping)).ThrowIfNothingSucceeded();
-        }
-    }
-
     if (shouldRunDefaultFlow)
     {
+        var updater = host.Services.GetRequiredService<ArticleUpdater>();
+
         // Only the bare invocation is the scheduled one, so only it checks in; a manual --fetch or
         // --analyse would otherwise satisfy the schedule and hide a run that never happened.
         // The interval must match the crontab that invokes this. Declaring it here upserts it to Sentry.
-        await SentrySdk.WithMonitorAsync("update-articles", UpdateArticlesAsync, monitor =>
+        await SentrySdk.WithMonitorAsync("update-articles", () => updater.RunScheduledAsync(limit, stopping), monitor =>
         {
             monitor.Interval("0 */6 * * *");
             monitor.TimeZone = "Etc/UTC";
@@ -180,7 +158,8 @@ try
     }
     else if (shouldUpdateArticles)
     {
-        await UpdateArticlesAsync();
+        var updater = host.Services.GetRequiredService<ArticleUpdater>();
+        await updater.RunManualAsync(runFetch, runAnalyse, limit, stopping);
     }
 
     await host.StopAsync();
