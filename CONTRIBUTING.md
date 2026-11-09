@@ -53,7 +53,7 @@ This keeps secrets out of source control and works consistently across local Doc
 ```bash
 dotnet restore truman.sln
 dotnet build truman.sln
-dotnet test truman.sln
+dotnet test --solution truman.sln
 ```
 
 Frontend:

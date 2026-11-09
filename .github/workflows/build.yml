@@ -26,7 +26,9 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: |
+            9.0.x
+            10.0.x
 
       - name: Cache NuGet packages
         uses: actions/cache@v6
@@ -46,13 +48,11 @@ jobs:
       - name: Build
         run: dotnet build truman.sln --configuration Release --no-restore -p:UseSentryCLI=false
 
-      # Note the extra `--` before the MTP parameters so that dotnet doesn't try to parse these
       - name: Test (with coverage)
         run: |
-          dotnet test truman.sln \
+          dotnet test --solution truman.sln \
             --configuration Release \
             --no-build \
-            -- \
             --report-trx \
             --report-trx-filename test-results.trx \
             --coverage --coverage-output-format cobertura \
