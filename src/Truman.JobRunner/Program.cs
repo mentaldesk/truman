@@ -117,36 +117,24 @@ try
     // Runs SentryHostedService, which initialises the SDK and closes it on shutdown.
     await host.StartAsync();
 
-    int? limit = null;
-    var limitIndex = Array.IndexOf(args, "--limit");
-    if (limitIndex >= 0 && limitIndex + 1 < args.Length && int.TryParse(args[limitIndex + 1], out var parsedLimit))
-    {
-        limit = parsedLimit;
-    }
+    var arguments = JobRunnerArguments.Parse(args);
 
-    var runMigrations = args.Contains("--run-migrations");
-    var runFetch = args.Contains("--fetch");
-    var runAnalyse = args.Contains("--analyse");
-
-    if (runMigrations)
+    if (arguments.RunMigrations)
     {
         var migrator = host.Services.GetRequiredService<DbMigrator>();
         await migrator.RunAsync();
     }
 
-    var shouldRunDefaultFlow = !runMigrations && !runFetch && !runAnalyse;
-    var shouldUpdateArticles = runFetch || runAnalyse || shouldRunDefaultFlow;
-
     var stopping = host.Services.GetRequiredService<IHostApplicationLifetime>().ApplicationStopping;
 
-    if (shouldRunDefaultFlow)
+    if (arguments.IsScheduled)
     {
         var updater = host.Services.GetRequiredService<ArticleUpdater>();
 
-        // Only the bare invocation is the scheduled one, so only it checks in; a manual --fetch or
-        // --analyse would otherwise satisfy the schedule and hide a run that never happened.
+        // Only the bare invocation is the scheduled one, so only it checks in; a manual run
+        // would otherwise satisfy the schedule and hide a run that never happened.
         // The interval must match the crontab that invokes this. Declaring it here upserts it to Sentry.
-        await SentrySdk.WithMonitorAsync("update-articles", () => updater.RunScheduledAsync(limit, stopping), monitor =>
+        await SentrySdk.WithMonitorAsync("update-articles", () => updater.RunScheduledAsync(stopping), monitor =>
         {
             monitor.Interval("0 */6 * * *");
             monitor.TimeZone = "Etc/UTC";
@@ -156,10 +144,10 @@ try
             monitor.RecoveryThreshold = 1;
         });
     }
-    else if (shouldUpdateArticles)
+    else if (arguments.Fetch || arguments.Analyse)
     {
         var updater = host.Services.GetRequiredService<ArticleUpdater>();
-        await updater.RunManualAsync(runFetch, runAnalyse, limit, stopping);
+        await updater.RunManualAsync(arguments.Fetch, arguments.Analyse, arguments.Limit, stopping);
     }
 
     await host.StopAsync();

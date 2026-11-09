@@ -242,7 +242,7 @@ public class ArticleUpdaterTests(JobRunnerDatabaseFixture fixture) : ArticleAnal
         using var shutdown = new CancellationTokenSource();
         Http.ThenCancel(shutdown);
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Updater().RunScheduledAsync(null, shutdown.Token));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Updater().RunScheduledAsync(shutdown.Token));
     }
 
     [Theory]

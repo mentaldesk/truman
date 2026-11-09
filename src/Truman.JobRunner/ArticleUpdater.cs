@@ -25,10 +25,10 @@ public class ArticleUpdater(
         }
     }
 
-    public async Task RunScheduledAsync(int? limit = null, CancellationToken cancellationToken = default)
+    public async Task RunScheduledAsync(CancellationToken cancellationToken = default)
     {
         var fetch = await fetcher.RunAsync(cancellationToken);
-        var analysis = await analyser.RunAsync(limit, cancellationToken);
+        var analysis = await analyser.RunAsync(limit: null, cancellationToken);
 
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
         var hasPresenters = await db.Presenters.AnyAsync(cancellationToken);
