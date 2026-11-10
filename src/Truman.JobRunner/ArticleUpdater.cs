@@ -63,9 +63,8 @@ public class ArticleUpdater(
             problems.Add("No presenters are configured to write stories");
         }
 
-        var nothingSaved = analysis is { Attempted: > 0, Succeeded: 0 };
         var badBatch = analysis.Attempted >= FewestAttemptsToJudgeABatch && analysis.Failed * 2 >= analysis.Attempted;
-        if (nothingSaved || badBatch)
+        if (analysis.NothingSucceeded || badBatch)
         {
             problems.Add($"{analysis.Failed} of {analysis.Attempted} stories failed analysis");
         }

@@ -36,7 +36,7 @@ public class RssFetcher(
 
         if (feeds.Count == 0)
         {
-            logger.LogWarning("No enabled feeds found - exiting cleanly");
+            logger.LogWarning("No enabled feeds found; nothing to fetch");
             return new FetchOutcome(0, 0);
         }
 
