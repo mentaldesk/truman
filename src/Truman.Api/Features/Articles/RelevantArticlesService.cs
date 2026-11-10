@@ -50,6 +50,8 @@ public class RelevantArticlesService : IRelevantArticlesService
         var articles = await _dbContext.Articles
             .Include(a => a.ArticlePresenters)
                 .ThenInclude(ap => ap.Presenter)
+            .Include(a => a.RssItem)
+                .ThenInclude(r => r.Feed)
             .Where(a => a.Sentiment >= userProfile.Mood)
             .Where(a => a.CreatedAt >= earliest)
             .ToListAsync();
@@ -88,7 +90,9 @@ public class RelevantArticlesService : IRelevantArticlesService
             Sentiment = x.Article.Sentiment,
             Tags = x.Article.Tags,
             RelevanceScore = x.RelevanceScore,
-            CreatedAt = x.Article.CreatedAt
+            CreatedAt = x.Article.CreatedAt,
+            Publisher = x.Article.RssItem.Feed?.Name,
+            PublishedAt = x.Article.RssItem.PubDate
         }).ToList();
 
         return new RelevantArticlesResponse

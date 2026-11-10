@@ -51,6 +51,10 @@ public class TrumanDbContext : DbContext
             entity.Property(e => e.Link).IsRequired();
             entity.Property(e => e.PubDate).IsRequired(false);
             entity.Property(e => e.TimeAnalysed).IsRequired(false);
+            entity.HasOne(e => e.Feed)
+                  .WithMany()
+                  .HasForeignKey(e => e.FeedId)
+                  .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<Article>(entity =>

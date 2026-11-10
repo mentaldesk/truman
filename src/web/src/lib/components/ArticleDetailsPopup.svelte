@@ -1,6 +1,7 @@
 <script lang="ts">
     import { createEventDispatcher } from 'svelte';
     import TagWithHoverMenu from './TagWithHoverMenu.svelte';
+    import StoryByline from './StoryByline.svelte';
     import { tagPreferences } from '../stores/tagPreferences';
     import { onMount } from 'svelte';
     
@@ -80,9 +81,14 @@
             <!-- Header -->
             <div class="flex items-center justify-between p-6 border-b border-gray-200">
                 <div class="flex items-center gap-3 flex-1 min-w-0">
-                    <h2 class="text-xl font-semibold text-gray-900 truncate">
-                        {article.title}
-                    </h2>
+                    <div class="min-w-0">
+                        <h2 class="text-xl font-semibold text-gray-900 truncate">
+                            {article.title}
+                        </h2>
+                        <div class="mt-1">
+                            <StoryByline publisher={article.publisher} publishedAt={article.publishedAt} link={article.link} />
+                        </div>
+                    </div>
                     <button
                         on:click={openOriginalArticle}
                         class="flex-shrink-0 p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"

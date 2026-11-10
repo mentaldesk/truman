@@ -30,6 +30,7 @@ public class RelevantArticlesServiceTests : IAsyncLifetime
         _ctx.UserTagPreferences.RemoveRange(_ctx.UserTagPreferences);
         _ctx.UserProfiles.RemoveRange(_ctx.UserProfiles);
         _ctx.RssItems.RemoveRange(_ctx.RssItems);
+        _ctx.Feeds.RemoveRange(_ctx.Feeds);
         return new ValueTask(_ctx.SaveChangesAsync(Ct));
     }
     
@@ -189,5 +190,53 @@ public class RelevantArticlesServiceTests : IAsyncLifetime
         var respMissing = await service.GetRelevantArticlesAsync(new RelevantArticlesRequest{ Presenter = "NonExistent"}, user);
         Assert.Single(respMissing.Articles);
         Assert.Equal("Default Title", respMissing.Articles[0].Title);
+    }
+
+    [Fact]
+    public async Task CarriesPublisherAndPublishDate_FromTheItemsFeed()
+    {
+        var service = new RelevantArticlesService(_ctx, NullLogger<RelevantArticlesService>.Instance);
+        var user = CreateUser($"user_{Guid.NewGuid()}@example.com");
+        _ctx.UserProfiles.Add(user);
+
+        var feed = new Feed { Name = "Phys.org", Url = $"https://example.invalid/{Guid.NewGuid():N}", IsEnabled = true };
+        var published = new DateTimeOffset(2026, 11, 3, 8, 30, 0, TimeSpan.Zero);
+        var fromFeed = MakeArticle($"feed_{Guid.NewGuid():N}", 7, [], a =>
+        {
+            a.RssItem.Feed = feed;
+            a.RssItem.PubDate = published;
+        });
+        var orphan = MakeArticle($"orphan_{Guid.NewGuid():N}", 7, []);
+        _ctx.Articles.AddRange(fromFeed, orphan);
+        await _ctx.SaveChangesAsync(Ct);
+
+        var resp = await service.GetRelevantArticlesAsync(new RelevantArticlesRequest { Presenter = "Default" }, user);
+
+        var withFeed = Assert.Single(resp.Articles, a => a.Link.StartsWith("feed_"));
+        Assert.Equal("Phys.org", withFeed.Publisher);
+        Assert.Equal(published, withFeed.PublishedAt);
+
+        var withoutFeed = Assert.Single(resp.Articles, a => a.Link.StartsWith("orphan_"));
+        Assert.Null(withoutFeed.Publisher);
+        Assert.Null(withoutFeed.PublishedAt);
+    }
+
+    [Fact]
+    public async Task DeletingAFeed_KeepsItsItemsAndArticles_WithNoFeed()
+    {
+        var feed = new Feed { Name = "Phys.org", Url = $"https://example.invalid/{Guid.NewGuid():N}", IsEnabled = true };
+        var article = MakeArticle($"feed_{Guid.NewGuid():N}", 7, [], a => a.RssItem.Feed = feed);
+        _ctx.Articles.Add(article);
+        await _ctx.SaveChangesAsync(Ct);
+
+        await using (var admin = new TrumanDbContext(_dbOptions))
+        {
+            admin.Feeds.Remove((await admin.Feeds.FindAsync([feed.Id], Ct))!);
+            await admin.SaveChangesAsync(Ct);
+        }
+
+        await using var fresh = new TrumanDbContext(_dbOptions);
+        var kept = await fresh.Articles.Include(a => a.RssItem).SingleAsync(a => a.Id == article.Id, Ct);
+        Assert.Null(kept.RssItem.FeedId);
     }
 }

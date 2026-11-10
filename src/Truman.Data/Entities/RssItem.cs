@@ -10,4 +10,6 @@ public class RssItem
     public string Description { get; set; } = string.Empty;
     public DateTimeOffset? PubDate { get; set; }
     public DateTimeOffset? TimeAnalysed { get; set; }
+    public int? FeedId { get; set; }
+    public Feed? Feed { get; set; }
 }
