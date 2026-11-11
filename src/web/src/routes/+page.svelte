@@ -2,6 +2,8 @@
     import Header from '#lib/components/Header.svelte';
     import ArticleDetailsPopup from '#lib/components/ArticleDetailsPopup.svelte';
     import StoryByline from '#lib/components/StoryByline.svelte';
+    import MatchBadges from '#lib/components/MatchBadges.svelte';
+    import type { RelevanceBreakdown } from '#lib/relevance.js';
     import { mood } from '#lib/stores/mood.js';
     import { onMount, onDestroy } from 'svelte';
     import { apiFetch, SessionExpiredError } from '#lib/api.js';
@@ -22,6 +24,7 @@
         createdAt: string;
         publisher: string | null;
         publishedAt: string | null;
+        why: RelevanceBreakdown;
     };
 
     let articles: RelevantArticle[] = [];
@@ -151,6 +154,7 @@
                             <div class="mt-2">
                                 <StoryByline publisher={article.publisher} publishedAt={article.publishedAt} />
                             </div>
+                            <MatchBadges matchedTags={article.why.matchedTags} matchedValues={article.why.matchedValues} />
                         </div>
                     </div>
                 {/each}

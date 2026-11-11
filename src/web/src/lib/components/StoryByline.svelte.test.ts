@@ -38,6 +38,7 @@ describe('StoryByline in the story popup', () => {
 		sentiment: 7,
 		tags: [],
 		relevanceScore: 0.5,
+		why: { valuesShare: 0, tagsShare: 0, toneShare: 1, matchedValues: [], matchedTags: [], mood: 5 },
 		publisher,
 		publishedAt
 	});

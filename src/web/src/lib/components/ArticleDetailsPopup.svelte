@@ -2,6 +2,7 @@
     import { createEventDispatcher } from 'svelte';
     import TagWithHoverMenu from './TagWithHoverMenu.svelte';
     import StoryByline from './StoryByline.svelte';
+    import WhyItsHere from './WhyItsHere.svelte';
     import { tagPreferences } from '../stores/tagPreferences';
     import { onMount } from 'svelte';
     
@@ -114,21 +115,8 @@
             <div class="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
                 <!-- Article metadata -->
                 <div class="mb-6 p-4 bg-gray-50 rounded-lg">
-                    <div class="flex items-center gap-4 text-sm text-gray-600 mb-3">
-                        <span class="flex items-center gap-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                            </svg>
-                            Sentiment: {article.sentiment}/10
-                        </span>
-                        <span class="flex items-center gap-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                            </svg>
-                            Relevance: {article.relevanceScore.toFixed(2)}
-                        </span>
-                    </div>
-                    
+                    <WhyItsHere why={article.why} sentiment={article.sentiment} />
+
                     {#if article.tags && article.tags.length > 0}
                         <div class="flex flex-wrap gap-2">
                             {#each tagStatuses as tagStatus (`${tagStatus.tag}-${tagStatus.isFavorite}-${tagStatus.isBanned}`)}

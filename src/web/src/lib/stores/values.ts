@@ -85,3 +85,4 @@ function createValuesStore() {
 }
 
 export const valuesStore = createValuesStore(); 
+export const valueName = (id: string) => initialValues.find(v => v.id === id)?.name ?? id;
