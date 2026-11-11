@@ -302,7 +302,6 @@ public class RelevantArticlesServiceTests : IAsyncLifetime
 
         var resp = await service.GetRelevantArticlesAsync(new RelevantArticlesRequest { Presenter = "Default" }, user);
 
-        // 0.4*(10/2)+0.2, 0.4*(8/1.5/2)+0.4+0.2, 0.2*4, 0.4*1
         Assert.Equal(["value_", "both_", "tone_", "tag_"], resp.Articles.Select(a => a.Link.Split('_')[0] + "_"));
         Assert.Equal(resp.Articles.Select(a => a.RelevanceScore).OrderDescending(), resp.Articles.Select(a => a.RelevanceScore));
     }
