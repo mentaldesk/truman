@@ -41,7 +41,25 @@ public class JobRunnerDatabaseFixture : IAsyncLifetime
     {
         await using var db = NewContext();
         await db.Database.ExecuteSqlRawAsync(
-            """TRUNCATE "ArticlePresenters", "Articles", "RssItems", "Presenters" RESTART IDENTITY CASCADE;""");
+            """TRUNCATE "ArticlePresenters", "Articles", "RssItems", "Presenters", "Feeds" RESTART IDENTITY CASCADE;""");
+    }
+
+    public async Task SeedFeedAsync(string url, bool isEnabled = true)
+    {
+        await using var db = NewContext();
+        db.Feeds.Add(new Feed { Name = url, Url = url, IsEnabled = isEnabled });
+        await db.SaveChangesAsync();
+    }
+
+    public async Task SeedArticleAsync(DateTimeOffset createdAt)
+    {
+        await using var db = NewContext();
+        var link = $"https://example.invalid/saved/{Guid.NewGuid():N}";
+        var item = new RssItem { Link = link, TimeAnalysed = createdAt };
+        db.RssItems.Add(item);
+        await db.SaveChangesAsync();
+        db.Articles.Add(new Article { Link = link, RssItemId = item.Id, CreatedAt = createdAt });
+        await db.SaveChangesAsync();
     }
 
     public async Task<RssItem> SeedPendingAsync(string link, string title = "A headline", string description = "Body text.")

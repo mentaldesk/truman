@@ -13,10 +13,12 @@ namespace Truman.JobRunner;
 
 public readonly record struct AnalysisOutcome(int Attempted, int Succeeded, int Failed)
 {
+    public bool NothingSucceeded => Attempted > 0 && Succeeded == 0;
+
     // A run that saved nothing must not report success: it would check in as healthy and exit 0.
     public void ThrowIfNothingSucceeded()
     {
-        if (Attempted > 0 && Succeeded == 0)
+        if (NothingSucceeded)
         {
             throw new InvalidOperationException(
                 $"Analysis failed for all {Attempted} articles; see the recorded failures for the cause.");

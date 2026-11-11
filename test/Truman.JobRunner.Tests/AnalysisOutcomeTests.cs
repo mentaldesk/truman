@@ -25,4 +25,13 @@ public class AnalysisOutcomeTests
     {
         new AnalysisOutcome(attempted, succeeded, failed).ThrowIfNothingSucceeded();
     }
+
+    [Theory]
+    [InlineData(3, 0, 3, true)]
+    [InlineData(0, 0, 0, false)]
+    [InlineData(3, 1, 2, false)]
+    public void NothingSucceeded_is_true_only_when_every_attempt_failed(int attempted, int succeeded, int failed, bool expected)
+    {
+        Assert.Equal(expected, new AnalysisOutcome(attempted, succeeded, failed).NothingSucceeded);
+    }
 }
