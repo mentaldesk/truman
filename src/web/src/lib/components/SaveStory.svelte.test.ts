@@ -46,6 +46,12 @@ describe('Save button in the story popup', () => {
 		await expect.element(button.element().querySelector('svg')!).toHaveAttribute('fill', 'currentColor');
 	});
 
+	it('leaves the source link in the byline as the only way to the original', async () => {
+		render(ArticleDetailsPopup, { isOpen: true, article: story(false) });
+		await expect.element(page.getByRole('link', { name: /RNZ World/ })).toHaveAttribute('href', 'https://example.invalid/story');
+		await expect.element(page.getByTitle('Open original article in new window')).not.toBeInTheDocument();
+	});
+
 	it('saves the story and says so', async () => {
 		const changes: Array<{ id: number; isSaved: boolean }> = [];
 		render(ArticleDetailsPopup, {

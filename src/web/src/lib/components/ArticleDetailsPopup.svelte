@@ -68,12 +68,6 @@
         }
     }
     
-    function openOriginalArticle() {
-        if (article?.link) {
-            window.open(article.link, '_blank');
-        }
-    }
-    
     function handleTagFavorite(event: CustomEvent) {
         const { tag } = event.detail;
         tagPreferences.favoriteTag(tag);
@@ -109,15 +103,6 @@
                             <StoryByline publisher={article.publisher} publishedAt={article.publishedAt} link={article.link} />
                         </div>
                     </div>
-                    <button
-                        on:click={openOriginalArticle}
-                        class="flex-shrink-0 p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Open original article in new window"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 3h7m0 0v7m0-7L10 14m-7 7h7a2 2 0 002-2v-7" />
-                        </svg>
-                    </button>
                     <button
                         on:click={toggleSaved}
                         disabled={saving}
