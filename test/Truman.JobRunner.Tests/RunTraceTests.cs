@@ -235,10 +235,11 @@ public sealed class RunTraceTests(JobRunnerDatabaseFixture fixture) : ArticleAna
         Http.Then(Rss(("https://example.invalid/one", Body), ("https://example.invalid/two", Body)));
         Chat.Then(GoodAnalysis).Then(PresenterReply).Always("not json");
 
-        await Updater().RunManualAsync(fetch: true, analyse: true, limit: null);
+        await Updater(Chat.WithSentry()).RunManualAsync(fetch: true, analyse: true, limit: null);
 
         var transactions = await _sentry.TransactionsAsync();
         Assert.Equal(3, transactions.Count);
+        Assert.Contains(transactions.SelectMany(t => t.Spans), s => s.Operation.StartsWith("gen_ai"));
         var recorded = transactions.SelectMany(t =>
             t.Tags.Values
                 .Concat(t.Extra.Values.Select(v => v?.ToString()))

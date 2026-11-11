@@ -97,7 +97,7 @@ try
             services.AddSingleton<IChatClient>(sp => sp
                 .GetRequiredService<AnthropicClient>()
                 .AsIChatClient(defaultModelId: model)
-                .AddSentry(o => o.Experimental.AgentName = "truman-analyser"));
+                .WithSentry());
 
             var jevApiKey = context.Configuration["Jev:ApiKey"]
                             ?? throw new InvalidOperationException("Jev API key not found in configuration.");
