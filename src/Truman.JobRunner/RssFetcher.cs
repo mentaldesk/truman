@@ -78,6 +78,7 @@ public class RssFetcher(
                         Title = item.Title ?? string.Empty,
                         Description = body ?? string.Empty,
                         PubDate = pubDate,
+                        FeedId = feedSource.Id,
                         TimeAnalysed = null // This will be set by the analysis job
                     };
 

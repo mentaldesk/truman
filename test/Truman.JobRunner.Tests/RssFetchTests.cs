@@ -49,6 +49,18 @@ public class RssFetchTests(JobRunnerDatabaseFixture fixture) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_new_item_records_the_feed_it_came_from()
+    {
+        var http = new ScriptedHttpHandler().Then(Rss("https://example.invalid/one"));
+
+        await Fetcher(http).RunAsync();
+
+        await using var db = fixture.NewContext();
+        var feed = await db.Feeds.SingleAsync(f => f.Url == FeedUrl);
+        Assert.Equal(feed.Id, Assert.Single(await db.RssItems.ToListAsync()).FeedId);
+    }
+
+    [Fact]
     public async Task A_body_that_is_not_xml_is_retried_past_the_cache()
     {
         var http = new ScriptedHttpHandler()

@@ -17,4 +17,6 @@ public class RelevantArticle
     public string[] Tags { get; set; } = Array.Empty<string>();
     public double RelevanceScore { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
+    public string? Publisher { get; set; }
+    public DateTimeOffset? PublishedAt { get; set; }
 } 

@@ -259,6 +259,9 @@ namespace Truman.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int?>("FeedId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Link")
                         .IsRequired()
                         .HasColumnType("text");
@@ -274,6 +277,8 @@ namespace Truman.Data.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("FeedId");
 
                     b.HasIndex("Link")
                         .IsUnique();
@@ -360,6 +365,16 @@ namespace Truman.Data.Migrations
                     b.Navigation("Article");
 
                     b.Navigation("Presenter");
+                });
+
+            modelBuilder.Entity("Truman.Data.Entities.RssItem", b =>
+                {
+                    b.HasOne("Truman.Data.Entities.Feed", "Feed")
+                        .WithMany()
+                        .HasForeignKey("FeedId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Feed");
                 });
 
             modelBuilder.Entity("Truman.Data.Entities.UserTagPreference", b =>

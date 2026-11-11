@@ -1,6 +1,7 @@
 <script lang="ts">
     import Header from '#lib/components/Header.svelte';
     import ArticleDetailsPopup from '#lib/components/ArticleDetailsPopup.svelte';
+    import StoryByline from '#lib/components/StoryByline.svelte';
     import { mood } from '#lib/stores/mood.js';
     import { onMount, onDestroy } from 'svelte';
     import { apiFetch, SessionExpiredError } from '#lib/api.js';
@@ -19,6 +20,8 @@
         tags: string[];
         relevanceScore: number;
         createdAt: string;
+        publisher: string | null;
+        publishedAt: string | null;
     };
 
     let articles: RelevantArticle[] = [];
@@ -145,6 +148,9 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 3h7m0 0v7m0-7L10 14m-7 7h7a2 2 0 002-2v-7" /></svg>
                             </div>
                             <p class="text-gray-500 mt-1">{article.tldr}</p>
+                            <div class="mt-2">
+                                <StoryByline publisher={article.publisher} publishedAt={article.publishedAt} />
+                            </div>
                         </div>
                     </div>
                 {/each}
