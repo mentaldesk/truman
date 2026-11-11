@@ -15,6 +15,7 @@ public class RelevantArticlesService : IRelevantArticlesService
     private const double TagAlignmentWeight = 0.4;
     private const double SentimentDeltaWeight = 0.2;
     private const double ExponentialDecayBase = 1.5;
+    private const int ValueMatchThreshold = 7;
 
     public RelevantArticlesService(TrumanDbContext dbContext, ILogger<RelevantArticlesService> logger)
     {
@@ -72,10 +73,15 @@ public class RelevantArticlesService : IRelevantArticlesService
             articles.Count, userProfile.Mood);
 
         // Calculate relevance scores for each article
-        var articlesWithScores = articles.Select(article => new
+        var articlesWithScores = articles.Select(article =>
         {
-            Article = article,
-            RelevanceScore = CalculateRelevanceScore(article, userValueWeights, userTagWeights, userProfile.Mood)
+            var parts = CalculateRelevanceParts(article, userValueWeights, userTagWeights, userProfile.Mood);
+            return new
+            {
+                Article = article,
+                RelevanceScore = parts.Values + parts.Tags + parts.Tone,
+                Why = Explain(article, parts, selectedValues, userTagWeights, userProfile.Mood)
+            };
         })
         .OrderByDescending(x => x.RelevanceScore);
 
@@ -90,6 +96,7 @@ public class RelevantArticlesService : IRelevantArticlesService
             Sentiment = x.Article.Sentiment,
             Tags = x.Article.Tags,
             RelevanceScore = x.RelevanceScore,
+            Why = x.Why,
             CreatedAt = x.Article.CreatedAt,
             Publisher = x.Article.RssItem.Feed?.Name,
             PublishedAt = x.Article.RssItem.PubDate
@@ -182,26 +189,43 @@ public class RelevantArticlesService : IRelevantArticlesService
         }
     }
 
-    private double CalculateRelevanceScore(Article article, Dictionary<string, double> userValueWeights, Dictionary<string, double> userTagWeights, int minimumSentiment)
+    private (double Values, double Tags, double Tone) CalculateRelevanceParts(Article article, Dictionary<string, double> userValueWeights, Dictionary<string, double> userTagWeights, int minimumSentiment)
     {
-        // Calculate value alignment score (weighted dot product)
         var valueAlignmentScore = CalculateValueAlignmentScore(article, userValueWeights);
-        
-        // Calculate tag alignment score
         var tagAlignmentScore = CalculateTagAlignmentScore(article, userTagWeights);
-        
-        // Calculate sentiment delta
         var sentimentDelta = article.Sentiment - minimumSentiment;
-        
-        // Calculate overall relevance score
-        var relevanceScore = ValueAlignmentWeight * valueAlignmentScore + 
-                           TagAlignmentWeight * tagAlignmentScore + 
-                           SentimentDeltaWeight * sentimentDelta;
-        
-        _logger.LogDebug("Article {ArticleId}: valueAlignment={ValueAlignment}, tagAlignment={TagAlignment}, sentimentDelta={SentimentDelta}, relevance={Relevance}", 
-            article.Id, valueAlignmentScore, tagAlignmentScore, sentimentDelta, relevanceScore);
-        
-        return relevanceScore;
+
+        _logger.LogDebug("Article {ArticleId}: valueAlignment={ValueAlignment}, tagAlignment={TagAlignment}, sentimentDelta={SentimentDelta}", 
+            article.Id, valueAlignmentScore, tagAlignmentScore, sentimentDelta);
+
+        return (ValueAlignmentWeight * valueAlignmentScore,
+                TagAlignmentWeight * tagAlignmentScore,
+                SentimentDeltaWeight * sentimentDelta);
+    }
+
+    private RelevanceBreakdown Explain(Article article, (double Values, double Tags, double Tone) parts, List<string> selectedValues, Dictionary<string, double> userTagWeights, int mood)
+    {
+        var total = parts.Values + parts.Tags + parts.Tone;
+        var articleTags = (article.Tags ?? [])
+            .Where(t => !string.IsNullOrEmpty(t))
+            .Select(t => t.Trim().ToLowerInvariant())
+            .ToHashSet();
+
+        return new RelevanceBreakdown
+        {
+            ValuesShare = total > 0 ? parts.Values / total : 0,
+            TagsShare = total > 0 ? parts.Tags / total : 0,
+            ToneShare = total > 0 ? parts.Tone / total : 0,
+            MatchedValues = selectedValues
+                .Where(v => GetArticleValueScore(article, v) >= ValueMatchThreshold)
+                .ToArray(),
+            MatchedTags = userTagWeights
+                .OrderByDescending(tw => tw.Value)
+                .Select(tw => tw.Key)
+                .Where(tag => articleTags.Contains(tag.ToLowerInvariant()))
+                .ToArray(),
+            Mood = mood
+        };
     }
 
     private double CalculateValueAlignmentScore(Article article, Dictionary<string, double> userValueWeights)

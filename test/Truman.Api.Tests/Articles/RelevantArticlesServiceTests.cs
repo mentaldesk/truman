@@ -239,4 +239,70 @@ public class RelevantArticlesServiceTests : IAsyncLifetime
         var kept = await fresh.Articles.Include(a => a.RssItem).SingleAsync(a => a.Id == article.Id, Ct);
         Assert.Null(kept.RssItem.FeedId);
     }
+
+    [Fact]
+    public async Task ExplainsEachStory_WithSharesAndWhatMatched()
+    {
+        var service = new RelevantArticlesService(_ctx, NullLogger<RelevantArticlesService>.Instance);
+        var user = CreateUser($"user_{Guid.NewGuid()}@example.com",
+            ["security", "knowledge", "freedom"], [("nz", 2), ("science", 1), ("cats", 0)]);
+        _ctx.UserProfiles.Add(user);
+
+        var article = MakeArticle($"a_{Guid.NewGuid():N}", 8, ["science", "NZ", "weather"], a =>
+        {
+            a.Freedom = 9;
+            a.Security = 7;
+            a.Knowledge = 6;
+        });
+        _ctx.Articles.Add(article);
+        await _ctx.SaveChangesAsync(Ct);
+
+        var resp = await service.GetRelevantArticlesAsync(new RelevantArticlesRequest { Presenter = "Default" }, user);
+
+        var why = Assert.Single(resp.Articles).Why;
+        Assert.Equal(["security", "freedom"], why.MatchedValues);
+        Assert.Equal(["nz", "science"], why.MatchedTags);
+        Assert.Equal(5, why.Mood);
+        Assert.Equal(1.0, why.ValuesShare + why.TagsShare + why.ToneShare, 9);
+        Assert.All([why.ValuesShare, why.TagsShare, why.ToneShare], share => Assert.True(share > 0));
+    }
+
+    [Fact]
+    public async Task ExplainsAStoryWithNothingToShow_WithoutDividingByZero()
+    {
+        var service = new RelevantArticlesService(_ctx, NullLogger<RelevantArticlesService>.Instance);
+        var user = CreateUser($"user_{Guid.NewGuid()}@example.com", ["freedom"]);
+        _ctx.UserProfiles.Add(user);
+        _ctx.Articles.Add(MakeArticle($"a_{Guid.NewGuid():N}", 5, ["ai"]));
+        await _ctx.SaveChangesAsync(Ct);
+
+        var resp = await service.GetRelevantArticlesAsync(new RelevantArticlesRequest { Presenter = "Default" }, user);
+
+        var story = Assert.Single(resp.Articles);
+        Assert.Equal(0, story.RelevanceScore);
+        Assert.Equal(0, story.Why.ValuesShare);
+        Assert.Equal(0, story.Why.TagsShare);
+        Assert.Equal(0, story.Why.ToneShare);
+        Assert.Empty(story.Why.MatchedValues);
+        Assert.Empty(story.Why.MatchedTags);
+    }
+
+    [Fact]
+    public async Task OrderIsUnchanged_ByTheExplanation()
+    {
+        var service = new RelevantArticlesService(_ctx, NullLogger<RelevantArticlesService>.Instance);
+        var user = CreateUser($"user_{Guid.NewGuid()}@example.com", ["freedom", "knowledge"], [("nz", 1)]);
+        _ctx.UserProfiles.Add(user);
+        _ctx.Articles.AddRange(
+            MakeArticle($"tone_{Guid.NewGuid():N}", 9, []),
+            MakeArticle($"tag_{Guid.NewGuid():N}", 5, ["nz"]),
+            MakeArticle($"value_{Guid.NewGuid():N}", 6, [], a => a.Freedom = 10),
+            MakeArticle($"both_{Guid.NewGuid():N}", 6, ["nz"], a => a.Knowledge = 8));
+        await _ctx.SaveChangesAsync(Ct);
+
+        var resp = await service.GetRelevantArticlesAsync(new RelevantArticlesRequest { Presenter = "Default" }, user);
+
+        Assert.Equal(["value_", "both_", "tone_", "tag_"], resp.Articles.Select(a => a.Link.Split('_')[0] + "_"));
+        Assert.Equal(resp.Articles.Select(a => a.RelevanceScore).OrderDescending(), resp.Articles.Select(a => a.RelevanceScore));
+    }
 }

@@ -2,6 +2,8 @@
     import Header from '#lib/components/Header.svelte';
     import ArticleDetailsPopup from '#lib/components/ArticleDetailsPopup.svelte';
     import StoryByline from '#lib/components/StoryByline.svelte';
+    import MatchBadges from '#lib/components/MatchBadges.svelte';
+    import type { RelevanceBreakdown } from '#lib/relevance.js';
     import { mood } from '#lib/stores/mood.js';
     import { onMount, onDestroy } from 'svelte';
     import { apiFetch, SessionExpiredError } from '#lib/api.js';
@@ -9,6 +11,7 @@
     import { selectedPresenter } from '#lib/stores/presenter.js';
     import { profileStore } from '#lib/stores/profile.js';
     import { tagPreferences } from '#lib/stores/tagPreferences.js';
+    import { refreshed } from '#lib/refreshed.js';
 
     type RelevantArticle = {
         id: number;
@@ -22,6 +25,7 @@
         createdAt: string;
         publisher: string | null;
         publishedAt: string | null;
+        why: RelevanceBreakdown;
     };
 
     let articles: RelevantArticle[] = [];
@@ -76,6 +80,10 @@
             if (!res.ok) throw new Error(`Failed to fetch articles (${res.status})`);
             const data = await res.json();
             articles = data.articles || [];
+            if (isPopupOpen) {
+                selectedArticle = refreshed(selectedArticle, articles);
+                if (!selectedArticle) isPopupOpen = false;
+            }
         } catch (e) {
             if (e instanceof SessionExpiredError) {
                 // apiFetch is redirecting to /login. Stay in the loading state so we
@@ -151,6 +159,7 @@
                             <div class="mt-2">
                                 <StoryByline publisher={article.publisher} publishedAt={article.publishedAt} />
                             </div>
+                            <MatchBadges matchedTags={article.why.matchedTags} matchedValues={article.why.matchedValues} />
                         </div>
                     </div>
                 {/each}

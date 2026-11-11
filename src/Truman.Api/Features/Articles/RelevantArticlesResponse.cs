@@ -19,4 +19,15 @@ public class RelevantArticle
     public DateTimeOffset CreatedAt { get; set; }
     public string? Publisher { get; set; }
     public DateTimeOffset? PublishedAt { get; set; }
+    public RelevanceBreakdown Why { get; set; } = new();
+}
+
+public class RelevanceBreakdown
+{
+    public double ValuesShare { get; set; }
+    public double TagsShare { get; set; }
+    public double ToneShare { get; set; }
+    public string[] MatchedValues { get; set; } = [];
+    public string[] MatchedTags { get; set; } = [];
+    public int Mood { get; set; }
 } 
