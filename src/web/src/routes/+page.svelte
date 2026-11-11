@@ -11,6 +11,7 @@
     import { selectedPresenter } from '#lib/stores/presenter.js';
     import { profileStore } from '#lib/stores/profile.js';
     import { tagPreferences } from '#lib/stores/tagPreferences.js';
+    import { refreshed } from '#lib/refreshed.js';
 
     type RelevantArticle = {
         id: number;
@@ -79,6 +80,10 @@
             if (!res.ok) throw new Error(`Failed to fetch articles (${res.status})`);
             const data = await res.json();
             articles = data.articles || [];
+            if (isPopupOpen) {
+                selectedArticle = refreshed(selectedArticle, articles);
+                if (!selectedArticle) isPopupOpen = false;
+            }
         } catch (e) {
             if (e instanceof SessionExpiredError) {
                 // apiFetch is redirecting to /login. Stay in the loading state so we
