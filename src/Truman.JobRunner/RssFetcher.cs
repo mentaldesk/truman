@@ -67,10 +67,11 @@ public class RssFetcher(
         {
             var span = stage?.StartChild("feed.fetch", feedSource.Name);
             span?.SetData("feed.url", feedSource.Url);
+            ParsedFeed? feed = null;
+            var newBodyLengths = new List<int>();
             try
             {
-                var feed = await ReadFeedAsync(client, feedSource, span, cancellationToken);
-                var newBodyLengths = new List<int>();
+                feed = await ReadFeedAsync(client, feedSource, span, cancellationToken);
 
                 foreach (var item in feed.Items)
                 {
@@ -115,18 +116,14 @@ public class RssFetcher(
                     newBodyLengths.Add(rssItem.Description.Length);
                 }
 
-                span?.SetData("feed.items", feed.Items.Count);
-                span?.SetData("feed.new", newBodyLengths.Count);
-                if (Median(newBodyLengths) is { } median)
-                {
-                    span?.SetData("feed.body_median", median);
-                }
+                SetFeedCounts(span, feed, newBodyLengths);
                 span?.Finish(SpanStatus.Ok);
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to fetch or parse feed {Feed} ({Url})", feedSource.Name, feedSource.Url);
                 failedFeedCount++;
+                SetFeedCounts(span, feed, newBodyLengths);
                 span?.SetData("feed.failure", ex is XmlException ? "not XML" : ex.Message);
                 span?.Finish(ex, SpanStatus.InternalError);
             }
@@ -138,6 +135,21 @@ public class RssFetcher(
             existingArticleCount);
 
         return new FetchOutcome(feeds.Count, failedFeedCount);
+    }
+
+    private static void SetFeedCounts(ISpan? span, ParsedFeed? feed, List<int> newBodyLengths)
+    {
+        if (span is null || feed is null)
+        {
+            return;
+        }
+
+        span.SetData("feed.items", feed.Items.Count);
+        span.SetData("feed.new", newBodyLengths.Count);
+        if (Median(newBodyLengths) is { } median)
+        {
+            span.SetData("feed.body_median", median);
+        }
     }
 
     private async Task<ParsedFeed> ReadFeedAsync(

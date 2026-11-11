@@ -148,6 +148,27 @@ public sealed class RunTraceTests(JobRunnerDatabaseFixture fixture) : ArticleAna
     }
 
     [Fact]
+    public async Task A_feed_that_fails_partway_keeps_the_counts_it_got_to()
+    {
+        await SeedFeedAsync("Partial");
+        Http.Then($"""
+                   <?xml version="1.0" encoding="UTF-8"?>
+                   <rss version="2.0"><channel><title>Example</title>
+                   <item><title>{Title}</title><link>https://partial.invalid/a</link><description>{Body}</description></item>
+                   <item><title>{Title}</title><description>{Body}</description></item>
+                   </channel></rss>
+                   """);
+
+        await Updater().RunManualAsync(fetch: true, analyse: false, limit: null);
+
+        var partial = FeedSpan(await RunTransactionAsync(), "Partial");
+        Assert.Equal(SpanStatus.InternalError, partial.Status);
+        Assert.Equal(2, partial.Data["feed.items"]);
+        Assert.Equal(1, partial.Data["feed.new"]);
+        Assert.Equal(Body.Length, partial.Data["feed.body_median"]);
+    }
+
+    [Fact]
     public async Task A_retry_counts_as_an_attempt_on_the_feed_span()
     {
         await SeedFeedAsync("Flaky");

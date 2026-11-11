@@ -325,9 +325,8 @@ public class ArticleAnalyser
 
             // Without an ambient transaction, each LLM call below would become its own.
             using var sentryScope = SentrySdk.PushScope();
-            var transaction = stage is null
-                ? SentrySdk.StartTransaction("analyse-article", "gen_ai.pipeline")
-                : SentrySdk.StartTransaction("analyse-article", "gen_ai.pipeline", stage.GetTraceHeader());
+            var transaction = SentrySdk.StartTransaction(
+                SentrySdk.ContinueTrace(stage?.GetTraceHeader(), null, "analyse-article", "gen_ai.pipeline"));
             SentrySdk.ConfigureScope(configured => configured.Transaction = transaction);
             transaction.SetTag("analysis.link", rssItem.Link);
             var saved = false;
