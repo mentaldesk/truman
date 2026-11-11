@@ -44,6 +44,9 @@
         <None Update="PresenterContentSchema.json">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
+        <None Update="Samples/SampleStories.json">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
         <None Update="ContentInstructions.md">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>

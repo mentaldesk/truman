@@ -1,0 +1,617 @@
+{
+  "reader": {
+    "email": "try@localhost",
+    "mood": 5,
+    "values": ["knowledge", "compassion", "adventure", "creativity"],
+    "followedTags": ["space"],
+    "bannedTags": ["celebrity"]
+  },
+  "sources": [
+    { "name": "Made-Up Herald", "url": "https://samples.invalid/made-up-herald/feed" },
+    { "name": "Made-Up Science Weekly", "url": "https://samples.invalid/made-up-science-weekly/feed" },
+    { "name": "Made-Up Local News", "url": "https://samples.invalid/made-up-local-news/feed" },
+    { "name": "Made-Up Sports Desk", "url": "https://samples.invalid/made-up-sports-desk/feed" }
+  ],
+  "stories": [
+    {
+      "slug": "volunteer-astronomers-spot-comet",
+      "source": "Made-Up Science Weekly",
+      "minutesAgo": 7,
+      "tone": 8,
+      "tags": ["space", "astronomy", "citizen-science"],
+      "values": { "knowledge": 9, "adventure": 8, "creativity": 7, "connection": 7 },
+      "presenters": {
+        "Default": {
+          "title": "Volunteer astronomers spot a new comet from a car park in Lowmarsh",
+          "tldr": "A club of amateur stargazers in the fictional town of Lowmarsh has found a comet professional surveys missed.",
+          "content": "A group of amateur astronomers in the fictional town of Lowmarsh has discovered a comet that larger professional surveys appear to have missed.\n\nThe Lowmarsh Stargazers, who meet every clear Thursday in the car park behind the leisure centre, noticed a faint smudge near the constellation of Cassiopeia while testing a second-hand camera. Over the following three nights they photographed it moving against the background stars, and sent their measurements to the made-up International Comet Registry.\n\nThe registry confirmed the find on Tuesday. Under its rules the comet will carry the club's name, making it Comet Lowmarsh, the first object in the sky named after a town best known for its roundabout.\n\nThe club's chair, a retired postwoman, said the discovery was down to patience rather than equipment. \"Most of us have cheap telescopes and expensive flasks,\" she said. \"The flasks matter more. You have to be willing to stand in the cold for a long time looking at nothing.\"\n\nThe comet is not expected to become visible to the naked eye. It will make its closest approach to the Sun next spring, and the club has offered to lend its telescopes to anyone who wants a look.\n\nThis story is a made-up sample for trying Truman. None of it happened."
+        },
+        "Jimmy": {
+          "title": "Pensioners find comet, astronomers find excuses",
+          "tldr": "Amateurs with a flask beat professionals with a budget. Again.",
+          "content": "A club of amateur astronomers in Lowmarsh has found a comet the professionals missed. The professionals say they were busy. Busy doing what? It's space. The one thing it's got is time.\n\nThey spotted it from a car park behind the leisure centre, which is the most Lowmarsh sentence ever written. The comet will be named Comet Lowmarsh, which is a lot of pressure for a ball of ice. It's never been to Lowmarsh. Nobody has. Not on purpose.\n\nMade-up sample story. Nothing here happened."
+        },
+        "Ricky": {
+          "title": "Car park comet: amateurs embarrass the experts",
+          "tldr": "A bunch of people with flasks found a comet. Good for them, honestly.",
+          "content": "Look, I love this. A bunch of retired people standing in a freezing car park every Thursday, and they find a comet the actual scientists missed. The scientists with the satellites. The funding. The lanyards.\n\nThe chair of the club says the secret is a good flask. That's it. That's the whole of astronomy apparently. Meanwhile the comet gets named after Lowmarsh, which it'll never visit, which makes it smarter than most of us.\n\nThis is a made-up sample story."
+        }
+      }
+    },
+    {
+      "slug": "zoo-penguins-get-jumpers",
+      "source": "Made-Up Local News",
+      "minutesAgo": 40,
+      "tone": 9,
+      "tags": ["animals", "local", "community"],
+      "values": { "compassion": 9, "connection": 8, "pleasure": 7 },
+      "presenters": {
+        "Default": {
+          "title": "Knitting circle makes jumpers for the zoo's chilly penguins",
+          "tldr": "Thirty volunteers knitted forty tiny jumpers after the made-up Brindle Zoo's heating failed.",
+          "content": "When the heating failed in the penguin house at the made-up Brindle Zoo, a local knitting circle had forty small jumpers ready within a week. Keepers say the birds have taken to them better than expected. This is a made-up sample story."
+        },
+        "Jimmy": {
+          "title": "Penguins now better dressed than most of Brindle",
+          "tldr": "Forty jumpers, forty penguins, no complaints.",
+          "content": "A knitting circle has made jumpers for forty cold penguins. Penguins live in Antarctica. They are not cold. They are dramatic. Made-up sample story."
+        },
+        "Ricky": {
+          "title": "Grans knit for penguins, penguins don't say thanks",
+          "tldr": "Lovely. Pointless, probably. But lovely.",
+          "content": "Thirty people knitted jumpers for penguins. Did the penguins ask? No. Do they look brilliant? Yes. That's all you can ask for really. Made-up sample story."
+        }
+      }
+    },
+    {
+      "slug": "moon-greenhouse-lettuce",
+      "source": "Made-Up Science Weekly",
+      "minutesAgo": 120,
+      "tone": 8,
+      "tags": ["space", "food", "technology"],
+      "values": { "knowledge": 8, "ambition": 7, "success": 7 },
+      "presenters": {
+        "Default": {
+          "title": "Moon greenhouse grows its first lettuce",
+          "tldr": "A fictional lunar research base has harvested a lettuce grown entirely in moon soil.",
+          "content": "Researchers at the fictional Selene Station have harvested a lettuce grown entirely in lunar soil under artificial light. The crew described it as \"small, slightly bitter and the best thing we have eaten in months.\" This is a made-up sample story."
+        },
+        "Jimmy": {
+          "title": "Billions spent, one lettuce produced",
+          "tldr": "It's the most expensive salad in history.",
+          "content": "Scientists on the Moon have grown a lettuce. Not a whole salad. One lettuce. At that price, I'd want it to sing. Made-up sample story."
+        },
+        "Ricky": {
+          "title": "Astronauts grow lettuce, call it a triumph",
+          "tldr": "You go all the way to the Moon and grow a lettuce.",
+          "content": "You fly to the Moon. You build a greenhouse. And you grow... a lettuce. Not even a nice one. Bitter, they said. Fair play though, I can't grow one here. Made-up sample story."
+        }
+      }
+    },
+    {
+      "slug": "fishmongers-parade-saved",
+      "source": "Made-Up Local News",
+      "minutesAgo": 300,
+      "tone": 6,
+      "tags": ["local", "tradition", "festivals"],
+      "values": { "tradition": 9, "loyalty": 7 },
+      "presenters": {
+        "Default": {
+          "title": "Council votes to keep the 300-year-old Fishmonger's Parade",
+          "tldr": "After a long debate, the fictional Harbourside council has kept its oldest festival.",
+          "content": "Harbourside's councillors have voted eleven to four to keep the made-up Fishmonger's Parade, which has run every August since 1726, despite rising costs. This is a made-up sample story."
+        },
+        "Jimmy": {
+          "title": "Town votes to keep parading fish",
+          "tldr": "Three centuries of tradition, all of it smelling of cod.",
+          "content": "The Fishmonger's Parade survives. Three hundred years of men carrying fish through the streets. It's not a tradition, it's a hostage situation. Made-up sample story."
+        },
+        "Ricky": {
+          "title": "Fish parade lives on, for some reason",
+          "tldr": "They're keeping it. Of course they are.",
+          "content": "Eleven councillors voted to keep a parade where people walk about holding fish. In August. In the heat. Respect, honestly. Made-up sample story."
+        }
+      }
+    },
+    {
+      "slug": "heatwave-closes-schools",
+      "source": "Made-Up Herald",
+      "minutesAgo": 180,
+      "tone": 2,
+      "tags": ["climate", "weather", "education"],
+      "values": { "security": 7, "responsibility": 7 },
+      "presenters": {
+        "Default": {
+          "title": "Heatwave closes schools across the province of Eastmere",
+          "tldr": "Temperatures above 40°C have shut more than 200 schools in the fictional province.",
+          "content": "More than 200 schools in the made-up province of Eastmere closed on Monday as temperatures passed 40°C for a fifth day. Officials warned the heat could last into next week. This is a made-up sample story."
+        },
+        "Jimmy": {
+          "title": "Eastmere so hot even the schools went home",
+          "tldr": "Two hundred schools shut. The children say it's the best climate crisis ever.",
+          "content": "A heatwave has closed 200 schools. The children are delighted. They'll be less delighted in thirty years. Made-up sample story."
+        },
+        "Ricky": {
+          "title": "Schools shut as Eastmere bakes",
+          "tldr": "It's forty degrees. Nobody's learning anything anyway.",
+          "content": "Forty degrees. Five days running. Schools shut. This is fine, everyone. This is all completely fine. Made-up sample story."
+        }
+      }
+    },
+    {
+      "slug": "valley-flooding-evacuations",
+      "source": "Made-Up Herald",
+      "minutesAgo": 60,
+      "tone": 1,
+      "tags": ["climate", "weather", "disaster"],
+      "values": { "compassion": 7, "security": 8 },
+      "presenters": {
+        "Default": {
+          "title": "Floods force thousands from their homes in the Corran Valley",
+          "tldr": "Emergency services in the fictional Corran Valley have evacuated six villages after record rainfall.",
+          "content": "Six villages in the made-up Corran Valley were evacuated overnight after a month's rain fell in a day. Rescue teams used boats to reach people stranded on upper floors, and shelters have opened in three schools. This is a made-up sample story."
+        },
+        "Jimmy": {
+          "title": "Corran Valley underwater",
+          "tldr": "Six villages evacuated. No joke here; it's grim.",
+          "content": "Six villages have been evacuated in the Corran Valley after record rain. Sometimes the news is just the news. Made-up sample story."
+        },
+        "Ricky": {
+          "title": "Floods hit the Corran Valley hard",
+          "tldr": "Thousands evacuated. Genuinely awful.",
+          "content": "Record rain, six villages evacuated, people rescued by boat from their bedrooms. There's no gag. Hope everyone's alright. Made-up sample story."
+        }
+      }
+    },
+    {
+      "slug": "pop-star-hairdresser-memoir",
+      "source": "Made-Up Herald",
+      "minutesAgo": 540,
+      "tone": 6,
+      "tags": ["celebrity", "books", "entertainment"],
+      "values": { "pleasure": 7, "self-respect": 7 },
+      "presenters": {
+        "Default": {
+          "title": "Pop star's hairdresser publishes a tell-all memoir",
+          "tldr": "The long-time stylist to the made-up singer Vesper Lane has written about twenty years on tour.",
+          "content": "The stylist who cut the made-up pop star Vesper Lane's hair for twenty years has published a memoir about life on tour. It goes on sale on Friday. This is a made-up sample story."
+        },
+        "Jimmy": {
+          "title": "Hairdresser spills secrets, mostly about fringes",
+          "tldr": "Four hundred pages. At least sixty about split ends.",
+          "content": "A hairdresser has written a tell-all memoir. Tell-all. About hair. The big reveal is on page 212: it was a wig. Made-up sample story."
+        },
+        "Ricky": {
+          "title": "Celebrity hairdresser cashes in",
+          "tldr": "Twenty years of fringes, now in hardback.",
+          "content": "Someone's written a whole book about cutting a pop star's hair. And people will buy it. I've given up. Made-up sample story."
+        }
+      }
+    },
+    {
+      "slug": "rowing-team-finishes-last",
+      "source": "Made-Up Sports Desk",
+      "minutesAgo": 1560,
+      "tone": 7,
+      "tags": ["sport", "rowing"],
+      "values": { "self-respect": 8, "discipline": 7, "loyalty": 8 },
+      "presenters": {
+        "Default": {
+          "title": "Rowing crew finishes last and celebrates anyway",
+          "tldr": "The made-up Fenwick Rowing Club came last in its first regatta in fifty years and threw a party.",
+          "content": "Fenwick Rowing Club, a fictional crew that only reformed this spring, finished last in every race at the Merrow Regatta and then hosted the best-attended party of the weekend. This is a made-up sample story."
+        },
+        "Jimmy": {
+          "title": "Fenwick come last, win at losing",
+          "tldr": "Last place in every race. First at the bar.",
+          "content": "Fenwick came last in every race. To be fair, they did row in every race. Most of them in the same direction. Made-up sample story."
+        },
+        "Ricky": {
+          "title": "Worst rowers in the regatta, best party",
+          "tldr": "They lost everything and didn't care. Heroes.",
+          "content": "Last in everything, then threw a party. That's the right attitude. Nobody remembers who won a regatta. Made-up sample story."
+        }
+      }
+    },
+    {
+      "slug": "wind-farm-coop-dividend",
+      "source": "Made-Up Herald",
+      "minutesAgo": 30,
+      "tone": 7,
+      "tags": ["climate", "energy", "community"],
+      "values": { "responsibility": 8, "independence": 7, "success": 7, "knowledge": 7 },
+      "presenters": {
+        "Default": {
+          "title": "Villagers' wind farm pays its first dividend",
+          "tldr": "A community-owned wind farm in the fictional village of Tarnby has paid each member £140.",
+          "content": "The made-up Tarnby Wind Co-operative, owned by 600 villagers, has paid its first dividend of £140 a member after a windy year. Its three turbines now supply more power than the village uses. This is a made-up sample story."
+        },
+        "Jimmy": {
+          "title": "Tarnby finally profits from all that hot air",
+          "tldr": "Villagers paid for being windy. Finally.",
+          "content": "A village has made money from wind. Finally, the parish council meetings are paying off. Made-up sample story."
+        },
+        "Ricky": {
+          "title": "Village wind farm actually works",
+          "tldr": "They built it themselves and it pays out. Who knew.",
+          "content": "Six hundred villagers clubbed together, put up some turbines, and now they get paid. That's a good idea. Annoyingly good. Made-up sample story."
+        }
+      }
+    },
+    {
+      "slug": "humming-onion-study",
+      "source": "Made-Up Science Weekly",
+      "minutesAgo": 4320,
+      "tone": 6,
+      "tags": ["food", "research", "cooking"],
+      "values": { "knowledge": 7, "pleasure": 8, "creativity": 7 },
+      "presenters": {
+        "Default": {
+          "title": "Study: cooks who hum burn fewer onions",
+          "tldr": "Researchers at the fictional Pellham Institute say humming keeps cooks paying attention.",
+          "content": "A small study at the made-up Pellham Institute found that home cooks who hummed while frying burned 30% fewer onions. The authors think humming keeps people at the hob. This is a made-up sample story."
+        },
+        "Jimmy": {
+          "title": "Hum while you cook, say scientists with too much time",
+          "tldr": "Burn fewer onions. Lose all your friends.",
+          "content": "Science says humming while you cook burns fewer onions. It also burns bridges with everyone in the house. Made-up sample story."
+        },
+        "Ricky": {
+          "title": "Humming saves onions, apparently",
+          "tldr": "Someone was paid to study this.",
+          "content": "Someone got a grant to find out whether humming stops you burning onions. It does, apparently. I'll be humming the whole time now, out of spite. Made-up sample story."
+        }
+      }
+    },
+    {
+      "slug": "mild-weather-report",
+      "source": "Made-Up Local News",
+      "minutesAgo": 15,
+      "tone": 5,
+      "tags": ["weather", "local"],
+      "values": {},
+      "presenters": {
+        "Default": {
+          "title": "Weather: mild and unremarkable",
+          "tldr": "Cloudy, 14°C, light winds.",
+          "content": "Expect cloud, 14°C and light winds today. This is a made-up sample story."
+        },
+        "Jimmy": {
+          "title": "Weather: beige",
+          "tldr": "The weather equivalent of a shrug.",
+          "content": "Fourteen degrees and cloudy. The weather has phoned it in. Made-up sample story."
+        },
+        "Ricky": {
+          "title": "Weather: nothing to report",
+          "tldr": "It's fine. It's just fine.",
+          "content": "Cloudy. Mild. Bit of wind. Why is this news? Made-up sample story."
+        }
+      }
+    },
+    {
+      "slug": "fake-sourdough-verdict",
+      "source": "Made-Up Herald",
+      "minutesAgo": 360,
+      "tone": 4,
+      "tags": ["food", "courts", "business"],
+      "values": { "justice": 9, "honesty": 9 },
+      "presenters": {
+        "Default": {
+          "title": "Bakery chain found guilty of selling fake sourdough",
+          "tldr": "A jury found the made-up chain Crumbworth's sold yeasted loaves labelled as sourdough.",
+          "content": "A jury has found the fictional bakery chain Crumbworth's guilty of misleading customers by selling ordinary yeasted bread as sourdough in 140 shops. It will be sentenced next month. This is a made-up sample story."
+        },
+        "Jimmy": {
+          "title": "Bakery guilty of crimes against bread",
+          "tldr": "Fake sourdough. The only thing sour is the verdict.",
+          "content": "Crumbworth's has been found guilty of selling fake sourdough. Expect a long sentence. Around twelve hours, with a bit of rising. Made-up sample story."
+        },
+        "Ricky": {
+          "title": "Fake sourdough scandal ends in court",
+          "tldr": "They lied about bread. To middle-class people.",
+          "content": "They sold normal bread as sourdough. To the one group of people who'll definitely take you to court over it. Made-up sample story."
+        }
+      }
+    },
+    {
+      "slug": "four-day-school-week",
+      "source": "Made-Up Local News",
+      "minutesAgo": 1200,
+      "tone": 5,
+      "tags": ["education", "local"],
+      "values": { "open-mindedness": 7, "peace-of-mind": 7, "freedom": 7 },
+      "presenters": {
+        "Default": {
+          "title": "Coastal town trials a four-day school week",
+          "tldr": "Schools in the fictional town of Saltby will close on Fridays for a year.",
+          "content": "All four schools in the made-up town of Saltby will move to a four-day week from January for a one-year trial, with longer days Monday to Thursday. Parents are divided. This is a made-up sample story."
+        },
+        "Jimmy": {
+          "title": "Saltby children get Fridays off, parents get panic",
+          "tldr": "A four-day week. For the children, not the parents.",
+          "content": "Saltby schools are trying a four-day week. Children are thrilled. Parents have discovered what their children actually do all day: nothing, at home, loudly. Made-up sample story."
+        },
+        "Ricky": {
+          "title": "Four-day school week: parents not thrilled",
+          "tldr": "Kids love it. Parents less so.",
+          "content": "Every Friday off. The kids are delighted. The parents are ringing round for childcare. Made-up sample story."
+        }
+      }
+    },
+    {
+      "slug": "rookie-climber-unclimbed-peak",
+      "source": "Made-Up Sports Desk",
+      "minutesAgo": 240,
+      "tone": 8,
+      "tags": ["adventure", "mountaineering", "sport"],
+      "values": { "adventure": 10, "independence": 9, "ambition": 8, "self-actualization": 8, "freedom": 7 },
+      "presenters": {
+        "Default": {
+          "title": "Rookie climber makes first solo ascent of Mount Ardel",
+          "tldr": "A 23-year-old has climbed the made-up Mount Ardel alone, two years after taking up climbing.",
+          "content": "A 23-year-old who took up climbing two years ago has made the first solo ascent of the fictional Mount Ardel's north face, reaching the summit after nineteen hours. This is a made-up sample story."
+        },
+        "Jimmy": {
+          "title": "Climber conquers mountain, alone, on purpose",
+          "tldr": "Nineteen hours on a cliff. Voluntarily.",
+          "content": "A rookie has climbed Mount Ardel alone. Nineteen hours. On a cliff face. By choice. I can't do nineteen minutes on a cross trainer. Made-up sample story."
+        },
+        "Ricky": {
+          "title": "Two years in, already showing everyone up",
+          "tldr": "Took up climbing in 2024, climbs an unclimbed mountain. Show-off.",
+          "content": "Two years ago they'd never climbed anything. Now they've done a face nobody's ever done. Alone. Brilliant. Also, slightly annoying. Made-up sample story."
+        }
+      }
+    },
+    {
+      "slug": "engineers-build-prosthetic-hands",
+      "source": "Made-Up Herald",
+      "minutesAgo": 2880,
+      "tone": 9,
+      "tags": ["technology", "health", "volunteering"],
+      "values": { "compassion": 9, "creativity": 8, "knowledge": 7, "equality": 8 },
+      "presenters": {
+        "Default": {
+          "title": "Retired engineers build free prosthetic hands in a church hall",
+          "tldr": "A group of retired engineers in the made-up town of Calderbrook has fitted more than 300 children with 3D-printed hands.",
+          "content": "In a church hall in the fictional town of Calderbrook, a group of retired engineers has spent four years building prosthetic hands for children, and giving them away.\n\nThe group, which calls itself the Tuesday Workshop, began when one member's granddaughter was born without fingers on her left hand. Commercial prosthetics cost thousands and children outgrow them within a year, so he designed one he could print at home for the price of a sandwich.\n\nWord spread. The workshop now has eleven members, six 3D printers and a waiting list. It has fitted more than 300 children, each hand sized from photographs and finished in the colours the child chooses. The most requested design, by a distance, is one that glows in the dark.\n\nThe hands are simple: the wearer bends their wrist and the fingers close around an object. They cannot do everything a commercial prosthetic can. But the workshop says that matters less than you would think, because a hand a child can replace for free every six months is a hand they actually wear.\n\nThe group has published its designs so that others can copy them, and says it has heard from workshops in nine countries that have.\n\n\"We spent our careers making things nobody thanked us for,\" one member said. \"Pumps. Valves. Gearboxes. This is the first thing I've made that gets a drawing in return.\"\n\nThis story is a made-up sample for trying Truman. None of it happened."
+        },
+        "Jimmy": {
+          "title": "Pensioners print hands, give them away, make rest of us look bad",
+          "tldr": "Three hundred children helped. I once helped someone move a sofa.",
+          "content": "A group of retired engineers in Calderbrook has made more than 300 prosthetic hands for children, for free, in a church hall. On Tuesdays. Between the flower arranging and the Zumba.\n\nThe most popular design glows in the dark. Which is the best thing about it, and also the worst thing to discover at 3am.\n\nThey've put the designs online so anyone can make them. Retired engineers, being generous with their time. Usually they're being generous with their opinions about your boiler.\n\nMade-up sample story. Nothing here happened."
+        },
+        "Ricky": {
+          "title": "Old engineers, new hands, no charge",
+          "tldr": "This is the kind of thing that gets you a bit, honestly.",
+          "content": "Right. A bunch of retired engineers, the sort who'd normally spend their days telling you you've wired a plug wrong, are building hands for kids. For nothing.\n\nThree hundred of them. In a church hall. And the kids pick the colours, and loads of them want glow-in-the-dark, which is exactly what I'd have wanted.\n\nOne of them said he spent his whole career making pumps and nobody thanked him, and now he gets drawings. That got me, that did. Made-up sample story."
+        }
+      }
+    },
+    {
+      "slug": "satellite-launch-seagull-delay",
+      "source": "Made-Up Science Weekly",
+      "minutesAgo": 10,
+      "tone": 6,
+      "tags": ["space", "technology", "animals"],
+      "values": { "pleasure": 7 },
+      "presenters": {
+        "Default": {
+          "title": "Satellite launch delayed by a curious seagull",
+          "tldr": "A seagull perched on the made-up Kestrel-2 rocket held up its launch by forty minutes.",
+          "content": "The launch of the fictional Kestrel-2 weather satellite was held for forty minutes on Wednesday after a seagull settled on the rocket's nose and refused to leave. This is a made-up sample story."
+        },
+        "Jimmy": {
+          "title": "Seagull grounds rocket. Classic seagull.",
+          "tldr": "It's stolen chips. Now it wants a satellite.",
+          "content": "A seagull held up a rocket launch for forty minutes. Seagulls: they'll take your chips, and now they'll take your space programme. Made-up sample story."
+        },
+        "Ricky": {
+          "title": "Bird delays rocket, rocket people furious",
+          "tldr": "Billions of pounds of kit, beaten by a gull.",
+          "content": "Forty minutes. A rocket. Held up by one seagull who just would not move. You've got to admire it. Made-up sample story."
+        }
+      }
+    },
+    {
+      "slug": "army-band-asked-to-play-quieter",
+      "source": "Made-Up Local News",
+      "minutesAgo": 720,
+      "tone": 5,
+      "tags": ["military", "music", "local"],
+      "values": { "obedience": 8, "discipline": 8, "tradition": 7 },
+      "presenters": {
+        "Default": {
+          "title": "Army band asked to play more quietly at Remembrance parade",
+          "tldr": "Residents in the made-up village of Hollin asked the regimental band to lower the volume. It agreed.",
+          "content": "The fictional 3rd Hollin Regimental Band has agreed to play more softly at next month's parade after residents complained last year's performance set off car alarms. This is a made-up sample story."
+        },
+        "Jimmy": {
+          "title": "Army band told to keep it down",
+          "tldr": "They've followed orders. Quietly.",
+          "content": "An army band has been asked to play more quietly. Soldiers are trained to obey orders. Musicians are not. This should be interesting. Made-up sample story."
+        },
+        "Ricky": {
+          "title": "Band told to turn it down",
+          "tldr": "Car alarms went off. Fair enough.",
+          "content": "They were so loud last year they set off car alarms. That's a review, that is. Made-up sample story."
+        }
+      }
+    },
+    {
+      "slug": "hospital-waiting-list-falls",
+      "source": "Made-Up Herald",
+      "minutesAgo": 480,
+      "tone": 6,
+      "tags": ["health", "government"],
+      "values": { "security": 8, "responsibility": 7, "peace-of-mind": 8 },
+      "presenters": {
+        "Default": {
+          "title": "Hospital waiting list falls for a third month",
+          "tldr": "Waiting times in the made-up Northvale health region are down 12% since the summer.",
+          "content": "The waiting list for planned operations in the fictional Northvale health region has fallen for the third month in a row, down 12% since July.\n\nThe region's health board puts most of the fall down to two changes. Operating theatres now run on Saturdays, using staff who volunteered for extra shifts at a higher rate. And patients waiting for hip and knee replacements are now offered a date at whichever of the region's four hospitals can see them first, rather than the one nearest their home.\n\nAbout a third of patients offered a hospital further away have taken it. The board says those who did were treated, on average, eleven weeks sooner.\n\nClinicians welcomed the figures but warned that winter usually reverses the trend, as beds fill with emergency admissions. The board says it has kept twenty beds aside for planned operations this year to stop that happening.\n\nThe longest waits are still in dermatology and ear, nose and throat, where the list has barely moved. The board says those specialties are short of consultants rather than theatre time, and that Saturday sessions cannot fix that.\n\nThis story is a made-up sample for trying Truman. None of it happened."
+        },
+        "Jimmy": {
+          "title": "Waiting list shrinks; patients suspicious",
+          "tldr": "Good news from a hospital. Check it's not a typo.",
+          "content": "The waiting list in Northvale has fallen for the third month running. Partly by opening theatres on Saturdays, and partly by asking people if they'd mind driving forty minutes to have a new knee. Which is a big ask for someone who needs a new knee.\n\nThey're warning it might go back up in winter. Of course it will. Winter's when everyone falls over.\n\nMade-up sample story. Nothing here happened."
+        },
+        "Ricky": {
+          "title": "Some good news from the hospital, for once",
+          "tldr": "Shorter waits. Don't get used to it.",
+          "content": "The waiting list's come down for three months. Saturday operations, and letting people go to a different hospital. Simple. Sensible. Why didn't they do it before?\n\nDermatology's still terrible, mind. If you've got a weird mole, you're on your own. Made-up sample story."
+        }
+      }
+    },
+    {
+      "slug": "library-lends-telescopes",
+      "source": "Made-Up Local News",
+      "minutesAgo": 200,
+      "tone": 8,
+      "tags": ["space", "books", "community", "local"],
+      "values": { "knowledge": 8, "connection": 7, "equality": 7 },
+      "presenters": {
+        "Default": {
+          "title": "Library lends out telescopes, and the waiting list reaches spring",
+          "tldr": "The made-up Ashgrove Library's six loan telescopes are booked until April.",
+          "content": "Ashgrove Library, in the fictional town of the same name, began lending telescopes in September. All six are now booked until April, and the library is raising money for more. This is a made-up sample story."
+        },
+        "Jimmy": {
+          "title": "Library lends telescopes; town discovers sky",
+          "tldr": "Booked until April. Clouds booked until May.",
+          "content": "A library is lending out telescopes and they're booked until April. In Britain. Where you'll see the stars about twice before then. Made-up sample story."
+        },
+        "Ricky": {
+          "title": "You can borrow a telescope now",
+          "tldr": "Libraries: still brilliant.",
+          "content": "Libraries lending out telescopes. Free. That's the best thing I've heard all week. Good luck seeing anything through the clouds. Made-up sample story."
+        }
+      }
+    },
+    {
+      "slug": "start-up-product-never-existed",
+      "source": "Made-Up Herald",
+      "minutesAgo": 2900,
+      "tone": 3,
+      "tags": ["business", "technology", "fraud"],
+      "values": { "honesty": 8, "justice": 7 },
+      "presenters": {
+        "Default": {
+          "title": "Start-up founder admits the product never existed",
+          "tldr": "The made-up firm Quillon raised £40m for a device that was never built.",
+          "content": "The founder of the fictional start-up Quillon has admitted that its smart kettle, which raised £40m from investors, was never built. Demonstrations used an ordinary kettle with a tablet taped to it. This is a made-up sample story."
+        },
+        "Jimmy": {
+          "title": "£40m raised for kettle that wasn't",
+          "tldr": "Investors are now boiling. Unlike the kettle.",
+          "content": "Quillon raised £40 million for a smart kettle that didn't exist. The demo was a normal kettle with an iPad stuck on. Honestly, that's still smarter than most kettles. Made-up sample story."
+        },
+        "Ricky": {
+          "title": "Tech founder: 'There was no kettle'",
+          "tldr": "Forty million quid. Sellotape.",
+          "content": "Forty million pounds. For a kettle with a tablet taped to it. And the investors didn't check. Who's the real idiot here? Made-up sample story."
+        }
+      }
+    },
+    {
+      "slug": "grandmother-finishes-marathon",
+      "source": "Made-Up Sports Desk",
+      "minutesAgo": 50,
+      "tone": 10,
+      "tags": ["sport", "running", "health"],
+      "values": { "self-actualization": 9, "discipline": 9, "ambition": 8, "success": 8, "adventure": 7 },
+      "presenters": {
+        "Default": {
+          "title": "Grandmother, 81, finishes her first marathon",
+          "tldr": "A great-grandmother from the made-up town of Penmoor ran her first marathon in under six hours.",
+          "content": "An 81-year-old from the fictional town of Penmoor crossed the line of the Penmoor Marathon in five hours and forty-one minutes, having started running at 78. This is a made-up sample story."
+        },
+        "Jimmy": {
+          "title": "Gran, 81, runs marathon; grandson, 24, runs late",
+          "tldr": "Five hours forty-one. Faster than most buses.",
+          "content": "An 81-year-old has finished her first marathon. She started running at 78. At 78 I plan to start sitting down. Made-up sample story."
+        },
+        "Ricky": {
+          "title": "81 and running marathons. Brilliant.",
+          "tldr": "Started at 78. Finished at 81. Legend.",
+          "content": "She started running at 78 and just did a marathon. What have you done this week? Exactly. Made-up sample story."
+        }
+      }
+    },
+    {
+      "slug": "meditation-app-outage",
+      "source": "Made-Up Science Weekly",
+      "minutesAgo": 290,
+      "tone": 7,
+      "tags": ["technology", "wellbeing"],
+      "values": { "peace-of-mind": 9, "pleasure": 7, "open-mindedness": 7 },
+      "presenters": {
+        "Default": {
+          "title": "Meditation app outage leaves users strangely calm",
+          "tldr": "A six-hour outage of the made-up app Stillwater produced almost no complaints.",
+          "content": "The fictional meditation app Stillwater was down for six hours on Sunday. Its support team received eleven complaints from more than two million users, most of them polite. This is a made-up sample story."
+        },
+        "Jimmy": {
+          "title": "Meditation app crashes; nobody minds",
+          "tldr": "It worked even better switched off.",
+          "content": "A meditation app went down for six hours and nobody complained. Which means it works. Or everyone was asleep. Made-up sample story."
+        },
+        "Ricky": {
+          "title": "Calm app breaks, users stay calm",
+          "tldr": "Eleven complaints. All polite.",
+          "content": "The meditation app crashed and two million people just... sat there. Calmly. That's the product working, isn't it? Made-up sample story."
+        }
+      }
+    },
+    {
+      "slug": "shipwreck-cheese",
+      "source": "Made-Up Science Weekly",
+      "minutesAgo": 5760,
+      "tone": 7,
+      "tags": ["history", "archaeology", "food", "adventure"],
+      "values": { "knowledge": 9, "adventure": 8, "tradition": 7 },
+      "presenters": {
+        "Default": {
+          "title": "Divers find a 200-year-old cheese in a shipwreck, and decline to taste it",
+          "tldr": "Archaeologists recovered a sealed wheel of cheese from the made-up merchant ship Margery.",
+          "content": "Divers exploring the wreck of the fictional merchant ship Margery, which sank off the made-up Gannet Point in 1824, have recovered an intact wheel of cheese sealed in wax inside a lead-lined box.\n\nThe ship was carrying cheese, wine and wool to the continent when it struck rocks in a storm. Most of its cargo was lost or salvaged at the time, but the box was buried under a collapsed section of deck and only came to light when last winter's storms shifted the sand.\n\nThe team brought the box up in July and opened it last week in a laboratory at the fictional Gannet Maritime Museum. Inside was a wheel of hard cheese about the size of a dinner plate, its wax still unbroken.\n\nThe museum's food historian said the find could show how cheese was made and stored for long voyages, which is poorly recorded. Samples will be tested for the bacteria and moulds it contains, some of which may no longer exist in modern cheese.\n\nAsked whether anyone would try it, the dive team's leader was firm. \"No,\" she said. \"Absolutely not. We've had a lot of questions about that, and the answer is no.\"\n\nThe cheese will go on display next year in a sealed, refrigerated case.\n\nThis story is a made-up sample for trying Truman. None of it happened."
+        },
+        "Jimmy": {
+          "title": "Two-hundred-year-old cheese found; still not as old as the stuff in my fridge",
+          "tldr": "Divers recover cheese from 1824. Nobody's hungry.",
+          "content": "Divers have found a 200-year-old cheese in a shipwreck. Still sealed. Still a cheese. Still, presumably, very much a cheese.\n\nThey've refused to taste it. Which is the first sensible thing anyone's done near that ship since 1824.\n\nIt's going on display in a sealed case. Not for its protection. For ours.\n\nMade-up sample story. Nothing here happened."
+        },
+        "Ricky": {
+          "title": "Ancient cheese found. Nobody eating it.",
+          "tldr": "Two centuries under the sea. No thank you.",
+          "content": "They found a cheese from 1824. In a shipwreck. And the first question everyone asked was, 'Are you going to eat it?' That's us, that is. That's humanity.\n\nShe said no. Firmly. Good. It's going in a museum in a fridge, which is where I'd want it too. Made-up sample story."
+        }
+      }
+    },
+    {
+      "slug": "choir-records-in-lighthouse",
+      "source": "Made-Up Local News",
+      "minutesAgo": 1800,
+      "tone": 8,
+      "tags": ["music", "local", "community"],
+      "values": { "creativity": 9, "connection": 9, "pleasure": 8 },
+      "presenters": {
+        "Default": {
+          "title": "Local choir records its first album inside a lighthouse",
+          "tldr": "The made-up Skerry Point Singers used the lighthouse stairwell's echo for twelve songs.",
+          "content": "The fictional Skerry Point Singers recorded their first album inside the town's decommissioned lighthouse, singing on its spiral stairs to use the echo. It's out next month. This is a made-up sample story."
+        },
+        "Jimmy": {
+          "title": "Choir records album in lighthouse; ships confused",
+          "tldr": "Twelve songs. Eighty-four stairs. One very tired alto.",
+          "content": "A choir has recorded an album in a lighthouse. Lighthouses are designed to warn people away. So that's on brand for a choir. Made-up sample story."
+        },
+        "Ricky": {
+          "title": "Lighthouse choir album: actually lovely",
+          "tldr": "I wanted to be cynical. I can't.",
+          "content": "A local choir, a lighthouse, a spiral staircase. I wanted to make a joke but I listened to a bit and it's lovely. Annoying. Made-up sample story."
+        }
+      }
+    }
+  ]
+}

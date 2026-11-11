@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
-# Builds this checkout, brings it up on a free port against a throwaway database, seeds a few
-# articles, signs you in, opens it, and takes the whole stack away again when you quit. It's the
-# truman team's `try` in a-team.
+# Builds this checkout, brings it up on a free port against a throwaway database, fills it with
+# made-up sample stories (or, with --live, fetches and analyses real ones), signs you in, opens it,
+# and takes the whole stack away again when you quit. It's the truman team's `try` in a-team.
 #
 # AI__ApiKey, AI__Model and Jev__ApiKey have to come from somewhere: point TRUMAN_TRY_ENV at an
 # env file holding them. The JobRunner's host build demands all three even to run migrations.
@@ -13,12 +13,14 @@ cd "$(dirname "$0")/.."
 die() { echo "try: $*" >&2; exit 1; }
 
 SEED=${TRUMAN_TRY_SEED:-10}
+LIVE=false
 LOGIN=true
 for arg in "$@"; do
   case "$arg" in
+    --live) LIVE=true ;;
     --no-seed) SEED=0 ;;
     --no-login) LOGIN=false ;;
-    *) echo "usage: scripts/try.sh [--no-seed] [--no-login]" >&2; exit 2 ;;
+    *) echo "usage: scripts/try.sh [--live] [--no-seed] [--no-login]" >&2; exit 2 ;;
   esac
 done
 
@@ -90,9 +92,12 @@ echo "Building this checkout…"
 echo "Running migrations…"
 "${COMPOSE[@]}" run --rm jobrunner --run-migrations
 
-if [ "$SEED" -gt 0 ]; then
+if [ "$SEED" -gt 0 ] && $LIVE; then
   echo "Fetching and analysing up to $SEED articles (this spends real AI quota)…"
   "${COMPOSE[@]}" run --rm jobrunner --fetch --analyse --limit "$SEED"
+elif [ "$SEED" -gt 0 ]; then
+  echo "Adding sample stories (made up; no feeds or AI used)…"
+  "${COMPOSE[@]}" run --rm jobrunner --samples
 fi
 
 "${COMPOSE[@]}" up -d --wait app

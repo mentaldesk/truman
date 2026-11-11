@@ -11,6 +11,7 @@ using Truman.JobRunner.Jev;
 using Polly;
 using Truman.Data;
 using Truman.JobRunner;
+using Truman.JobRunner.Samples;
 using DotNetEnv;
 using DotNetEnv.Configuration;
 
@@ -74,6 +75,7 @@ try
             );
             services.AddSingleton<ArticleUpdater>();
             services.AddSingleton<DbMigrator>();
+            services.AddSingleton<SampleStoryLoader>();
 
             services
                 .AddHttpClient("RssClient")
@@ -123,6 +125,12 @@ try
     {
         var migrator = host.Services.GetRequiredService<DbMigrator>();
         await migrator.RunAsync();
+    }
+
+    if (arguments.Samples)
+    {
+        var loader = host.Services.GetRequiredService<SampleStoryLoader>();
+        await loader.LoadAsync(SampleSet.ReadBundled(), DateTimeOffset.UtcNow);
     }
 
     var stopping = host.Services.GetRequiredService<IHostApplicationLifetime>().ApplicationStopping;
