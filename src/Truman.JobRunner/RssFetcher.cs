@@ -3,6 +3,7 @@ using System.Xml;
 using CodeHollow.FeedReader;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Sentry;
 using Truman.Data;
 using Truman.Data.Entities;
 using FeedSource = Truman.Data.Entities.Feed;
@@ -25,6 +26,24 @@ public class RssFetcher(
     {
         logger.LogInformation("Starting RSS fetch job...");
 
+        var stage = SentrySdk.GetSpan()?.StartChild("job.fetch", "fetch");
+        try
+        {
+            var outcome = await FetchFeedsAsync(stage, cancellationToken);
+            stage?.SetData("fetch.feeds", outcome.EnabledFeeds);
+            stage?.SetData("fetch.failed_feeds", outcome.FailedFeeds);
+            stage?.Finish(SpanStatus.Ok);
+            return outcome;
+        }
+        catch (Exception ex)
+        {
+            stage?.Finish(ex);
+            throw;
+        }
+    }
+
+    private async Task<FetchOutcome> FetchFeedsAsync(ISpan? stage, CancellationToken cancellationToken)
+    {
         var client = httpClientFactory.CreateClient("RssClient");
 
         // Create a new context for this operation
@@ -46,9 +65,12 @@ public class RssFetcher(
 
         foreach (var feedSource in feeds)
         {
+            var span = stage?.StartChild("feed.fetch", feedSource.Name);
+            span?.SetData("feed.url", feedSource.Url);
             try
             {
-                var feed = await ReadFeedAsync(client, feedSource, cancellationToken);
+                var feed = await ReadFeedAsync(client, feedSource, span, cancellationToken);
+                var newBodyLengths = new List<int>();
 
                 foreach (var item in feed.Items)
                 {
@@ -90,12 +112,23 @@ public class RssFetcher(
 
                     logger.LogInformation("New article found from {Feed}: {Title} ({Link})", feedSource.Name, item.Title, link);
                     newArticleCount++;
+                    newBodyLengths.Add(rssItem.Description.Length);
                 }
+
+                span?.SetData("feed.items", feed.Items.Count);
+                span?.SetData("feed.new", newBodyLengths.Count);
+                if (Median(newBodyLengths) is { } median)
+                {
+                    span?.SetData("feed.body_median", median);
+                }
+                span?.Finish(SpanStatus.Ok);
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to fetch or parse feed {Feed} ({Url})", feedSource.Name, feedSource.Url);
                 failedFeedCount++;
+                span?.SetData("feed.failure", ex is XmlException ? "not XML" : ex.Message);
+                span?.Finish(ex, SpanStatus.InternalError);
             }
         }
 
@@ -110,12 +143,15 @@ public class RssFetcher(
     private async Task<ParsedFeed> ReadFeedAsync(
         HttpClient client,
         FeedSource feedSource,
+        ISpan? span,
         CancellationToken cancellationToken)
     {
         for (var attempt = 1; ; attempt++)
         {
+            span?.SetData("feed.attempts", attempt);
             var url = attempt == 1 ? feedSource.Url : WithCacheBuster(feedSource.Url);
             var body = await client.GetByteArrayAsync(url, cancellationToken);
+            span?.SetData("feed.response_bytes", body.Length);
 
             try
             {
@@ -133,6 +169,18 @@ public class RssFetcher(
                 }
             }
         }
+    }
+
+    internal static int? Median(List<int> values)
+    {
+        if (values.Count == 0)
+        {
+            return null;
+        }
+
+        values.Sort();
+        var middle = values.Count / 2;
+        return values.Count % 2 == 1 ? values[middle] : (values[middle - 1] + values[middle]) / 2;
     }
 
     internal static string WithCacheBuster(string url)
