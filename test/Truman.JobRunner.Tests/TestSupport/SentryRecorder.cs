@@ -12,6 +12,7 @@ public sealed record RecordedCheckIn(string MonitorSlug, string Status, string? 
 public sealed class SentryRecorder : ITransport, IDisposable
 {
     private readonly ConcurrentQueue<SentryTransaction> _transactions = new();
+    private readonly ConcurrentQueue<SentryEvent> _events = new();
     private readonly ConcurrentQueue<RecordedCheckIn> _checkIns = new();
     private readonly IDisposable _sdk;
 
@@ -23,6 +24,11 @@ public sealed class SentryRecorder : ITransport, IDisposable
             options.Transport = this;
             options.TracesSampleRate = 1.0;
             options.AutoSessionTracking = false;
+            options.SetBeforeSend(sentryEvent =>
+            {
+                _events.Enqueue(sentryEvent);
+                return null;
+            });
             options.SetBeforeSendTransaction(transaction =>
             {
                 _transactions.Enqueue(transaction);
@@ -35,6 +41,12 @@ public sealed class SentryRecorder : ITransport, IDisposable
     {
         await SentrySdk.FlushAsync(TimeSpan.FromSeconds(5));
         return _transactions.ToList();
+    }
+
+    public async Task<IReadOnlyList<SentryEvent>> EventsAsync()
+    {
+        await SentrySdk.FlushAsync(TimeSpan.FromSeconds(5));
+        return _events.ToList();
     }
 
     public async Task<IReadOnlyList<RecordedCheckIn>> CheckInsAsync()

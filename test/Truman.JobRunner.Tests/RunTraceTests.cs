@@ -249,6 +249,30 @@ public sealed class RunTraceTests(JobRunnerDatabaseFixture fixture) : ArticleAna
     }
 
     [Fact]
+    public async Task A_story_that_throws_reaches_sentry_as_one_event_described_on_the_issue_only()
+    {
+        const string link = "https://example.invalid/one";
+        await Db.SeedPendingAsync(link, Title, Body);
+        await Db.SeedPresenterAsync();
+        var failure = new HttpRequestException("model unreachable");
+        var chatClient = Substitute.For<IChatClient>();
+        chatClient.GetResponseAsync(Arg.Any<IEnumerable<ChatMessage>>(), Arg.Any<ChatOptions?>(), Arg.Any<CancellationToken>())
+            .Returns<Task<ChatResponse>>(_ => throw failure);
+
+        await Updater(chatClient).RunManualAsync(fetch: false, analyse: true, limit: null)
+            .ContinueWith(_ => { });
+
+        var issue = Assert.Single(await _sentry.EventsAsync());
+        Assert.Same(failure, issue.Exception);
+        Assert.Equal(link, issue.Tags["analysis.link"]);
+        Assert.Equal("analysis-loop", issue.Tags["analysis.stage"]);
+        Assert.Contains("analysis.reason", issue.Extra.Keys);
+
+        var story = Assert.Single(await StoryTransactionsAsync());
+        Assert.DoesNotContain("analysis.reason", story.Extra.Keys);
+    }
+
+    [Fact]
     public async Task No_story_text_reaches_a_span_tag_or_extra()
     {
         await SeedFeedAsync("Example");
