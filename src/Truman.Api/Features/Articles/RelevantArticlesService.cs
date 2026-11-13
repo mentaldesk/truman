@@ -31,12 +31,6 @@ public class RelevantArticlesService : IRelevantArticlesService
         _logger.LogInformation("Getting relevant articles for user {UserEmail} with {ValueCount} values and minimum sentiment {MinSentiment}", 
             userProfile.Email, selectedValues.Count, userProfile.Mood);
 
-        // Calculate user value weights using exponential decay
-        var userValueWeights = CalculateUserValueWeights(selectedValues);
-
-        // Calculate user tag weights using ranking system
-        var userTagWeights = CalculateUserTagWeights(userProfile);
-
         // Get today's date for filtering (using UTC to avoid timezone issues with PostgreSQL)
         var earliest = DateTime.UtcNow.Date.AddDays(-1);
 
@@ -72,40 +66,73 @@ public class RelevantArticlesService : IRelevantArticlesService
         _logger.LogInformation("Found {ArticleCount} articles from yesterday and today with minimum sentiment {MinSentiment}", 
             articles.Count, userProfile.Mood);
 
-        // Calculate relevance scores for each article
-        var articlesWithScores = articles.Select(article =>
-        {
-            var parts = CalculateRelevanceParts(article, userValueWeights, userTagWeights, userProfile.Mood);
-            return new
-            {
-                Article = article,
-                RelevanceScore = parts.Values + parts.Tags + parts.Tone,
-                Why = Explain(article, parts, selectedValues, userTagWeights, userProfile.Mood)
-            };
-        })
-        .OrderByDescending(x => x.RelevanceScore);
+        var savedIds = await SavedArticleIdsAsync(userProfile, articles.Select(a => a.Id));
 
-        // Find a presenter whose name starts with the requested presenter
-        var relevantArticles = articlesWithScores.Select(x => new RelevantArticle
-        {
-            Id = x.Article.Id,
-            Link = x.Article.Link,
-            Title = GetPresenterTitle(x.Article.ArticlePresenters, request.Presenter),
-            Tldr = GetPresenterTldr(x.Article.ArticlePresenters, request.Presenter),
-            Content = GetPresenterContent(x.Article.ArticlePresenters, request.Presenter),
-            Sentiment = x.Article.Sentiment,
-            Tags = x.Article.Tags,
-            RelevanceScore = x.RelevanceScore,
-            Why = x.Why,
-            CreatedAt = x.Article.CreatedAt,
-            Publisher = x.Article.RssItem.Feed?.Name,
-            PublishedAt = x.Article.RssItem.PubDate
-        }).ToList();
+        var relevantArticles = Score(articles, request, userProfile, savedIds)
+            .OrderByDescending(a => a.RelevanceScore)
+            .ToList();
 
         return new RelevantArticlesResponse
         {
             Articles = relevantArticles
         };
+    }
+
+    public async Task<RelevantArticlesResponse> GetSavedArticlesAsync(RelevantArticlesRequest request, UserProfile userProfile)
+    {
+        var saved = await _dbContext.SavedStories
+            .Where(s => s.UserProfileId == userProfile.Id)
+            .Include(s => s.Article.ArticlePresenters)
+                .ThenInclude(ap => ap.Presenter)
+            .Include(s => s.Article.RssItem)
+                .ThenInclude(r => r.Feed)
+            .OrderByDescending(s => s.SavedAt)
+            .ThenByDescending(s => s.Id)
+            .ToListAsync();
+        var articles = saved.Select(s => s.Article).ToList();
+
+        return new RelevantArticlesResponse
+        {
+            Articles = Score(articles, request, userProfile, articles.Select(a => a.Id).ToHashSet()).ToList()
+        };
+    }
+
+    private async Task<HashSet<int>> SavedArticleIdsAsync(UserProfile userProfile, IEnumerable<int> articleIds)
+    {
+        var ids = articleIds.ToList();
+        var saved = await _dbContext.SavedStories
+            .Where(s => s.UserProfileId == userProfile.Id && ids.Contains(s.ArticleId))
+            .Select(s => s.ArticleId)
+            .ToListAsync();
+        return saved.ToHashSet();
+    }
+
+    private IEnumerable<RelevantArticle> Score(IEnumerable<Article> articles, RelevantArticlesRequest request, UserProfile userProfile, HashSet<int> savedIds)
+    {
+        var selectedValues = ParseSelectedValues(userProfile.SelectedValues);
+        var userValueWeights = CalculateUserValueWeights(selectedValues);
+        var userTagWeights = CalculateUserTagWeights(userProfile);
+
+        return articles.Select(article =>
+        {
+            var parts = CalculateRelevanceParts(article, userValueWeights, userTagWeights, userProfile.Mood);
+            return new RelevantArticle
+            {
+                Id = article.Id,
+                Link = article.Link,
+                Title = GetPresenterTitle(article.ArticlePresenters, request.Presenter),
+                Tldr = GetPresenterTldr(article.ArticlePresenters, request.Presenter),
+                Content = GetPresenterContent(article.ArticlePresenters, request.Presenter),
+                Sentiment = article.Sentiment,
+                Tags = article.Tags,
+                RelevanceScore = parts.Values + parts.Tags + parts.Tone,
+                Why = Explain(article, parts, selectedValues, userTagWeights, userProfile.Mood),
+                CreatedAt = article.CreatedAt,
+                Publisher = article.RssItem.Feed?.Name,
+                PublishedAt = article.RssItem.PubDate,
+                IsSaved = savedIds.Contains(article.Id)
+            };
+        });
     }
 
     private List<string> ParseSelectedValues(string selectedValuesJson)

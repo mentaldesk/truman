@@ -1,9 +1,8 @@
 <script lang="ts">
     import Header from '#lib/components/Header.svelte';
     import ArticleDetailsPopup from '#lib/components/ArticleDetailsPopup.svelte';
-    import StoryByline from '#lib/components/StoryByline.svelte';
-    import MatchBadges from '#lib/components/MatchBadges.svelte';
-    import type { RelevanceBreakdown } from '#lib/relevance.js';
+    import StoryCard from '#lib/components/StoryCard.svelte';
+    import type { Story } from '#lib/story.js';
     import { mood } from '#lib/stores/mood.js';
     import { onMount, onDestroy } from 'svelte';
     import { apiFetch, SessionExpiredError } from '#lib/api.js';
@@ -13,22 +12,7 @@
     import { tagPreferences } from '#lib/stores/tagPreferences.js';
     import { refreshed } from '#lib/refreshed.js';
 
-    type RelevantArticle = {
-        id: number;
-        link: string;
-        title: string;
-        tldr: string;
-        content: string;
-        sentiment: number;
-        tags: string[];
-        relevanceScore: number;
-        createdAt: string;
-        publisher: string | null;
-        publishedAt: string | null;
-        why: RelevanceBreakdown;
-    };
-
-    let articles: RelevantArticle[] = [];
+    let articles: Story[] = [];
     let loading = true;
     let error: string | null = null;
     let moodUnsubscribe: () => void;
@@ -40,7 +24,7 @@
     let valuesUnsub: () => void;
     
     // Popup state
-    let selectedArticle: RelevantArticle | null = null;
+    let selectedArticle: Story | null = null;
     let isPopupOpen = false;
 
     function handleSourcesClick() {
@@ -53,7 +37,7 @@
         // TODO: Implement rules dialog
     }
     
-    function openArticleDetails(article: RelevantArticle) {
+    function openArticleDetails(article: Story) {
         selectedArticle = article;
         isPopupOpen = true;
     }
@@ -61,6 +45,12 @@
     function closePopup() {
         isPopupOpen = false;
         selectedArticle = null;
+    }
+
+    function handleSavedChange(event: CustomEvent<{ id: number; isSaved: boolean }>) {
+        const { id, isSaved } = event.detail;
+        articles = articles.map((a) => (a.id === id ? { ...a, isSaved } : a));
+        if (selectedArticle?.id === id) selectedArticle = { ...selectedArticle, isSaved };
     }
 
     async function fetchArticles() {
@@ -146,22 +136,7 @@
         {:else}
             <div class="space-y-6">
                 {#each articles as article (article.id)}
-                    <div class="flex bg-white rounded-lg shadow p-4 gap-4 items-start hover:shadow-md transition-shadow cursor-pointer" on:click={() => openArticleDetails(article)}>
-                        <div class="hidden sm:flex w-28 h-28 bg-gray-200 rounded flex-shrink-0 items-center justify-center">
-                            <span class="text-gray-400 text-3xl">📰</span>
-                        </div>
-                        <div class="flex-1">
-                            <div class="text-xl font-semibold text-blue-700 hover:underline flex items-center gap-2">
-                                {article.title}
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 3h7m0 0v7m0-7L10 14m-7 7h7a2 2 0 002-2v-7" /></svg>
-                            </div>
-                            <p class="text-gray-500 mt-1">{article.tldr}</p>
-                            <div class="mt-2">
-                                <StoryByline publisher={article.publisher} publishedAt={article.publishedAt} />
-                            </div>
-                            <MatchBadges matchedTags={article.why.matchedTags} matchedValues={article.why.matchedValues} />
-                        </div>
-                    </div>
+                    <StoryCard story={article} on:click={() => openArticleDetails(article)} />
                 {/each}
             </div>
         {/if}
@@ -172,5 +147,6 @@
 <ArticleDetailsPopup 
     article={selectedArticle} 
     isOpen={isPopupOpen} 
-    on:close={closePopup} 
+    on:close={closePopup}
+    on:savedChange={handleSavedChange}
 />

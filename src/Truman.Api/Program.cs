@@ -73,6 +73,7 @@ builder.Services.AddSingleton<brevo_csharp.Api.ITransactionalEmailsApi>(sp => {
 });
 builder.Services.AddSingleton<IEmailService, EmailService>();
 builder.Services.AddScoped<IRelevantArticlesService, RelevantArticlesService>();
+builder.Services.AddScoped<ISavedStoriesService, SavedStoriesService>();
 builder.Services.AddScoped<ITagPreferenceService, TagPreferenceService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddOpenApi();

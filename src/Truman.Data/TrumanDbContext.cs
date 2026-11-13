@@ -19,6 +19,7 @@ public class TrumanDbContext : DbContext
     public DbSet<ArticlePresenter> ArticlePresenters { get; set; } = null!;
     public DbSet<UserTagPreference> UserTagPreferences { get; set; } = null!;
     public DbSet<Feed> Feeds { get; set; } = null!;
+    public DbSet<SavedStory> SavedStories { get; set; } = null!;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -123,6 +124,21 @@ public class TrumanDbContext : DbContext
             entity.Property(e => e.Url).IsRequired();
             entity.Property(e => e.Name).IsRequired();
             entity.Property(e => e.IsEnabled).IsRequired();
+        });
+
+        modelBuilder.Entity<SavedStory>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.UserProfileId, e.ArticleId }).IsUnique();
+            entity.Property(e => e.SavedAt).IsRequired();
+            entity.HasOne(e => e.UserProfile)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserProfileId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Article)
+                  .WithMany()
+                  .HasForeignKey(e => e.ArticleId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
     }
 } 
