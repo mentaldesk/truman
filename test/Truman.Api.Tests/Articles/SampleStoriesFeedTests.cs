@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Truman.Api.Features.Articles;
 using Truman.Data;
 using Truman.Data.Entities;
-using Truman.JobRunner.Samples;
+using Truman.Samples;
 
 namespace Truman.Api.Tests.Articles;
 
@@ -84,6 +84,22 @@ public class SampleStoriesFeedTests(DatabaseFixture fixture) : IAsyncLifetime
             r.TagPreferences.Add(new UserTagPreference { Tag = "local", Weight = 0 }));
 
         Assert.True(before.Articles.Count - after.Articles.Count >= 3);
+    }
+
+    [Fact]
+    public async Task Following_a_tag_moves_its_stories_up()
+    {
+        var followed = Samples.Reader.FollowedTags[0];
+        var feed = await FeedAsync();
+        var unfollowed = await FeedAsync(change: r =>
+            r.TagPreferences.Remove(r.TagPreferences.Single(p => p.Tag == followed)));
+
+        var stories = feed.Articles.Where(a => a.Tags.Contains(followed)).Select(a => a.Id).ToList();
+        int Rank(RelevantArticlesResponse f, int id) => f.Articles.FindIndex(a => a.Id == id);
+
+        Assert.NotEmpty(stories);
+        Assert.All(stories, id => Assert.True(Rank(feed, id) <= Rank(unfollowed, id)));
+        Assert.Contains(stories, id => Rank(feed, id) < Rank(unfollowed, id));
     }
 
     [Fact]

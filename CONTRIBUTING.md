@@ -35,7 +35,7 @@ building its host, so even `--run-migrations` needs them. Everything else is gen
 database credentials, the JWT key, and an empty `Sentry__Dsn` and `Email__Brevo__ApiKey`, so a try
 reports nothing and emails nobody.
 
-The sample stories are in `src/Truman.JobRunner/Samples/SampleStories.json`. No feeds or AI are
+The sample stories are in `src/Truman.Samples/SampleStories.json`. No feeds or AI are
 used, so a try is up in seconds and shows the same stories every time: every tone from 1 to 10,
 stories matching several of the reader's values, one or none, and every presenter. The try reader
 starts with a profile, so the feed, badges and Why it's here box show on first load.

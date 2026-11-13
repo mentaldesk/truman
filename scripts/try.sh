@@ -89,16 +89,16 @@ echo "Building this checkout…"
 "${COMPOSE[@]}" build
 "${COMPOSE[@]}" up -d --wait postgres
 
+JOB=(--run-migrations)
 echo "Running migrations…"
-"${COMPOSE[@]}" run --rm jobrunner --run-migrations
-
 if [ "$SEED" -gt 0 ] && $LIVE; then
   echo "Fetching and analysing up to $SEED articles (this spends real AI quota)…"
-  "${COMPOSE[@]}" run --rm jobrunner --fetch --analyse --limit "$SEED"
+  JOB+=(--fetch --analyse --limit "$SEED")
 elif [ "$SEED" -gt 0 ]; then
   echo "Adding sample stories (made up; no feeds or AI used)…"
-  "${COMPOSE[@]}" run --rm jobrunner --samples
+  JOB+=(--samples)
 fi
+"${COMPOSE[@]}" run --rm jobrunner "${JOB[@]}"
 
 "${COMPOSE[@]}" up -d --wait app
 

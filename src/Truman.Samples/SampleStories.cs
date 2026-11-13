@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using Truman.Data;
 using Truman.Data.Entities;
 
-namespace Truman.JobRunner.Samples;
+namespace Truman.Samples;
 
 public sealed record SampleSet(SampleReader Reader, SampleSource[] Sources, SampleStory[] Stories)
 {
@@ -16,7 +16,7 @@ public sealed record SampleSet(SampleReader Reader, SampleSource[] Sources, Samp
                ?? throw new InvalidOperationException($"No sample stories in {path}.");
     }
 
-    public static SampleSet ReadBundled() => Read(Path.Combine(AppContext.BaseDirectory, "Samples", "SampleStories.json"));
+    public static SampleSet ReadBundled() => Read(Path.Combine(AppContext.BaseDirectory, "SampleStories.json"));
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {

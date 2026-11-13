@@ -11,7 +11,7 @@ using Truman.JobRunner.Jev;
 using Polly;
 using Truman.Data;
 using Truman.JobRunner;
-using Truman.JobRunner.Samples;
+using Truman.Samples;
 using DotNetEnv;
 using DotNetEnv.Configuration;
 

@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
-using Truman.JobRunner.Samples;
+using Truman.Samples;
 using Truman.JobRunner.Tests.TestSupport;
 
 namespace Truman.JobRunner.Tests;
