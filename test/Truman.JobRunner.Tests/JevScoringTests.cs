@@ -87,20 +87,64 @@ public class JevScoringTests
     }
 
     [Fact]
-    public async Task Records_the_call_as_a_gen_ai_span()
+    public async Task Records_the_call_as_a_gen_ai_decide_span()
     {
         var (parent, span) = Spans();
 
         await JevStub.Scorer().ScoreAsync(Article, parent, CancellationToken.None);
 
-        parent.Received(1).StartChild("gen_ai.chat");
-        Assert.Equal($"chat {JevClient.Model}", span.Description);
-        span.Received().SetData("gen_ai.operation.name", "chat");
+        parent.Received(1).StartChild("gen_ai.decide");
+        Assert.Equal($"decide {JevClient.Model}", span.Description);
+        span.Received().SetData("gen_ai.operation.name", "decide");
+        span.Received().SetData("gen_ai.provider.name", "typesafe");
         span.Received().SetData("gen_ai.request.model", JevClient.Model);
         span.Received().SetData("gen_ai.response.model", JevClient.Model);
         span.Received().SetData("jev.questions", QuestionCount);
         span.Received().SetData("jev.answers.missing", 0);
         span.Received(1).Finish(SpanStatus.Ok);
+    }
+
+    [Fact]
+    public async Task Records_every_question_with_its_definition_and_the_story_only_as_its_length()
+    {
+        var (parent, span) = Spans();
+
+        await JevStub.Scorer().ScoreAsync(Article, parent, CancellationToken.None);
+
+        var messages = JsonNode.Parse(Data(span, "gen_ai.input.messages"))!.AsArray();
+        var evaluation = Assert.Single(messages)!.AsObject();
+        Assert.Equal("evaluation", evaluation["type"]!.GetValue<string>());
+        Assert.False(evaluation.ContainsKey("state"));
+        var questions = evaluation["questions"]!.AsObject();
+        Assert.Equal(QuestionCount, questions.Count);
+        Assert.Contains(AValue, questions[AValue]!["instructions"]!.GetValue<string>());
+        Assert.Equal("score", questions[JevArticleScorer.SentimentKey]!["type"]!.GetValue<string>());
+        Assert.Equal(5, questions[JevArticleScorer.SentimentKey]!["criteria"]!.AsArray().Count);
+        Assert.DoesNotContain("A headline", Data(span, "gen_ai.input.messages"));
+        span.Received().SetData("jev.state.length", Article.Length);
+    }
+
+    [Fact]
+    public async Task Records_the_answers_jev_gave()
+    {
+        var (parent, span) = Spans();
+        var scorer = JevStub.Scorer(q =>
+        {
+            var answers = JevStub.Answers(q, noul: 0.84, score: 3.0);
+            answers.Remove(AValue);
+            return JevStub.Payload(answers);
+        });
+
+        await scorer.ScoreAsync(Article, parent, CancellationToken.None);
+
+        var messages = JsonNode.Parse(Data(span, "gen_ai.output.messages"))!.AsArray();
+        var evaluation = Assert.Single(messages)!.AsObject();
+        Assert.Equal("evaluation", evaluation["type"]!.GetValue<string>());
+        var answers = evaluation["answers"]!.AsObject();
+        Assert.Equal(QuestionCount - 1, answers.Count);
+        Assert.False(answers.ContainsKey(AValue));
+        Assert.Equal(0.84, answers["justice"]!["noul"]!.GetValue<double>());
+        Assert.Equal(3.0, answers[JevArticleScorer.SentimentKey]!["score"]!.GetValue<double>());
     }
 
     [Fact]
@@ -149,7 +193,12 @@ public class JevScoringTests
 
         span.Received(1).Finish(Arg.Any<HttpRequestException>());
         span.DidNotReceive().Finish(SpanStatus.Ok);
+        span.DidNotReceive().SetData("gen_ai.output.messages", Arg.Any<object>());
     }
+
+    private static string Data(ISpan span, string key) =>
+        Assert.Single(span.ReceivedCalls(), c => c.GetMethodInfo().Name == nameof(ISpan.SetData) && (string)c.GetArguments()[0]! == key)
+            .GetArguments()[1]!.ToString()!;
 
     private static (ISpan Parent, ISpan Child) Spans()
     {
