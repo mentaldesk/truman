@@ -5,4 +5,5 @@ namespace Truman.Api.Features.Articles;
 public interface IRelevantArticlesService
 {
     Task<RelevantArticlesResponse> GetRelevantArticlesAsync(RelevantArticlesRequest request, UserProfile userProfile);
+    Task<RelevantArticlesResponse> GetSavedArticlesAsync(RelevantArticlesRequest request, UserProfile userProfile);
 } 

@@ -286,6 +286,33 @@ namespace Truman.Data.Migrations
                     b.ToTable("RssItems");
                 });
 
+            modelBuilder.Entity("Truman.Data.Entities.SavedStory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ArticleId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("SavedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UserProfileId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ArticleId");
+
+                    b.HasIndex("UserProfileId", "ArticleId")
+                        .IsUnique();
+
+                    b.ToTable("SavedStories");
+                });
+
             modelBuilder.Entity("Truman.Data.Entities.UserProfile", b =>
                 {
                     b.Property<int>("Id")
@@ -375,6 +402,25 @@ namespace Truman.Data.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Feed");
+                });
+
+            modelBuilder.Entity("Truman.Data.Entities.SavedStory", b =>
+                {
+                    b.HasOne("Truman.Data.Entities.Article", "Article")
+                        .WithMany()
+                        .HasForeignKey("ArticleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Truman.Data.Entities.UserProfile", "UserProfile")
+                        .WithMany()
+                        .HasForeignKey("UserProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Article");
+
+                    b.Navigation("UserProfile");
                 });
 
             modelBuilder.Entity("Truman.Data.Entities.UserTagPreference", b =>

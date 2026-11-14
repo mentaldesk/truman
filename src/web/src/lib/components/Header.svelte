@@ -38,6 +38,11 @@
         goto('/tags');
     }
 
+    function handleSavedClick() {
+        menuOpen = false;
+        goto('/saved');
+    }
+
     function handleAdminFeedsClick() {
         menuOpen = false;
         goto('/admin/feeds');
@@ -116,6 +121,11 @@
               </button>
               <button on:click={handleTagsClick} class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
                 <img src="/icons/tags.svg" alt="" class="w-5 h-5 mr-2 inline-block" />Tags
+              </button>
+              <button on:click={handleSavedClick} class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+                <svg class="w-5 h-5 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>Saved
               </button>
               {#if $auth.user?.isAdmin}
                 <button on:click={handleAdminFeedsClick} class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
@@ -212,6 +222,11 @@
         </button>
         <button on:click={handleTagsClick} class="w-full text-left px-2 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md flex items-center">
           <img src="/icons/tags.svg" alt="" class="w-5 h-5 mr-3" />Tags
+        </button>
+        <button on:click={handleSavedClick} class="w-full text-left px-2 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md flex items-center">
+          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+          </svg>Saved
         </button>
         {#if $auth.user?.isAdmin}
           <button on:click={handleAdminFeedsClick} class="w-full text-left px-2 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md flex items-center">
