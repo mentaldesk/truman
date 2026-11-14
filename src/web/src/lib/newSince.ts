@@ -25,7 +25,7 @@ export function formatVisitTime(since: string, now: Date = new Date()): string {
 		return `${clock12(at)} this evening`;
 	}
 	if (day === yesterday) {
-		return hour >= 18 ? `${clock12(at)} last night` : `yesterday at ${clock24(at)}`;
+		return hour >= 21 ? `${clock12(at)} last night` : `yesterday at ${clock24(at)}`;
 	}
 	return at.toLocaleDateString('en-GB', {
 		day: 'numeric',

@@ -14,13 +14,13 @@ describe('formatVisitTime', () => {
 		expect(formatVisitTime(at(10, 19, 30), new Date(2026, 10, 10, 22, 0))).toBe('7:30 this evening');
 	});
 
-	it('says last night for yesterday evening and the small hours', () => {
+	it('says last night for late yesterday and the small hours', () => {
 		expect(formatVisitTime(at(9, 21, 15), now)).toBe('9:15 last night');
 		expect(formatVisitTime(at(10, 0, 30), now)).toBe('12:30 last night');
 	});
 
 	it('says yesterday at a 24-hour time for earlier yesterday', () => {
-		expect(formatVisitTime(at(9, 17, 2), now)).toBe('yesterday at 17:02');
+		expect(formatVisitTime(at(9, 18, 2), now)).toBe('yesterday at 18:02');
 		expect(formatVisitTime(at(9, 9, 5), now)).toBe('yesterday at 09:05');
 	});
 
