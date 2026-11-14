@@ -118,6 +118,25 @@ public class ArticleAnalyser
 
     public async Task<AnalysisOutcome> RunAsync(int? limit = null, CancellationToken cancellationToken = default)
     {
+        var stage = SentrySdk.GetSpan()?.StartChild("job.analyse", "analyse");
+        try
+        {
+            var outcome = await AnalysePendingAsync(limit, stage, cancellationToken);
+            stage?.SetData("analysis.attempted", outcome.Attempted);
+            stage?.SetData("analysis.succeeded", outcome.Succeeded);
+            stage?.SetData("analysis.failed", outcome.Failed);
+            stage?.Finish(SpanStatus.Ok);
+            return outcome;
+        }
+        catch (Exception ex)
+        {
+            stage?.Finish(ex);
+            throw;
+        }
+    }
+
+    private async Task<AnalysisOutcome> AnalysePendingAsync(int? limit, ISpan? stage, CancellationToken cancellationToken)
+    {
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var pending = await db.RssItems
             .Where(x => x.TimeAnalysed == null)
@@ -132,7 +151,7 @@ public class ArticleAnalyser
             _logger.LogInformation("Limiting analysis to {Limit} articles", limit.Value);
             pending = pending.Take(limit.Value).ToList();
         }
-        return await AnalyzePendingArticles(pending, db, cancellationToken);
+        return await AnalyzePendingArticles(pending, db, stage, cancellationToken);
     }
 
     private sealed class ArticleAnalysisData
@@ -288,7 +307,7 @@ public class ArticleAnalyser
         return string.Join("\n", parts);
     }
 
-    private async Task<AnalysisOutcome> AnalyzePendingArticles(List<RssItem> pending, TrumanDbContext db, CancellationToken cancellationToken)
+    private async Task<AnalysisOutcome> AnalyzePendingArticles(List<RssItem> pending, TrumanDbContext db, ISpan? stage, CancellationToken cancellationToken)
     {
 
         var presenters = await db.Presenters.OrderBy(p => p.Id).ToListAsync(cancellationToken);
@@ -306,9 +325,11 @@ public class ArticleAnalyser
 
             // Without an ambient transaction, each LLM call below would become its own.
             using var sentryScope = SentrySdk.PushScope();
-            var transaction = SentrySdk.StartTransaction("analyse-article", "gen_ai.pipeline");
+            var transaction = SentrySdk.StartTransaction(
+                SentrySdk.ContinueTrace(stage?.GetTraceHeader(), null, "analyse-article", "gen_ai.pipeline"));
             SentrySdk.ConfigureScope(configured => configured.Transaction = transaction);
             transaction.SetTag("analysis.link", rssItem.Link);
+            var saved = false;
 
             try
             {
@@ -362,27 +383,31 @@ public class ArticleAnalyser
                 }
 
                 _logger.LogInformation("Successfully deserialized and aggregated ArticleData for {Link}", rssItem.Link);
-                if (await SaveAnalysisResults(rssItem, articleData, presenterContents, db, cancellationToken))
+                if (await SaveAnalysisResults(rssItem, articleData, presenterContents, db, transaction, cancellationToken))
                 {
                     succeeded++;
+                    saved = true;
                 }
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 // Shutting down is not the article's fault; leave it pending rather than writing it off.
                 _logger.LogInformation("Analysis cancelled before {Link} completed", rssItem.Link);
+                transaction.Finish(SpanStatus.Cancelled);
                 throw;
             }
             catch (Exception ex)
             {
-                transaction.Finish(ex);
-                SentrySdk.CaptureException(ex);
                 _logger.LogWarning(ex, "Skipping article {Link} due to unhandled exception", rssItem.Link);
                 await RecordFailure(rssItem, $"Unhandled exception: {ex.Message}", db, stage: "analysis-loop", exception: ex);
+                transaction.Finish(ex, SpanStatus.InternalError);
             }
             finally
             {
-                transaction.Finish(); // Idempotent; the catch above may already have.
+                if (!transaction.IsFinished)
+                {
+                    transaction.Finish(saved ? SpanStatus.Ok : SpanStatus.InternalError);
+                }
             }
         }
         var outcome = new AnalysisOutcome(attempted, succeeded, attempted - succeeded);
@@ -392,8 +417,9 @@ public class ArticleAnalyser
         return outcome;
     }
 
-    private async Task<bool> SaveAnalysisResults(RssItem rssItem, ArticleData articleData, Dictionary<int, PresenterContentData> presenterContents, TrumanDbContext db, CancellationToken cancellationToken)
+    private async Task<bool> SaveAnalysisResults(RssItem rssItem, ArticleData articleData, Dictionary<int, PresenterContentData> presenterContents, TrumanDbContext db, ISpan storySpan, CancellationToken cancellationToken)
     {
+        var span = storySpan.StartChild("db", "save-article");
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
         try
         {
@@ -454,16 +480,19 @@ public class ArticleAnalyser
             await db.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             
+            span.Finish(SpanStatus.Ok);
             _logger.LogInformation("Successfully saved analysis for {Link}", rssItem.Link);
             return true;
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException ex) when (cancellationToken.IsCancellationRequested)
         {
+            span.Finish(ex, SpanStatus.Cancelled);
             await transaction.RollbackAsync(CancellationToken.None);
             throw;
         }
         catch (Exception ex)
         {
+            span.Finish(ex, SpanStatus.InternalError);
             await transaction.RollbackAsync(CancellationToken.None);
             await RecordFailure(rssItem, $"Database save failed: {ex.Message}", db, stage: "save-results", exception: ex);
             return false;
@@ -474,7 +503,14 @@ public class ArticleAnalyser
     {
         _logger.LogError("Article analysis failed for {Link}: {Reason}", rssItem.Link, reason);
 
-        SentrySdk.ConfigureScope(scope =>
+        // The first stage to fail is the cause; a presenter failure also fails validation after it.
+        if (SentrySdk.GetTransaction() is { } transaction && !transaction.Tags.ContainsKey("analysis.stage"))
+        {
+            transaction.SetTag("analysis.stage", stage ?? "unknown");
+        }
+
+        // On the issue only: the response is story text, which stays out of the story's transaction.
+        void Describe(Scope scope)
         {
             scope.SetTag("analysis.link", rssItem.Link);
             scope.SetTag("analysis.stage", stage ?? "unknown");
@@ -483,15 +519,15 @@ public class ArticleAnalyser
             {
                 scope.SetExtra("analysis.response_content", responseContent);
             }
-        });
+        }
 
         if (exception is not null)
         {
-            SentrySdk.CaptureException(exception);
+            SentrySdk.CaptureException(exception, Describe);
         }
         else
         {
-            SentrySdk.CaptureMessage($"Article analysis failed at {stage ?? "unknown"}: {reason}", SentryLevel.Error);
+            SentrySdk.CaptureMessage($"Article analysis failed at {stage ?? "unknown"}: {reason}", Describe, SentryLevel.Error);
         }
         
         // Mark the RssItem as analysed to prevent infinite retry loops

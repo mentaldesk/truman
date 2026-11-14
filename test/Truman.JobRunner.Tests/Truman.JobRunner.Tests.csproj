@@ -37,6 +37,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Truman.JobRunner\Truman.JobRunner.csproj" />
     <ProjectReference Include="..\..\src\Truman.Data\Truman.Data.csproj" />
+    <ProjectReference Include="..\..\src\Truman.Samples\Truman.Samples.csproj" />
   </ItemGroup>
 
 </Project>

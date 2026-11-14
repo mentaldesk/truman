@@ -11,6 +11,7 @@ using Truman.JobRunner.Jev;
 using Polly;
 using Truman.Data;
 using Truman.JobRunner;
+using Truman.Samples;
 using DotNetEnv;
 using DotNetEnv.Configuration;
 
@@ -74,6 +75,7 @@ try
             );
             services.AddSingleton<ArticleUpdater>();
             services.AddSingleton<DbMigrator>();
+            services.AddSingleton<SampleStoryLoader>();
 
             services
                 .AddHttpClient("RssClient")
@@ -97,7 +99,7 @@ try
             services.AddSingleton<IChatClient>(sp => sp
                 .GetRequiredService<AnthropicClient>()
                 .AsIChatClient(defaultModelId: model)
-                .AddSentry(o => o.Experimental.AgentName = "truman-analyser"));
+                .WithSentry());
 
             var jevApiKey = context.Configuration["Jev:ApiKey"]
                             ?? throw new InvalidOperationException("Jev API key not found in configuration.");
@@ -125,24 +127,19 @@ try
         await migrator.RunAsync();
     }
 
+    if (arguments.Samples)
+    {
+        var loader = host.Services.GetRequiredService<SampleStoryLoader>();
+        await loader.LoadAsync(SampleSet.ReadBundled(), DateTimeOffset.UtcNow);
+    }
+
     var stopping = host.Services.GetRequiredService<IHostApplicationLifetime>().ApplicationStopping;
 
     if (arguments.IsScheduled)
     {
         var updater = host.Services.GetRequiredService<ArticleUpdater>();
 
-        // Only the bare invocation is the scheduled one, so only it checks in; a manual run
-        // would otherwise satisfy the schedule and hide a run that never happened.
-        // The interval must match the crontab that invokes this. Declaring it here upserts it to Sentry.
-        await SentrySdk.WithMonitorAsync("update-articles", () => updater.RunScheduledAsync(stopping), monitor =>
-        {
-            monitor.Interval("0 */6 * * *");
-            monitor.TimeZone = "Etc/UTC";
-            monitor.CheckInMargin = TimeSpan.FromMinutes(30);
-            monitor.MaxRuntime = TimeSpan.FromMinutes(60);
-            monitor.FailureIssueThreshold = 1;
-            monitor.RecoveryThreshold = 1;
-        });
+        await updater.RunScheduledAsync(stopping);
     }
     else if (arguments.Fetch || arguments.Analyse)
     {

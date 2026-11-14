@@ -17,6 +17,12 @@ public sealed class ScriptedHttpHandler : HttpMessageHandler, IHttpClientFactory
         return this;
     }
 
+    public ScriptedHttpHandler ThenThrow(Exception exception)
+    {
+        _bodies.Enqueue(() => throw exception);
+        return this;
+    }
+
     public ScriptedHttpHandler ThenCancel(CancellationTokenSource shutdown)
     {
         _bodies.Enqueue(() =>
