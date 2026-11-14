@@ -130,6 +130,7 @@ public class RelevantArticlesService : IRelevantArticlesService
                 CreatedAt = article.CreatedAt,
                 Publisher = article.RssItem.Feed?.Name,
                 PublishedAt = article.RssItem.PubDate,
+                SourceWordCount = article.SourceWordCount,
                 IsSaved = savedIds.Contains(article.Id)
             };
         });

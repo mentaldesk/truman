@@ -106,6 +106,9 @@ namespace Truman.Data.Migrations
                     b.Property<int>("Sentiment")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("SourceWordCount")
+                        .HasColumnType("integer");
+
                     b.Property<int>("Success")
                         .HasColumnType("integer");
 

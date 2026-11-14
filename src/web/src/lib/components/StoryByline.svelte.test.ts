@@ -22,6 +22,26 @@ describe('StoryByline on a feed card', () => {
 		await expect.element(page.getByText('3 hours ago', { exact: true })).toBeInTheDocument();
 	});
 
+	it('ends with the word count', async () => {
+		render(StoryByline, { publisher: 'Phys.org', publishedAt: threeHoursAgo(), wordCount: 42 });
+		await expect.element(page.getByText('Phys.org · 3 hours ago · 42 words')).toBeInTheDocument();
+	});
+
+	it('says 1 word for a count of one', async () => {
+		render(StoryByline, { publisher: 'Phys.org', publishedAt: threeHoursAgo(), wordCount: 1 });
+		await expect.element(page.getByText('Phys.org · 3 hours ago · 1 word', { exact: true })).toBeInTheDocument();
+	});
+
+	it('separates thousands in a count over 1,000', async () => {
+		render(StoryByline, { publisher: 'Phys.org', publishedAt: threeHoursAgo(), wordCount: 1240 });
+		await expect.element(page.getByText('Phys.org · 3 hours ago · 1,240 words')).toBeInTheDocument();
+	});
+
+	it('leaves no stray separator with no count', async () => {
+		render(StoryByline, { publisher: 'Phys.org', publishedAt: threeHoursAgo(), wordCount: null });
+		await expect.element(page.getByText('Phys.org · 3 hours ago', { exact: true })).toBeInTheDocument();
+	});
+
 	it('is not a link', async () => {
 		render(StoryByline, { publisher: 'Phys.org', publishedAt: threeHoursAgo() });
 		await expect.element(page.getByRole('link')).not.toBeInTheDocument();
@@ -29,7 +49,7 @@ describe('StoryByline on a feed card', () => {
 });
 
 describe('StoryByline in the story popup', () => {
-	const article = (publisher: string | null, publishedAt: string | null) => ({
+	const article = (publisher: string | null, publishedAt: string | null, sourceWordCount: number | null = null) => ({
 		id: 1,
 		link: 'https://example.invalid/story',
 		title: 'A headline',
@@ -40,7 +60,8 @@ describe('StoryByline in the story popup', () => {
 		relevanceScore: 0.5,
 		why: { valuesShare: 0, tagsShare: 0, toneShare: 1, matchedValues: [], matchedTags: [], mood: 5 },
 		publisher,
-		publishedAt
+		publishedAt,
+		sourceWordCount
 	});
 
 	it('links the publisher to the original in a new tab', async () => {
@@ -49,6 +70,16 @@ describe('StoryByline in the story popup', () => {
 		await expect.element(link).toHaveAttribute('href', 'https://example.invalid/story');
 		await expect.element(link).toHaveAttribute('target', '_blank');
 		await expect.element(page.getByText('Phys.org ↗ · 3 hours ago')).toBeInTheDocument();
+	});
+
+	it('follows the source and time with the word count', async () => {
+		render(ArticleDetailsPopup, { isOpen: true, article: article('Phys.org', threeHoursAgo(), 42) });
+		await expect.element(page.getByText('Phys.org ↗ · 3 hours ago · 42 words')).toBeInTheDocument();
+	});
+
+	it('leaves no stray separator with no count', async () => {
+		render(ArticleDetailsPopup, { isOpen: true, article: article('Phys.org', threeHoursAgo(), null) });
+		await expect.element(page.getByText('Phys.org ↗ · 3 hours ago', { exact: true })).toBeInTheDocument();
 	});
 
 	it('names the link Original article with no known publisher', async () => {

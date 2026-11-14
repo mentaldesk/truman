@@ -19,6 +19,7 @@ public class RelevantArticle
     public DateTimeOffset CreatedAt { get; set; }
     public string? Publisher { get; set; }
     public DateTimeOffset? PublishedAt { get; set; }
+    public int? SourceWordCount { get; set; }
     public RelevanceBreakdown Why { get; set; } = new();
     public bool IsSaved { get; set; }
 }

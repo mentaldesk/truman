@@ -13,6 +13,7 @@ export type Story = {
     createdAt: string;
     publisher: string | null;
     publishedAt: string | null;
+    sourceWordCount: number | null;
     why: RelevanceBreakdown;
     isSaved: boolean;
 };

@@ -39,6 +39,7 @@ public class Article
     
     // Metadata
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public int? SourceWordCount { get; set; }
     public int RssItemId { get; set; }
     public RssItem RssItem { get; set; } = null!;
 } 
