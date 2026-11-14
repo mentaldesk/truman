@@ -15,6 +15,7 @@ export type Story = {
     publishedAt: string | null;
     why: RelevanceBreakdown;
     isSaved: boolean;
+    isNew?: boolean;
 };
 
 export async function setSaved(id: number, saved: boolean): Promise<void> {

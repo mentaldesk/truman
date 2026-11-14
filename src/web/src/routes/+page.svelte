@@ -1,7 +1,7 @@
 <script lang="ts">
     import Header from '#lib/components/Header.svelte';
     import ArticleDetailsPopup from '#lib/components/ArticleDetailsPopup.svelte';
-    import StoryCard from '#lib/components/StoryCard.svelte';
+    import Feed from '#lib/components/Feed.svelte';
     import type { Story } from '#lib/story.js';
     import { mood } from '#lib/stores/mood.js';
     import { onMount, onDestroy } from 'svelte';
@@ -13,6 +13,7 @@
     import { refreshed } from '#lib/refreshed.js';
 
     let articles: Story[] = [];
+    let newSince: string | null = null;
     let loading = true;
     let error: string | null = null;
     let moodUnsubscribe: () => void;
@@ -70,6 +71,7 @@
             if (!res.ok) throw new Error(`Failed to fetch articles (${res.status})`);
             const data = await res.json();
             articles = data.articles || [];
+            newSince = data.newSince ?? null;
             if (isPopupOpen) {
                 selectedArticle = refreshed(selectedArticle, articles);
                 if (!selectedArticle) isPopupOpen = false;
@@ -134,11 +136,7 @@
                 <p class="text-gray-500 text-lg">No relevant articles found.</p>
             </div>
         {:else}
-            <div class="space-y-6">
-                {#each articles as article (article.id)}
-                    <StoryCard story={article} on:click={() => openArticleDetails(article)} />
-                {/each}
-            </div>
+            <Feed stories={articles} {newSince} on:open={(e) => openArticleDetails(e.detail)} />
         {/if}
     </main>
 </div>
