@@ -103,6 +103,7 @@ public class RssFetcher(
                         Link = link,
                         Title = item.Title ?? string.Empty,
                         Description = body ?? string.Empty,
+                        ImageUrl = FeedPicture.Find(item.SpecificItem?.Element),
                         PubDate = pubDate,
                         FeedId = feedSource.Id,
                         TimeAnalysed = null // This will be set by the analysis job

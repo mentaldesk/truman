@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import SavedPage from './+page.svelte';
 
-const story = (id: number, title: string) => ({
+const story = (id: number, title: string, imageUrl: string | null = null) => ({
 	id,
 	link: `https://example.invalid/${id}`,
 	title,
@@ -16,6 +16,7 @@ const story = (id: number, title: string) => ({
 	publisher: 'RNZ World',
 	publishedAt: null,
 	sourceWordCount: null,
+	imageUrl,
 	why: { valuesShare: 1, tagsShare: 0, toneShare: 0, matchedValues: [], matchedTags: [], mood: 5 },
 	isSaved: true
 });
@@ -49,6 +50,18 @@ describe('/saved', () => {
 		await expect.element(page.getByText('Newer', { exact: true })).toBeInTheDocument();
 		const titles = [...document.querySelectorAll('main .text-xl')].map((e) => e.textContent?.trim());
 		expect(titles).toEqual(['Newer', 'Older']);
+	});
+
+	it('shows the picture on the card, and tapping it opens a popup with none', async () => {
+		const pixel =
+			'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+		serve([story(1, 'Pictured', pixel)]);
+		render(SavedPage);
+		const picture = page.getByRole('presentation');
+		await expect.element(picture).toHaveAttribute('src', pixel);
+		(picture.element() as HTMLElement).click();
+		await expect.element(page.getByRole('button', { name: 'Remove from saved' })).toBeInTheDocument();
+		expect(document.querySelectorAll('img')).toHaveLength(1);
 	});
 
 	it('opens a story and un-saving it takes it off the list', async () => {

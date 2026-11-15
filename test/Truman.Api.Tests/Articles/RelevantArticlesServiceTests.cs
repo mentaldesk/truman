@@ -239,6 +239,23 @@ public class RelevantArticlesServiceTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task CarriesThePicturesAddress_OrNone()
+    {
+        var service = new RelevantArticlesService(_ctx, NullLogger<RelevantArticlesService>.Instance);
+        var user = CreateUser($"user_{Guid.NewGuid()}@example.com");
+        _ctx.UserProfiles.Add(user);
+        _ctx.Articles.AddRange(
+            MakeArticle($"pictured_{Guid.NewGuid():N}", 7, [], a => a.RssItem.ImageUrl = "https://img.invalid/a.jpg"),
+            MakeArticle($"plain_{Guid.NewGuid():N}", 7, []));
+        await _ctx.SaveChangesAsync(Ct);
+
+        var resp = await service.GetRelevantArticlesAsync(new RelevantArticlesRequest { Presenter = "Default" }, user);
+
+        Assert.Equal("https://img.invalid/a.jpg", Assert.Single(resp.Articles, a => a.Link.StartsWith("pictured_")).ImageUrl);
+        Assert.Null(Assert.Single(resp.Articles, a => a.Link.StartsWith("plain_")).ImageUrl);
+    }
+
+    [Fact]
     public async Task DeletingAFeed_KeepsItsItemsAndArticles_WithNoFeed()
     {
         var feed = new Feed { Name = "Phys.org", Url = $"https://example.invalid/{Guid.NewGuid():N}", IsEnabled = true };

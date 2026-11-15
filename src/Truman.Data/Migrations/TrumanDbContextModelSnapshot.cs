@@ -265,6 +265,9 @@ namespace Truman.Data.Migrations
                     b.Property<int?>("FeedId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("text");
+
                     b.Property<string>("Link")
                         .IsRequired()
                         .HasColumnType("text");

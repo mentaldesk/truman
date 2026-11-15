@@ -36,7 +36,8 @@ public sealed record SampleStory(
     int Tone,
     string[] Tags,
     Dictionary<string, int> Values,
-    Dictionary<string, SampleContent> Presenters)
+    Dictionary<string, SampleContent> Presenters,
+    string? Image = null)
 {
     public string Link => $"https://samples.invalid/stories/{Slug}";
 }
@@ -96,6 +97,7 @@ public class SampleStoryLoader(ILogger<SampleStoryLoader> logger, IDbContextFact
                 Link = story.Link,
                 Title = story.Presenters["Default"].Title,
                 Description = story.Presenters["Default"].Content,
+                ImageUrl = story.Image,
                 PubDate = now.AddMinutes(-story.MinutesAgo),
                 TimeAnalysed = now,
                 Feed = feeds[story.Source]

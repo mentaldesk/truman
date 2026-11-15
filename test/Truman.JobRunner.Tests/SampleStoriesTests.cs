@@ -99,6 +99,14 @@ public class SampleSetTests
     }
 
     [Fact]
+    public void Some_stories_have_a_picture_one_that_fails_to_load_and_some_none()
+    {
+        Assert.Contains(Samples.Stories, s => s.Image is not null && new Uri(s.Image).Host != "samples.invalid");
+        Assert.Contains(Samples.Stories, s => s.Image is not null && new Uri(s.Image).Host == "samples.invalid");
+        Assert.Contains(Samples.Stories, s => s.Image is null);
+    }
+
+    [Fact]
     public void Every_story_has_distinct_content_for_every_presenter()
     {
         Assert.All(Samples.Stories, s =>
@@ -190,6 +198,7 @@ public class SampleStoryLoaderTests(JobRunnerDatabaseFixture database) : IAsyncL
         var comet = articles.Single(a => a.Link.EndsWith("/volunteer-astronomers-spot-comet"));
         Assert.Equal(9, comet.Knowledge);
         Assert.Equal(8, comet.Sentiment);
+        Assert.Equal("https://picsum.photos/seed/comet/640/400", comet.RssItem.ImageUrl);
     }
 
     [Fact]

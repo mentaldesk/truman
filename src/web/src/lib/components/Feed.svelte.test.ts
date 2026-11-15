@@ -16,6 +16,8 @@ const story = (id: number, isNew: boolean): Story => ({
 	createdAt: new Date().toISOString(),
 	publisher: null,
 	publishedAt: null,
+	sourceWordCount: null,
+	imageUrl: null,
 	why: { valuesShare: 0, tagsShare: 0, toneShare: 1, matchedValues: [], matchedTags: [], mood: 5 },
 	isSaved: false,
 	isNew

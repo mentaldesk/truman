@@ -94,6 +94,21 @@ public class SavedStoriesTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task SavedStories_CarryThePicturesAddress_OrNone()
+    {
+        var user = await AddUserAsync();
+        var pictured = await AddArticleAsync("pictured", conf: a => a.RssItem.ImageUrl = "https://img.invalid/a.jpg");
+        var plain = await AddArticleAsync("plain");
+        await Saved().SaveAsync(user, pictured.Id);
+        await Saved().SaveAsync(user, plain.Id);
+
+        var resp = await Articles().GetSavedArticlesAsync(As("Default"), user);
+
+        Assert.Equal("https://img.invalid/a.jpg", Assert.Single(resp.Articles, a => a.Id == pictured.Id).ImageUrl);
+        Assert.Null(Assert.Single(resp.Articles, a => a.Id == plain.Id).ImageUrl);
+    }
+
+    [Fact]
     public async Task SavingTwice_KeepsOneEntry()
     {
         var user = await AddUserAsync();

@@ -16,6 +16,7 @@ const story = (isSaved: boolean) => ({
 	publisher: 'RNZ World',
 	publishedAt: null,
 	sourceWordCount: null,
+	imageUrl: null,
 	why: { valuesShare: 1, tagsShare: 0, toneShare: 0, matchedValues: [], matchedTags: [], mood: 5 },
 	isSaved
 });
