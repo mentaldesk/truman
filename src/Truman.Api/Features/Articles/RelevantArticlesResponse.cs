@@ -4,6 +4,14 @@ public class RelevantArticlesResponse
 {
     public List<RelevantArticle> Articles { get; set; } = new();
     public DateTimeOffset? NewSince { get; set; }
+    public HiddenCounts? Hidden { get; set; }
+}
+
+public class HiddenCounts
+{
+    public int BelowMood { get; set; }
+    public int BannedTag { get; set; }
+    public int Mood { get; set; }
 }
 
 public class RelevantArticle

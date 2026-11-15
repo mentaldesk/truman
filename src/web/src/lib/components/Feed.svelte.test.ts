@@ -54,4 +54,16 @@ describe('Feed', () => {
 		await expect.element(page.getByText('Story 2')).toBeInTheDocument();
 		expect(document.querySelectorAll('h2')).toHaveLength(0);
 	});
+
+	it('puts the Not shown line after the last story, below Earlier', async () => {
+		render(Feed, {
+			stories: [story(1, false), story(2, true)],
+			newSince: sevenForty(),
+			hidden: { belowMood: 4, bannedTag: 0, mood: 7 }
+		});
+		await expect.element(page.getByText(/Not shown/)).toBeInTheDocument();
+		const all = document.body.textContent ?? '';
+		expect(all.indexOf('Not shown')).toBeGreaterThan(all.indexOf('Story 1'));
+		expect(all.indexOf('Story 1')).toBeGreaterThan(all.indexOf('Earlier'));
+	});
 });
