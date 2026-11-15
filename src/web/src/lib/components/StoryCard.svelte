@@ -17,7 +17,7 @@
         </div>
         <p class="text-gray-500 mt-1">{story.tldr}</p>
         <div class="mt-2">
-            <StoryByline publisher={story.publisher} publishedAt={story.publishedAt} />
+            <StoryByline publisher={story.publisher} publishedAt={story.publishedAt} wordCount={story.sourceWordCount} />
         </div>
         <MatchBadges matchedTags={story.why.matchedTags} matchedValues={story.why.matchedValues} />
     </div>

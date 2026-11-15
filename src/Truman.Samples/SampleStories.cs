@@ -106,6 +106,7 @@ public class SampleStoryLoader(ILogger<SampleStoryLoader> logger, IDbContextFact
                 Sentiment = story.Tone,
                 Tags = story.Tags,
                 CreatedAt = now,
+                SourceWordCount = SourceText.CountWords(item.Description),
                 RssItem = item
             };
             foreach (var (value, score) in story.Values)

@@ -14,6 +14,7 @@ const article = {
 	relevanceScore: 0.8234,
 	publisher: 'RNZ World',
 	publishedAt: null,
+	sourceWordCount: null,
 	why: {
 		valuesShare: 0.6,
 		tagsShare: 0.1,

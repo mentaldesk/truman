@@ -15,6 +15,7 @@ const story = (id: number, title: string) => ({
 	createdAt: new Date().toISOString(),
 	publisher: 'RNZ World',
 	publishedAt: null,
+	sourceWordCount: null,
 	why: { valuesShare: 1, tagsShare: 0, toneShare: 0, matchedValues: [], matchedTags: [], mood: 5 },
 	isSaved: true
 });

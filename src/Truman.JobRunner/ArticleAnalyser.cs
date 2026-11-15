@@ -453,7 +453,8 @@ public class ArticleAnalyser
                 Connection = articleData.Connection,
                 Adventure = articleData.Adventure,
                 RssItemId = rssItem.Id,
-                CreatedAt = DateTimeOffset.UtcNow
+                CreatedAt = DateTimeOffset.UtcNow,
+                SourceWordCount = SourceText.CountWords(rssItem.Description)
             };
             
             db.Articles.Add(article);

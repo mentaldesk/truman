@@ -222,6 +222,23 @@ public class RelevantArticlesServiceTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task CarriesTheSourceWordCount_AndNoneForOlderStories()
+    {
+        var service = new RelevantArticlesService(_ctx, NullLogger<RelevantArticlesService>.Instance);
+        var user = CreateUser($"user_{Guid.NewGuid()}@example.com");
+        _ctx.UserProfiles.Add(user);
+        _ctx.Articles.AddRange(
+            MakeArticle($"counted_{Guid.NewGuid():N}", 7, [], a => a.SourceWordCount = 42),
+            MakeArticle($"older_{Guid.NewGuid():N}", 7, []));
+        await _ctx.SaveChangesAsync(Ct);
+
+        var resp = await service.GetRelevantArticlesAsync(new RelevantArticlesRequest { Presenter = "Default" }, user);
+
+        Assert.Equal(42, Assert.Single(resp.Articles, a => a.Link.StartsWith("counted_")).SourceWordCount);
+        Assert.Null(Assert.Single(resp.Articles, a => a.Link.StartsWith("older_")).SourceWordCount);
+    }
+
+    [Fact]
     public async Task DeletingAFeed_KeepsItsItemsAndArticles_WithNoFeed()
     {
         var feed = new Feed { Name = "Phys.org", Url = $"https://example.invalid/{Guid.NewGuid():N}", IsEnabled = true };

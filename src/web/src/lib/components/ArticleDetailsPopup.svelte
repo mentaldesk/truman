@@ -100,7 +100,7 @@
                             {article.title}
                         </h2>
                         <div class="mt-1">
-                            <StoryByline publisher={article.publisher} publishedAt={article.publishedAt} link={article.link} />
+                            <StoryByline publisher={article.publisher} publishedAt={article.publishedAt} wordCount={article.sourceWordCount} link={article.link} />
                         </div>
                     </div>
                     <button
