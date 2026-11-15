@@ -328,8 +328,14 @@ namespace Truman.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<DateTimeOffset?>("FeedSeenAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("Mood")
                         .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("NewSince")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("SelectedValues")
                         .IsRequired()

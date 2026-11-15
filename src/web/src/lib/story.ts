@@ -16,6 +16,7 @@ export type Story = {
     sourceWordCount: number | null;
     why: RelevanceBreakdown;
     isSaved: boolean;
+    isNew?: boolean;
 };
 
 export async function setSaved(id: number, saved: boolean): Promise<void> {

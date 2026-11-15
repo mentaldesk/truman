@@ -9,6 +9,7 @@ public class RelevantArticlesService : IRelevantArticlesService
 {
     private readonly TrumanDbContext _dbContext;
     private readonly ILogger<RelevantArticlesService> _logger;
+    private readonly TimeProvider _time;
     
     // Weighting constants for relevance calculation
     private const double ValueAlignmentWeight = 0.4;
@@ -17,10 +18,11 @@ public class RelevantArticlesService : IRelevantArticlesService
     private const double ExponentialDecayBase = 1.5;
     private const int ValueMatchThreshold = 7;
 
-    public RelevantArticlesService(TrumanDbContext dbContext, ILogger<RelevantArticlesService> logger)
+    public RelevantArticlesService(TrumanDbContext dbContext, ILogger<RelevantArticlesService> logger, TimeProvider? time = null)
     {
         _dbContext = dbContext;
         _logger = logger;
+        _time = time ?? TimeProvider.System;
     }
 
     public async Task<RelevantArticlesResponse> GetRelevantArticlesAsync(RelevantArticlesRequest request, UserProfile userProfile)
@@ -68,13 +70,19 @@ public class RelevantArticlesService : IRelevantArticlesService
 
         var savedIds = await SavedArticleIdsAsync(userProfile, articles.Select(a => a.Id));
 
+        FeedVisit.Record(userProfile, _time.GetUtcNow());
+        await _dbContext.SaveChangesAsync();
+
         var relevantArticles = Score(articles, request, userProfile, savedIds)
             .OrderByDescending(a => a.RelevanceScore)
             .ToList();
+        foreach (var article in relevantArticles)
+            article.IsNew = article.CreatedAt > userProfile.NewSince;
 
         return new RelevantArticlesResponse
         {
-            Articles = relevantArticles
+            Articles = relevantArticles,
+            NewSince = userProfile.NewSince
         };
     }
 

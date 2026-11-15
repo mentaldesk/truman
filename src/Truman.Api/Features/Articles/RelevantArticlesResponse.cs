@@ -3,6 +3,7 @@ namespace Truman.Api.Features.Articles;
 public class RelevantArticlesResponse
 {
     public List<RelevantArticle> Articles { get; set; } = new();
+    public DateTimeOffset? NewSince { get; set; }
 }
 
 public class RelevantArticle
@@ -22,6 +23,7 @@ public class RelevantArticle
     public int? SourceWordCount { get; set; }
     public RelevanceBreakdown Why { get; set; } = new();
     public bool IsSaved { get; set; }
+    public bool IsNew { get; set; }
 }
 
 public class RelevanceBreakdown
