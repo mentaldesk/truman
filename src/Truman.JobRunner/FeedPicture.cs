@@ -40,9 +40,9 @@ public static class FeedPicture
 
     private static long Area(XElement e)
     {
-        var width = (long?)ParseDimension(e.Attribute("width")) ?? 0;
-        var height = (long?)ParseDimension(e.Attribute("height")) ?? 1;
-        return width * height;
+        var width = (long?)ParseDimension(e.Attribute("width"));
+        var height = (long?)ParseDimension(e.Attribute("height"));
+        return (width ?? height ?? 0) * (height ?? width ?? 0);
     }
 
     private static int? ParseDimension(XAttribute? attribute) =>

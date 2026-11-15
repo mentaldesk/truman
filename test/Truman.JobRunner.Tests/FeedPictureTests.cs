@@ -49,16 +49,23 @@ public class FeedPictureTests(JobRunnerDatabaseFixture fixture) : IAsyncLifetime
         Assert.Equal("https://img.invalid/a.jpg", await FetchedPicture(extras));
     }
 
-    [Fact]
-    public async Task Prefers_the_largest_of_several()
+    [Theory]
+    [InlineData("""
+        <media:thumbnail url="https://img.invalid/small.jpg" width="150" height="100"/>
+        <media:content url="https://img.invalid/large.jpg" medium="image" width="1200" height="800"/>
+        <media:content url="https://img.invalid/medium.jpg" medium="image" width="600" height="400"/>
+        """)]
+    [InlineData("""
+        <media:thumbnail url="https://img.invalid/small.jpg" width="150" height="100"/>
+        <media:content url="https://img.invalid/large.jpg" medium="image" width="1200"/>
+        """)]
+    [InlineData("""
+        <media:thumbnail url="https://img.invalid/small.jpg" width="150" height="100"/>
+        <media:content url="https://img.invalid/large.jpg" medium="image" height="800"/>
+        """)]
+    public async Task Prefers_the_largest_of_several(string extras)
     {
-        var picture = await FetchedPicture("""
-            <media:thumbnail url="https://img.invalid/small.jpg" width="150" height="100"/>
-            <media:content url="https://img.invalid/large.jpg" medium="image" width="1200" height="800"/>
-            <media:content url="https://img.invalid/medium.jpg" medium="image" width="600" height="400"/>
-            """);
-
-        Assert.Equal("https://img.invalid/large.jpg", picture);
+        Assert.Equal("https://img.invalid/large.jpg", await FetchedPicture(extras));
     }
 
     [Theory]
