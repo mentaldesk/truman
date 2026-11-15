@@ -30,10 +30,13 @@ public sealed class JevArticleScorer(JevClient client)
     {
         var questions = BuildQuestions();
 
-        // Sentry's gen_ai attributes, so this call sits beside the Anthropic ones in the AI views.
-        var span = parent?.StartChild("gen_ai.chat", $"chat {JevClient.Model}");
-        span?.SetData("gen_ai.operation.name", "chat");
+        // Shaped like Sentry's JavaScript TypeSafe integration, minus the story: only its length.
+        var span = parent?.StartChild("gen_ai.decide", $"decide {JevClient.Model}");
+        span?.SetData("gen_ai.operation.name", "decide");
+        span?.SetData("gen_ai.provider.name", "typesafe");
         span?.SetData("gen_ai.request.model", JevClient.Model);
+        span?.SetData("gen_ai.input.messages", Evaluation("questions", questions));
+        span?.SetData("jev.state.length", article.Length);
         span?.SetData("jev.questions", questions.Count);
 
         JevResponse response;
@@ -62,6 +65,7 @@ public sealed class JevArticleScorer(JevClient client)
         }
 
         span?.SetData("gen_ai.response.model", response.Model);
+        span?.SetData("gen_ai.output.messages", Evaluation("answers", response.Answers));
         if (response.Usage is { } usage)
         {
             span?.SetData("gen_ai.usage.input_tokens", usage.InputTokens);
@@ -73,6 +77,12 @@ public sealed class JevArticleScorer(JevClient client)
 
         return new JevScores(scores, missingAnswers);
     }
+
+    private static readonly JsonSerializerOptions SpanJson =
+        new() { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
+
+    private static string Evaluation<T>(string key, T content) =>
+        JsonSerializer.Serialize(new[] { new Dictionary<string, object?> { ["type"] = "evaluation", [key] = content } }, SpanJson);
 
     private Dictionary<string, JevQuestion> BuildQuestions()
     {

@@ -284,7 +284,8 @@ public sealed class RunTraceTests(JobRunnerDatabaseFixture fixture) : ArticleAna
 
         var transactions = await _sentry.TransactionsAsync();
         Assert.Equal(3, transactions.Count);
-        Assert.Contains(transactions.SelectMany(t => t.Spans), s => s.Operation.StartsWith("gen_ai"));
+        Assert.Contains(transactions.SelectMany(t => t.Spans), s => s.Operation == "gen_ai.chat");
+        Assert.Contains(transactions.SelectMany(t => t.Spans), s => s.Operation == "gen_ai.decide");
         var recorded = transactions.SelectMany(t =>
             t.Tags.Values
                 .Concat(t.Extra.Values.Select(v => v?.ToString()))
