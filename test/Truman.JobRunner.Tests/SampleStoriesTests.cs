@@ -198,7 +198,7 @@ public class SampleStoryLoaderTests(JobRunnerDatabaseFixture database) : IAsyncL
         var comet = articles.Single(a => a.Link.EndsWith("/volunteer-astronomers-spot-comet"));
         Assert.Equal(9, comet.Knowledge);
         Assert.Equal(8, comet.Sentiment);
-        Assert.Equal("https://picsum.photos/seed/comet/640/400", comet.RssItem.ImageUrl);
+        Assert.Equal("https://placehold.co/640x400/1e3a8a/ffffff/png?text=Comet", comet.RssItem.ImageUrl);
     }
 
     [Fact]

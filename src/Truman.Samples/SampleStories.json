@@ -15,7 +15,7 @@
   "stories": [
     {
       "slug": "volunteer-astronomers-spot-comet",
-      "image": "https://picsum.photos/seed/comet/640/400",
+      "image": "https://placehold.co/640x400/1e3a8a/ffffff/png?text=Comet",
       "source": "Made-Up Science Weekly",
       "minutesAgo": 7,
       "tone": 8,
@@ -41,7 +41,7 @@
     },
     {
       "slug": "zoo-penguins-get-jumpers",
-      "image": "https://picsum.photos/seed/penguins/640/400",
+      "image": "https://placehold.co/640x400/0f766e/ffffff/png?text=Penguins",
       "source": "Made-Up Local News",
       "minutesAgo": 40,
       "tone": 9,
@@ -67,7 +67,7 @@
     },
     {
       "slug": "moon-greenhouse-lettuce",
-      "image": "https://picsum.photos/seed/lettuce/400/640",
+      "image": "https://placehold.co/400x640/15803d/ffffff/png?text=Lettuce",
       "source": "Made-Up Science Weekly",
       "minutesAgo": 120,
       "tone": 8,
@@ -118,7 +118,6 @@
     },
     {
       "slug": "heatwave-closes-schools",
-      "image": "https://samples.invalid/pictures/missing.jpg",
       "source": "Made-Up Herald",
       "minutesAgo": 180,
       "tone": 2,
@@ -219,7 +218,7 @@
     },
     {
       "slug": "wind-farm-coop-dividend",
-      "image": "https://picsum.photos/seed/windfarm/640/400",
+      "image": "https://placehold.co/640x400/0369a1/ffffff/png?text=Windfarm",
       "source": "Made-Up Herald",
       "minutesAgo": 30,
       "tone": 7,
@@ -345,7 +344,7 @@
     },
     {
       "slug": "rookie-climber-unclimbed-peak",
-      "image": "https://picsum.photos/seed/peak/640/400",
+      "image": "https://placehold.co/640x400/57534e/ffffff/png?text=Peak",
       "source": "Made-Up Sports Desk",
       "minutesAgo": 240,
       "tone": 8,
@@ -471,7 +470,7 @@
     },
     {
       "slug": "library-lends-telescopes",
-      "image": "https://picsum.photos/seed/telescope/640/400",
+      "image": "https://placehold.co/640x400/4c1d95/ffffff/png?text=Telescope",
       "source": "Made-Up Local News",
       "minutesAgo": 200,
       "tone": 8,
@@ -522,7 +521,7 @@
     },
     {
       "slug": "grandmother-finishes-marathon",
-      "image": "https://picsum.photos/seed/marathon/640/400",
+      "image": "https://placehold.co/640x400/b45309/ffffff/png?text=Marathon",
       "source": "Made-Up Sports Desk",
       "minutesAgo": 50,
       "tone": 10,
@@ -573,6 +572,7 @@
     },
     {
       "slug": "shipwreck-cheese",
+      "image": "https://samples.invalid/pictures/missing.jpg",
       "source": "Made-Up Science Weekly",
       "minutesAgo": 5760,
       "tone": 7,
@@ -598,7 +598,7 @@
     },
     {
       "slug": "choir-records-in-lighthouse",
-      "image": "https://picsum.photos/seed/lighthouse/640/400",
+      "image": "https://placehold.co/640x400/9f1239/ffffff/png?text=Lighthouse",
       "source": "Made-Up Local News",
       "minutesAgo": 1800,
       "tone": 8,
