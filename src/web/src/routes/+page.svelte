@@ -2,9 +2,12 @@
     import Header from '#lib/components/Header.svelte';
     import ArticleDetailsPopup from '#lib/components/ArticleDetailsPopup.svelte';
     import Feed from '#lib/components/Feed.svelte';
+    import HiddenLine from '#lib/components/HiddenLine.svelte';
+    import { noneShown, type HiddenCounts } from '#lib/hidden.js';
     import type { Story } from '#lib/story.js';
     import { mood } from '#lib/stores/mood.js';
     import { onMount, onDestroy } from 'svelte';
+    import { get } from 'svelte/store';
     import { apiFetch, SessionExpiredError } from '#lib/api.js';
     import { valuesStore } from '#lib/stores/values.js';
     import { selectedPresenter } from '#lib/stores/presenter.js';
@@ -14,6 +17,7 @@
 
     let articles: Story[] = [];
     let newSince: string | null = null;
+    let hidden: HiddenCounts | null = null;
     let loading = true;
     let error: string | null = null;
     let moodUnsubscribe: () => void;
@@ -66,12 +70,13 @@
         try {
             const res = await apiFetch('/api/articles/relevant', {
                 method: 'POST',
-                body: JSON.stringify({ presenter })
+                body: JSON.stringify({ presenter, mood: get(mood) })
             });
             if (!res.ok) throw new Error(`Failed to fetch articles (${res.status})`);
             const data = await res.json();
             articles = data.articles || [];
             newSince = data.newSince ?? null;
+            hidden = data.hidden ?? null;
             if (isPopupOpen) {
                 selectedArticle = refreshed(selectedArticle, articles);
                 if (!selectedArticle) isPopupOpen = false;
@@ -132,11 +137,12 @@
                 <p class="text-red-500 text-lg">{error}</p>
             </div>
         {:else if articles.length === 0}
-            <div class="bg-white rounded-lg shadow p-6 min-h-[400px] flex items-center justify-center">
-                <p class="text-gray-500 text-lg">No relevant articles found.</p>
+            <div class="bg-white rounded-lg shadow p-6 min-h-[400px] flex flex-col items-center justify-center gap-2 text-center">
+                <p class="text-gray-500 text-lg">{hidden ? noneShown(hidden) : 'No relevant articles found.'}</p>
+                {#if hidden}<HiddenLine {hidden} />{/if}
             </div>
         {:else}
-            <Feed stories={articles} {newSince} on:open={(e) => openArticleDetails(e.detail)} />
+            <Feed stories={articles} {newSince} {hidden} on:open={(e) => openArticleDetails(e.detail)} />
         {/if}
     </main>
 </div>

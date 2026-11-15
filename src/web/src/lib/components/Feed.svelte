@@ -1,11 +1,14 @@
 <script lang="ts">
     import StoryCard from './StoryCard.svelte';
+    import HiddenLine from './HiddenLine.svelte';
+    import type { HiddenCounts } from '#lib/hidden.js';
     import type { Story } from '#lib/story.js';
     import { formatVisitTime } from '../newSince';
     import { createEventDispatcher } from 'svelte';
 
     export let stories: Story[];
     export let newSince: string | null = null;
+    export let hidden: HiddenCounts | null = null;
 
     const dispatch = createEventDispatcher<{ open: Story }>();
 
@@ -31,5 +34,10 @@
         {#each stories as story (story.id)}
             <StoryCard {story} on:click={() => dispatch('open', story)} />
         {/each}
+    </div>
+{/if}
+{#if hidden}
+    <div class="mt-6">
+        <HiddenLine {hidden} />
     </div>
 {/if}

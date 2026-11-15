@@ -29,9 +29,11 @@ public class RelevantArticlesService : IRelevantArticlesService
     {
         // Parse the selected values from JSON string
         var selectedValues = ParseSelectedValues(userProfile.SelectedValues);
+        // The slider saves the mood after the feed refetches, so the request's mood is the current one.
+        var mood = Math.Clamp(request.Mood ?? userProfile.Mood, 1, 10);
         
         _logger.LogInformation("Getting relevant articles for user {UserEmail} with {ValueCount} values and minimum sentiment {MinSentiment}", 
-            userProfile.Email, selectedValues.Count, userProfile.Mood);
+            userProfile.Email, selectedValues.Count, mood);
 
         // Get today's date for filtering (using UTC to avoid timezone issues with PostgreSQL)
         var earliest = DateTime.UtcNow.Date.AddDays(-1);
@@ -49,11 +51,15 @@ public class RelevantArticlesService : IRelevantArticlesService
                 .ThenInclude(ap => ap.Presenter)
             .Include(a => a.RssItem)
                 .ThenInclude(r => r.Feed)
-            .Where(a => a.Sentiment >= userProfile.Mood)
+            .Where(a => a.Sentiment >= mood)
             .Where(a => a.CreatedAt >= earliest)
             .ToListAsync();
 
+        var belowMood = await _dbContext.Articles
+            .CountAsync(a => a.CreatedAt >= earliest && a.Sentiment < mood);
+
         // Filter out articles with banned tags (case-insensitive comparison)
+        var withMood = articles.Count;
         if (bannedTags.Count > 0)
         {
             articles = articles.Where(a => 
@@ -66,14 +72,14 @@ public class RelevantArticlesService : IRelevantArticlesService
         }
 
         _logger.LogInformation("Found {ArticleCount} articles from yesterday and today with minimum sentiment {MinSentiment}", 
-            articles.Count, userProfile.Mood);
+            articles.Count, mood);
 
         var savedIds = await SavedArticleIdsAsync(userProfile, articles.Select(a => a.Id));
 
         FeedVisit.Record(userProfile, _time.GetUtcNow());
         await _dbContext.SaveChangesAsync();
 
-        var relevantArticles = Score(articles, request, userProfile, savedIds)
+        var relevantArticles = Score(articles, request, userProfile, mood, savedIds)
             .OrderByDescending(a => a.RelevanceScore)
             .ToList();
         foreach (var article in relevantArticles)
@@ -82,7 +88,8 @@ public class RelevantArticlesService : IRelevantArticlesService
         return new RelevantArticlesResponse
         {
             Articles = relevantArticles,
-            NewSince = userProfile.NewSince
+            NewSince = userProfile.NewSince,
+            Hidden = new HiddenCounts { BelowMood = belowMood, BannedTag = withMood - articles.Count, Mood = mood }
         };
     }
 
@@ -101,7 +108,7 @@ public class RelevantArticlesService : IRelevantArticlesService
 
         return new RelevantArticlesResponse
         {
-            Articles = Score(articles, request, userProfile, articles.Select(a => a.Id).ToHashSet()).ToList()
+            Articles = Score(articles, request, userProfile, userProfile.Mood, articles.Select(a => a.Id).ToHashSet()).ToList()
         };
     }
 
@@ -115,7 +122,7 @@ public class RelevantArticlesService : IRelevantArticlesService
         return saved.ToHashSet();
     }
 
-    private IEnumerable<RelevantArticle> Score(IEnumerable<Article> articles, RelevantArticlesRequest request, UserProfile userProfile, HashSet<int> savedIds)
+    private IEnumerable<RelevantArticle> Score(IEnumerable<Article> articles, RelevantArticlesRequest request, UserProfile userProfile, int mood, HashSet<int> savedIds)
     {
         var selectedValues = ParseSelectedValues(userProfile.SelectedValues);
         var userValueWeights = CalculateUserValueWeights(selectedValues);
@@ -123,7 +130,7 @@ public class RelevantArticlesService : IRelevantArticlesService
 
         return articles.Select(article =>
         {
-            var parts = CalculateRelevanceParts(article, userValueWeights, userTagWeights, userProfile.Mood);
+            var parts = CalculateRelevanceParts(article, userValueWeights, userTagWeights, mood);
             return new RelevantArticle
             {
                 Id = article.Id,
@@ -134,7 +141,7 @@ public class RelevantArticlesService : IRelevantArticlesService
                 Sentiment = article.Sentiment,
                 Tags = article.Tags,
                 RelevanceScore = parts.Values + parts.Tags + parts.Tone,
-                Why = Explain(article, parts, selectedValues, userTagWeights, userProfile.Mood),
+                Why = Explain(article, parts, selectedValues, userTagWeights, mood),
                 CreatedAt = article.CreatedAt,
                 Publisher = article.RssItem.Feed?.Name,
                 PublishedAt = article.RssItem.PubDate,

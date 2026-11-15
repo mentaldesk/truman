@@ -322,4 +322,81 @@ public class RelevantArticlesServiceTests : IAsyncLifetime
         Assert.Equal(["value_", "both_", "tone_", "tag_"], resp.Articles.Select(a => a.Link.Split('_')[0] + "_"));
         Assert.Equal(resp.Articles.Select(a => a.RelevanceScore).OrderDescending(), resp.Articles.Select(a => a.RelevanceScore));
     }
+
+    private async Task<HiddenCounts> HiddenFor(UserProfile user, params Article[] articles)
+    {
+        _ctx.UserProfiles.Add(user);
+        _ctx.Articles.AddRange(articles);
+        await _ctx.SaveChangesAsync(Ct);
+        var service = new RelevantArticlesService(_ctx, NullLogger<RelevantArticlesService>.Instance);
+        var resp = await service.GetRelevantArticlesAsync(new RelevantArticlesRequest { Presenter = "Default" }, user);
+        return resp.Hidden!;
+    }
+
+    [Fact]
+    public async Task CountsStoriesBelowMood()
+    {
+        var hidden = await HiddenFor(CreateUser($"user_{Guid.NewGuid()}@example.com"),
+            MakeArticle($"low1_{Guid.NewGuid():N}", 2, []),
+            MakeArticle($"low2_{Guid.NewGuid():N}", 4, []),
+            MakeArticle($"ok_{Guid.NewGuid():N}", 5, []));
+
+        Assert.Equal(2, hidden.BelowMood);
+        Assert.Equal(0, hidden.BannedTag);
+        Assert.Equal(5, hidden.Mood);
+    }
+
+    [Fact]
+    public async Task CountsStoriesWithABannedTag_CaseInsensitively()
+    {
+        var hidden = await HiddenFor(CreateUser($"user_{Guid.NewGuid()}@example.com", tagPrefs: [("politics", 0)]),
+            MakeArticle($"b1_{Guid.NewGuid():N}", 7, ["Politics"]),
+            MakeArticle($"b2_{Guid.NewGuid():N}", 6, ["politics", "nz"]),
+            MakeArticle($"ok_{Guid.NewGuid():N}", 6, ["nz"]));
+
+        Assert.Equal(0, hidden.BelowMood);
+        Assert.Equal(2, hidden.BannedTag);
+    }
+
+    [Fact]
+    public async Task CountsAStoryBothBelowMoodAndBanned_OnceAsBelowMood()
+    {
+        var hidden = await HiddenFor(CreateUser($"user_{Guid.NewGuid()}@example.com", tagPrefs: [("politics", 0)]),
+            MakeArticle($"both_{Guid.NewGuid():N}", 2, ["politics"]),
+            MakeArticle($"low_{Guid.NewGuid():N}", 3, []),
+            MakeArticle($"banned_{Guid.NewGuid():N}", 8, ["politics"]));
+
+        Assert.Equal(2, hidden.BelowMood);
+        Assert.Equal(1, hidden.BannedTag);
+    }
+
+    [Fact]
+    public async Task CountsNothing_WhenNothingWasHidden_OrOutsideTheWindow()
+    {
+        var hidden = await HiddenFor(CreateUser($"user_{Guid.NewGuid()}@example.com", tagPrefs: [("politics", 0)]),
+            MakeArticle($"old_{Guid.NewGuid():N}", 2, ["politics"], a => a.CreatedAt = DateTimeOffset.UtcNow.AddDays(-3)),
+            MakeArticle($"ok_{Guid.NewGuid():N}", 6, ["nz"]));
+
+        Assert.Equal(0, hidden.BelowMood);
+        Assert.Equal(0, hidden.BannedTag);
+    }
+
+    [Fact]
+    public async Task FiltersAndCountsByTheRequestsMood_BeforeTheProfileHasSavedIt()
+    {
+        var user = CreateUser($"user_{Guid.NewGuid()}@example.com");
+        _ctx.UserProfiles.Add(user);
+        _ctx.Articles.AddRange(
+            MakeArticle($"six_{Guid.NewGuid():N}", 6, []),
+            MakeArticle($"eight_{Guid.NewGuid():N}", 8, []));
+        await _ctx.SaveChangesAsync(Ct);
+        var service = new RelevantArticlesService(_ctx, NullLogger<RelevantArticlesService>.Instance);
+
+        var resp = await service.GetRelevantArticlesAsync(new RelevantArticlesRequest { Presenter = "Default", Mood = 7 }, user);
+
+        Assert.StartsWith("eight_", Assert.Single(resp.Articles).Link);
+        Assert.Equal(1, resp.Hidden!.BelowMood);
+        Assert.Equal(7, resp.Hidden.Mood);
+        Assert.Equal(7, resp.Articles[0].Why.Mood);
+    }
 }
