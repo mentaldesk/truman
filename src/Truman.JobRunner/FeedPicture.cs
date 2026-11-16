@@ -19,9 +19,10 @@ public static class FeedPicture
             .Concat(item.Elements("enclosure").Where(e => IsImageType((string?)e.Attribute("type"))));
 
         return candidates
-            .Select(e => (Url: ((string?)e.Attribute("url"))?.Trim(), Area: Area(e)))
+            .Select(e => (Url: ((string?)e.Attribute("url"))?.Trim(), Area: Area(e), IsThumbnail: e.Name == Media + "thumbnail"))
             .Where(c => IsWebAddress(c.Url))
             .OrderByDescending(c => c.Area)
+            .ThenBy(c => c.IsThumbnail)
             .Select(c => c.Url)
             .FirstOrDefault();
     }

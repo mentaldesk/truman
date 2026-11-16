@@ -29,9 +29,11 @@ public class FeedPictureTests(JobRunnerDatabaseFixture fixture) : IAsyncLifetime
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
-    private async Task<string?> FetchedPicture(string itemExtras)
+    private Task<string?> FetchedPicture(string itemExtras) => FetchedPictureFrom(Rss(itemExtras));
+
+    private async Task<string?> FetchedPictureFrom(string rss)
     {
-        var http = new ScriptedHttpHandler().Then(Rss(itemExtras));
+        var http = new ScriptedHttpHandler().Then(rss);
         await new RssFetcher(http, new FakeLogger<RssFetcher>(), fixture.ContextFactory).RunAsync();
 
         await using var db = fixture.NewContext();
@@ -66,6 +68,32 @@ public class FeedPictureTests(JobRunnerDatabaseFixture fixture) : IAsyncLifetime
     public async Task Prefers_the_largest_of_several(string extras)
     {
         Assert.Equal("https://img.invalid/large.jpg", await FetchedPicture(extras));
+    }
+
+    [Theory]
+    [InlineData("""
+        <media:thumbnail url="https://img.invalid/small.jpg"/>
+        <media:content url="https://img.invalid/large.jpg" medium="image"/>
+        """)]
+    [InlineData("""
+        <media:thumbnail url="https://img.invalid/small.jpg"/>
+        <enclosure url="https://img.invalid/large.jpg" type="image/jpeg"/>
+        """)]
+    public async Task Prefers_a_full_picture_over_a_thumbnail_when_neither_has_a_size(string extras)
+    {
+        Assert.Equal("https://img.invalid/large.jpg", await FetchedPicture(extras));
+    }
+
+    [Theory]
+    [InlineData("bigthink.xml", "https://bigthink.com/wp-content/uploads/2026/11/UGC_12158.jpg?quality=85&w=640")]
+    [InlineData("thegradient.xml", "https://thegradient.pub/content/images/2026/02/ramelli-featured.jpg")]
+    [InlineData("phys.xml", "https://scx1.b-cdn.net/csz/news/tmb/2026/south-korea-exam-cheat.jpg")]
+    [InlineData("singularityhub.xml", "https://singularityhub.com/uploads/2026/11/firework-explosion-red-orange-and-green.jpeg?auto=webp")]
+    public async Task Keeps_the_picture_from_a_real_publisher_item(string feed, string expected)
+    {
+        var rss = await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "Feeds", feed));
+
+        Assert.Equal(expected, await FetchedPictureFrom(rss));
     }
 
     [Theory]
