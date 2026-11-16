@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:wfw="http://wellformedweb.org/CommentAPI/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:sy="http://purl.org/rss/1.0/modules/syndication/" xmlns:slash="http://purl.org/rss/1.0/modules/slash/" xmlns:webfeeds="http://webfeeds.org/rss/1.0" xmlns:media="http://search.yahoo.com/mrss/" >
+<channel>
+        <title>Big Think</title>
+<item>
+                <title>Astronomers weigh the Milky Way&#8217;s mass at long last</title>
+                <link>https://bigthink.com/starts-with-a-bang/astronomers-weigh-milky-way/</link>
+                <guid>https://bigthink.com/starts-with-a-bang/astronomers-weigh-milky-way/</guid>
+                                        <media:content url="https://bigthink.com/wp-content/uploads/2026/11/UGC_12158.jpg?quality=85&#038;w=640" medium="image" type="image/jpeg"></media:content>
+                                        <description><![CDATA[Description trimmed.]]></description>
+                <pubDate>Mon, 16 Nov 2026 07:00:00 +0000</pubDate>
+                <dc:creator>Ethan Siegel</dc:creator>
+                <post-id xmlns="com-wordpress:feed-additions:1">617208</post-id>            </item>
+</channel>
+</rss>

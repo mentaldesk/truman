@@ -29,6 +29,7 @@ public class RelevantArticle
     public string? Publisher { get; set; }
     public DateTimeOffset? PublishedAt { get; set; }
     public int? SourceWordCount { get; set; }
+    public string? ImageUrl { get; set; }
     public RelevanceBreakdown Why { get; set; } = new();
     public bool IsSaved { get; set; }
     public bool IsNew { get; set; }

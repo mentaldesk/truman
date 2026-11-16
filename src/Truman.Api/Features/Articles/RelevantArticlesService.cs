@@ -146,6 +146,7 @@ public class RelevantArticlesService : IRelevantArticlesService
                 Publisher = article.RssItem.Feed?.Name,
                 PublishedAt = article.RssItem.PubDate,
                 SourceWordCount = article.SourceWordCount,
+                ImageUrl = article.RssItem.ImageUrl,
                 IsSaved = savedIds.Contains(article.Id)
             };
         });

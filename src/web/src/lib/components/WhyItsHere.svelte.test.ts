@@ -15,6 +15,7 @@ const article = {
 	publisher: 'RNZ World',
 	publishedAt: null,
 	sourceWordCount: null,
+	imageUrl: null,
 	why: {
 		valuesShare: 0.6,
 		tagsShare: 0.1,

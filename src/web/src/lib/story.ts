@@ -14,6 +14,7 @@ export type Story = {
     publisher: string | null;
     publishedAt: string | null;
     sourceWordCount: number | null;
+    imageUrl: string | null;
     why: RelevanceBreakdown;
     isSaved: boolean;
     isNew?: boolean;

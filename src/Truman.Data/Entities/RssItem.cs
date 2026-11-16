@@ -8,6 +8,7 @@ public class RssItem
     public string Link { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
+    public string? ImageUrl { get; set; }
     public DateTimeOffset? PubDate { get; set; }
     public DateTimeOffset? TimeAnalysed { get; set; }
     public int? FeedId { get; set; }
