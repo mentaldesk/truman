@@ -11,18 +11,18 @@
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.12.0" />
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.12.0" />
     <!-- Integration support -->
-    <PackageVersion Include="Testcontainers.PostgreSql" Version="4.16.0" />
+    <PackageVersion Include="Testcontainers.PostgreSql" Version="4.17.0" />
     <!-- Align with EF Core used in src (explicit for direct references in tests) -->
-    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="9.0.22" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.22" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.22" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="9.0.23" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.23" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.23" />
     <!-- Mocking -->
     <PackageVersion Include="NSubstitute" Version="6.2.0" />
     <!-- Logging for NullLogger -->
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.22" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.23" />
     <!-- Logging for FakeLogger -->
     <PackageVersion Include="Microsoft.Extensions.Diagnostics.Testing" Version="9.10.0" />
     <!-- Anthropic SDK, so the chat-request shape can be asserted on the wire (match src) -->
-    <PackageVersion Include="Anthropic" Version="13.7.0" />
+    <PackageVersion Include="Anthropic" Version="13.9.0" />
   </ItemGroup>
 </Project>
