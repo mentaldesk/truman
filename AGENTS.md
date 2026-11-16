@@ -135,7 +135,7 @@ Run these from the repo root unless there is a better documented path.
 
 - `dotnet restore truman.sln`
 - `dotnet build truman.sln`
-- `dotnet test truman.sln`
+- `dotnet test --solution truman.sln`
 
 ### Frontend
 
@@ -187,7 +187,7 @@ Good simplification targets usually include:
 At minimum, run whatever is relevant to the change:
 
 - `dotnet build truman.sln`
-- `dotnet test truman.sln`
+- `dotnet test --solution truman.sln`
 - `cd src/web && npm run build`
 - `cd src/web && npm run test`
 
