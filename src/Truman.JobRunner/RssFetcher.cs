@@ -143,7 +143,9 @@ public class RssFetcher(
                 {
                     // One bad item fails the whole batch. Fall back to saving one at a time so the items
                     // ahead of the bad one are kept; the bad one still throws and fails the feed below.
-                    dbContext.ChangeTracker.Clear();
+                    // Only the items are detached: the feeds must stay tracked, or re-adding an item would
+                    // re-insert its Feed through the navigation EF fixed up.
+                    DetachRssItems(dbContext);
                     foreach (var rssItem in newItems)
                     {
                         rssItem.Id = default; // discard any key read back from the rolled-back batch
@@ -166,7 +168,7 @@ public class RssFetcher(
             catch (Exception ex)
             {
                 // Drop anything this feed queued but failed to save, so it isn't retried with the next feed.
-                dbContext.ChangeTracker.Clear();
+                DetachRssItems(dbContext);
                 logger.LogError(ex, "Failed to fetch or parse feed {Feed} ({Url})", feedSource.Name, feedSource.Url);
                 failedFeedCount++;
                 SetFeedCounts(span, feed, newBodyLengths);
@@ -181,6 +183,14 @@ public class RssFetcher(
             existingArticleCount);
 
         return new FetchOutcome(feeds.Count, failedFeedCount);
+    }
+
+    private static void DetachRssItems(TrumanDbContext dbContext)
+    {
+        foreach (var entry in dbContext.ChangeTracker.Entries<RssItem>().ToList())
+        {
+            entry.State = EntityState.Detached;
+        }
     }
 
     private static void SetFeedCounts(ISpan? span, ParsedFeed? feed, List<int> newBodyLengths)
