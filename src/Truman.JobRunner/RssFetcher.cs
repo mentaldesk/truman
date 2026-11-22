@@ -73,13 +73,25 @@ public class RssFetcher(
             {
                 feed = await ReadFeedAsync(client, feedSource, span, cancellationToken);
 
+                // Look up which of this feed's links we already have in a single query, rather than
+                // one existence check per item.
+                var feedLinks = feed.Items
+                    .Select(i => i.Link)
+                    .Where(l => l is not null)
+                    .Distinct()
+                    .ToList();
+                var knownLinks = await dbContext.RssItems
+                    .Where(r => feedLinks.Contains(r.Link))
+                    .Select(r => r.Link)
+                    .ToHashSetAsync(cancellationToken);
+
+                var newItems = new List<RssItem>();
                 foreach (var item in feed.Items)
                 {
                     var link = item.Link;
 
-                    // Check if we already have this article
-                    var exists = await dbContext.RssItems.AnyAsync(a => a.Link == link);
-                    if (exists)
+                    // Check if we already have this article (or have already queued it from this feed)
+                    if (!knownLinks.Add(link))
                     {
                         existingArticleCount++;
                         continue;
@@ -110,9 +122,17 @@ public class RssFetcher(
                     };
 
                     dbContext.RssItems.Add(rssItem);
-                    await dbContext.SaveChangesAsync(cancellationToken);
+                    newItems.Add(rssItem);
+                }
 
-                    logger.LogInformation("New article found from {Feed}: {Title} ({Link})", feedSource.Name, item.Title, link);
+                if (newItems.Count > 0)
+                {
+                    await dbContext.SaveChangesAsync(cancellationToken);
+                }
+
+                foreach (var rssItem in newItems)
+                {
+                    logger.LogInformation("New article found from {Feed}: {Title} ({Link})", feedSource.Name, rssItem.Title, rssItem.Link);
                     newArticleCount++;
                     newBodyLengths.Add(rssItem.Description.Length);
                 }
@@ -122,6 +142,8 @@ public class RssFetcher(
             }
             catch (Exception ex)
             {
+                // Drop anything this feed queued but failed to save, so it isn't retried with the next feed.
+                dbContext.ChangeTracker.Clear();
                 logger.LogError(ex, "Failed to fetch or parse feed {Feed} ({Url})", feedSource.Name, feedSource.Url);
                 failedFeedCount++;
                 SetFeedCounts(span, feed, newBodyLengths);
