@@ -125,16 +125,39 @@ public class RssFetcher(
                     newItems.Add(rssItem);
                 }
 
-                if (newItems.Count > 0)
-                {
-                    await dbContext.SaveChangesAsync(cancellationToken);
-                }
-
-                foreach (var rssItem in newItems)
+                void RecordSaved(RssItem rssItem)
                 {
                     logger.LogInformation("New article found from {Feed}: {Title} ({Link})", feedSource.Name, rssItem.Title, rssItem.Link);
                     newArticleCount++;
                     newBodyLengths.Add(rssItem.Description.Length);
+                }
+
+                try
+                {
+                    if (newItems.Count > 0)
+                    {
+                        await dbContext.SaveChangesAsync(cancellationToken);
+                    }
+                }
+                catch (Exception) when (newItems.Count > 1 && !cancellationToken.IsCancellationRequested)
+                {
+                    // One bad item fails the whole batch. Fall back to saving one at a time so the items
+                    // ahead of the bad one are kept; the bad one still throws and fails the feed below.
+                    dbContext.ChangeTracker.Clear();
+                    foreach (var rssItem in newItems)
+                    {
+                        rssItem.Id = default; // discard any key read back from the rolled-back batch
+                        dbContext.RssItems.Add(rssItem);
+                        await dbContext.SaveChangesAsync(cancellationToken);
+                        RecordSaved(rssItem);
+                    }
+
+                    newItems.Clear();
+                }
+
+                foreach (var rssItem in newItems)
+                {
+                    RecordSaved(rssItem);
                 }
 
                 SetFeedCounts(span, feed, newBodyLengths);
