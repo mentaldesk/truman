@@ -73,13 +73,25 @@ public class RssFetcher(
             {
                 feed = await ReadFeedAsync(client, feedSource, span, cancellationToken);
 
+                // Look up which of this feed's links we already have in a single query, rather than
+                // one existence check per item.
+                var feedLinks = feed.Items
+                    .Select(i => i.Link)
+                    .Where(l => l is not null)
+                    .Distinct()
+                    .ToList();
+                var knownLinks = await dbContext.RssItems
+                    .Where(r => feedLinks.Contains(r.Link))
+                    .Select(r => r.Link)
+                    .ToHashSetAsync(cancellationToken);
+
+                var newItems = new List<RssItem>();
                 foreach (var item in feed.Items)
                 {
                     var link = item.Link;
 
-                    // Check if we already have this article
-                    var exists = await dbContext.RssItems.AnyAsync(a => a.Link == link);
-                    if (exists)
+                    // Check if we already have this article (or have already queued it from this feed)
+                    if (!knownLinks.Add(link))
                     {
                         existingArticleCount++;
                         continue;
@@ -110,11 +122,44 @@ public class RssFetcher(
                     };
 
                     dbContext.RssItems.Add(rssItem);
-                    await dbContext.SaveChangesAsync(cancellationToken);
+                    newItems.Add(rssItem);
+                }
 
-                    logger.LogInformation("New article found from {Feed}: {Title} ({Link})", feedSource.Name, item.Title, link);
+                void RecordSaved(RssItem rssItem)
+                {
+                    logger.LogInformation("New article found from {Feed}: {Title} ({Link})", feedSource.Name, rssItem.Title, rssItem.Link);
                     newArticleCount++;
                     newBodyLengths.Add(rssItem.Description.Length);
+                }
+
+                try
+                {
+                    if (newItems.Count > 0)
+                    {
+                        await dbContext.SaveChangesAsync(cancellationToken);
+                    }
+                }
+                catch (Exception) when (newItems.Count > 1 && !cancellationToken.IsCancellationRequested)
+                {
+                    // One bad item fails the whole batch. Fall back to saving one at a time so the items
+                    // ahead of the bad one are kept; the bad one still throws and fails the feed below.
+                    // Only the items are detached: the feeds must stay tracked, or re-adding an item would
+                    // re-insert its Feed through the navigation EF fixed up.
+                    DetachRssItems(dbContext);
+                    foreach (var rssItem in newItems)
+                    {
+                        rssItem.Id = default; // discard any key read back from the rolled-back batch
+                        dbContext.RssItems.Add(rssItem);
+                        await dbContext.SaveChangesAsync(cancellationToken);
+                        RecordSaved(rssItem);
+                    }
+
+                    newItems.Clear();
+                }
+
+                foreach (var rssItem in newItems)
+                {
+                    RecordSaved(rssItem);
                 }
 
                 SetFeedCounts(span, feed, newBodyLengths);
@@ -122,6 +167,8 @@ public class RssFetcher(
             }
             catch (Exception ex)
             {
+                // Drop anything this feed queued but failed to save, so it isn't retried with the next feed.
+                DetachRssItems(dbContext);
                 logger.LogError(ex, "Failed to fetch or parse feed {Feed} ({Url})", feedSource.Name, feedSource.Url);
                 failedFeedCount++;
                 SetFeedCounts(span, feed, newBodyLengths);
@@ -136,6 +183,14 @@ public class RssFetcher(
             existingArticleCount);
 
         return new FetchOutcome(feeds.Count, failedFeedCount);
+    }
+
+    private static void DetachRssItems(TrumanDbContext dbContext)
+    {
+        foreach (var entry in dbContext.ChangeTracker.Entries<RssItem>().ToList())
+        {
+            entry.State = EntityState.Detached;
+        }
     }
 
     private static void SetFeedCounts(ISpan? span, ParsedFeed? feed, List<int> newBodyLengths)

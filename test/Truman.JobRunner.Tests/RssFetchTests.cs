@@ -114,6 +114,48 @@ public class RssFetchTests(JobRunnerDatabaseFixture fixture) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task An_item_already_stored_is_not_stored_again()
+    {
+        await using (var db = fixture.NewContext())
+        {
+            var feed = await db.Feeds.SingleAsync(f => f.Url == FeedUrl);
+            db.RssItems.Add(new RssItem { Link = "https://example.invalid/one", Title = "Old", FeedId = feed.Id });
+            await db.SaveChangesAsync();
+        }
+
+        var http = new ScriptedHttpHandler().Then(Rss("https://example.invalid/one", "https://example.invalid/two"));
+
+        await Fetcher(http).RunAsync();
+
+        await using var verify = fixture.NewContext();
+        var links = await verify.RssItems.Select(r => r.Link).OrderBy(l => l).ToListAsync();
+        Assert.Equal(["https://example.invalid/one", "https://example.invalid/two"], links);
+        Assert.Equal("Old", (await verify.RssItems.SingleAsync(r => r.Link == "https://example.invalid/one")).Title);
+    }
+
+    [Fact]
+    public async Task A_link_repeated_within_a_feed_is_stored_once()
+    {
+        var http = new ScriptedHttpHandler().Then(Rss("https://example.invalid/one", "https://example.invalid/one"));
+
+        await Fetcher(http).RunAsync();
+
+        await using var db = fixture.NewContext();
+        Assert.Equal("https://example.invalid/one", Assert.Single(await db.RssItems.ToListAsync()).Link);
+    }
+
+    [Fact]
+    public async Task All_new_items_in_a_feed_are_stored()
+    {
+        var http = new ScriptedHttpHandler().Then(Rss("https://example.invalid/one", "https://example.invalid/two", "https://example.invalid/three"));
+
+        await Fetcher(http).RunAsync();
+
+        await using var db = fixture.NewContext();
+        Assert.Equal(3, await db.RssItems.CountAsync());
+    }
+
+    [Fact]
     public void A_body_preview_escapes_bytes_that_are_not_printable_ascii()
     {
         Assert.Equal(@"\x1f\x8b\x08rest", RssFetcher.DescribeBody([0x1f, 0x8b, 0x08, (byte)'r', (byte)'e', (byte)'s', (byte)'t']));
