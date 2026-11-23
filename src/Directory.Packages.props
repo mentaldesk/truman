@@ -28,7 +28,7 @@
     <PackageVersion Include="Sentry.AspNetCore" Version="7.0.1" />
     <PackageVersion Include="Sentry.Extensions.AI" Version="7.0.1" />
     <PackageVersion Include="Sentry.Extensions.Hosting" Version="7.0.1" />
-    <PackageVersion Include="Sentry.Extensions.Logging" Version="7.0.0" />
+    <PackageVersion Include="Sentry.Extensions.Logging" Version="7.0.1" />
     <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerUI" Version="9.0.6" />
   </ItemGroup>
   <ItemGroup>
